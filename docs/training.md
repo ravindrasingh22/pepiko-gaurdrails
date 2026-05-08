@@ -1,0 +1,67 @@
+# Training Jobs
+
+## SLM GL classifier
+
+- Objective: train SmolLM2 to detect `GL-01` through `GL-13` as a multi-label classifier.
+- Notebooks: `02_guardrail_dataset_builder.ipynb`, `03_slm_classifier_train_smolLM2_135M.ipynb`, `04_slm_classifier_eval_thresholds.ipynb`
+- Scripts: `training/slm_classifier/`
+- Canonical dataset target: `data/processed/piku_gl_classifier_train.jsonl`
+- Source discovery manifest: `data/processed/piku_gl_classifier_manifest.json`
+- Model output target: `models/piku-slm-guardrail-smollm2-135m/`
+
+### Canonical classifier row
+
+```json
+{
+  "sample_id": "religion_001_5_8",
+  "question": "Who is God?",
+  "age_band": "5-8",
+  "language": "en",
+  "recent_context": "none",
+  "gl_01": 1,
+  "gl_02": 0,
+  "gl_03": 0,
+  "gl_04": 0,
+  "gl_05": 0,
+  "gl_06": 0,
+  "gl_07": 0,
+  "gl_08": 0,
+  "gl_09": 1,
+  "gl_10": 0,
+  "gl_11": 0,
+  "gl_12": 0,
+  "gl_13": 0,
+  "g1": "BELIEF",
+  "g2": "NEUTRAL_FACT",
+  "g3": "SV0",
+  "g4": "ALLOW"
+}
+```
+
+### Source-of-truth rules
+
+- Put raw spreadsheets or exports in `data/raw/`.
+- Any file in `data/raw/` that does not start with `trained_` is treated as pending input for the dataset builder.
+- The training pipeline writes a manifest so unfinished sources are easy to detect before training.
+- Do not use generated prompts or model answers as classifier inputs.
+- Authoring sheets may stay wide and human-friendly, but training ingestion must flatten them to:
+  `sample_id, question, age_band, language, recent_context, gl_01..gl_13, g1, g2, g3, g4`
+- For `docs/Religion-politics-idealogy.csv`, create one training row per `question x age_band`.
+- Keep age-specific reference answers only as optional audit columns; they are not classifier inputs.
+
+### Training split of responsibility
+
+- Model training learns only GL detection.
+- `G1`, `G2`, `G3`, `G4`, response decisions, and prompt contracts are derived deterministically from configs in `configs/`.
+
+## Child-safe answer LLM
+
+- Notebook ownership: `05`, `06`, `07`
+- Script ownership: `training/childsafe_llm/`
+- Output target: `models/piku-childsafe-llm-lora/`
+
+## RAG safety tagger
+
+- Notebook ownership: `08`
+- Script ownership: `training/rag_tagger/`
+- Output target: future chunk tagger model or metadata pipeline

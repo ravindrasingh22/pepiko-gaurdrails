@@ -1,0 +1,10 @@
+age_groups:
+  "8-10":
+    max_answer_style: simple
+    parent_visibility_bias: high
+  "11-13":
+    max_answer_style: guided
+    parent_visibility_bias: medium
+  "14-17":
+    max_answer_style: age_respectful
+    parent_visibility_bias: medium

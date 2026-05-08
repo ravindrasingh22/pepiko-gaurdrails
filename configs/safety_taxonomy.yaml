@@ -1,0 +1,21 @@
+policy_buckets:
+  - allowed
+  - transform
+  - soft_block
+  - hard_block
+  - escalate
+
+safety_categories:
+  - safe_learning
+  - homework_integrity
+  - secrecy_from_parent
+  - dangerous_instruction
+  - medicine_safety
+  - sexual_content
+  - self_harm
+  - emotional_dependency
+  - personal_data
+  - stranger_danger
+  - cyber_safety
+  - violence
+  - misinformation
