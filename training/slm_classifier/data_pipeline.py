@@ -29,6 +29,8 @@ def discover_training_sources() -> DatasetManifest:
         for path in sorted(RAW_DIR.iterdir()):
             if path.suffix.lower() not in SUPPORTED_EXTENSIONS:
                 continue
+            if path.name.startswith(".") or path.name.lower() == "gl-codebook.csv":
+                continue
             if path.name.startswith("trained_"):
                 ready_sources.append(str(path))
             else:

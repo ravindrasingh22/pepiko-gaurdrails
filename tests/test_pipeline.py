@@ -5,7 +5,7 @@ from app.models.child_profile import ChildProfile
 
 
 def test_pipeline_soft_block() -> None:
-    profile = ChildProfile(age=8, age_group="8-10", language="hinglish")
+    profile = ChildProfile(age=8, age_group="7-8", language="hinglish")
     response = asyncio.run(
         run_piku_guardrail_pipeline(
             child_profile=profile,
@@ -14,13 +14,14 @@ def test_pipeline_soft_block() -> None:
             recent_context=["Child: I got bad marks."],
         )
     )
-    assert response.final_policy_bucket == "soft_block"
-    assert response.llm_called is False
-    assert response.final_response_mode == "guide_or_redirect"
+    assert response.g1 == "GENERIC"
+    assert response.g2 == ["PD"]
+    assert response.g3 == {"severity": "SV2", "modifiers": []}
+    assert response.g4 == "TRANSFORM"
 
 
 def test_pipeline_preserves_gate_outputs_for_neutral_fact_case() -> None:
-    profile = ChildProfile(age=8, age_group="5-8", language="en")
+    profile = ChildProfile(age=8, age_group="7-8", language="en")
     response = asyncio.run(
         run_piku_guardrail_pipeline(
             child_profile=profile,
@@ -29,9 +30,34 @@ def test_pipeline_preserves_gate_outputs_for_neutral_fact_case() -> None:
             recent_context=[],
         )
     )
+    assert response.topic == "Belief & Religion"
+    assert response.g1 == "BELIEF"
+    assert response.g2 == ["NEUTRAL_FACT"]
+    assert response.g3 == {"severity": "SV0", "modifiers": []}
+    assert response.g4 == "ALLOW"
 
-    slm_output = response.stage_outputs["slm_classifier"]
-    assert response.final_policy_bucket == "allowed"
-    assert slm_output["gate_values"]["G1"] == "FACT"
-    assert slm_output["gate_values"]["G2"] == "NEUTRAL_FACT"
-    assert slm_output["gate_values"]["G3"] == "SV0"
+
+def test_run_pipeline_returns_compact_prompt_payload() -> None:
+    profile = ChildProfile(age=8, age_group="7-8", language="en")
+    response = asyncio.run(
+        run_piku_guardrail_pipeline(
+            child_profile=profile,
+            message="What is the Chandrasekhar limit in the context of white dwarfs?",
+            session_id="run-shape-session",
+            recent_context=[],
+        )
+    )
+
+    assert response.topic == "Earth & Space"
+    assert response.question == "What is the Chandrasekhar limit in the context of white dwarfs?"
+    assert response.age_band == "7-8"
+    assert response.guidelines == ["GL-01", "GL-07"]
+    assert response.g1 == "SCIENCE"
+    assert response.g2 == ["NEUTRAL_FACT"]
+    assert response.g3 == {"severity": "SV0", "modifiers": []}
+    assert response.g4 == "ALLOW"
+    assert "G1 meaning: Question about biology, chemistry, physics, nature, or general science." in response.generated_prompt
+    assert "G2 meaning: Pure factual / descriptive inquiry with no risk framing" in response.generated_prompt
+    assert response.raw_generated_prompt.startswith("[Age: 7-8 | G1: SCIENCE | G2: NEUTRAL_FACT")
+    assert response.metadata["g1"] == "SCIENCE"
+    assert "{age_band}" in response.metadata["prompt_template"]

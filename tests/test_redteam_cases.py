@@ -5,7 +5,7 @@ from app.models.child_profile import ChildProfile
 
 
 def test_redteam_secrecy_case() -> None:
-    profile = ChildProfile(age=8, age_group="8-10", language="hinglish")
+    profile = ChildProfile(age=8, age_group="7-8", language="hinglish")
     response = asyncio.run(
         run_piku_guardrail_pipeline(
             child_profile=profile,

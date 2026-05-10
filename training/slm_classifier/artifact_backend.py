@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import re
@@ -8,6 +9,7 @@ from pathlib import Path
 
 from app.guardrails.gate_mapper import GUIDELINES, build_guardrail_decision
 from app.models.guardrail_decision import GLSignal, GuardrailDecision
+from training.slm_classifier.codebook import DOC_CODEBOOK_PATH
 from training.slm_classifier.data_pipeline import CANONICAL_DATASET, GL_COLUMNS, build_input_text
 
 
@@ -16,6 +18,11 @@ TOKEN_RE = re.compile(r"[a-z0-9']+")
 MAX_FEATURES_PER_LABEL = 32
 MIN_FEATURE_SCORE = 1.0
 MIN_POSITIVE_SAMPLES = 2
+ARTIFACT_VERSION = 3
+
+
+def _codebook_fingerprint() -> str:
+    return hashlib.sha256(DOC_CODEBOOK_PATH.read_bytes()).hexdigest()[:16]
 
 
 def _tokenize(text: str) -> list[str]:
@@ -72,7 +79,8 @@ def train_artifact(dataset_path: Path = CANONICAL_DATASET, target_path: Path = A
         labels.append({"id": gl_id, "bias": round(bias, 4), "threshold": 0.5, "rules": rules})
 
     artifact = {
-        "version": 1,
+        "version": ARTIFACT_VERSION,
+        "codebook_fingerprint": _codebook_fingerprint(),
         "model_type": "lexical-multilabel-artifact",
         "source_dataset": str(dataset_path),
         "labels": labels,
@@ -85,7 +93,12 @@ def train_artifact(dataset_path: Path = CANONICAL_DATASET, target_path: Path = A
 def load_artifact(path: Path = ARTIFACT_PATH) -> dict[str, object] | None:
     if not path.exists():
         return None
-    return json.loads(path.read_text(encoding="utf-8"))
+    artifact = json.loads(path.read_text(encoding="utf-8"))
+    if int(artifact.get("version", 0)) != ARTIFACT_VERSION:
+        return None
+    if str(artifact.get("codebook_fingerprint", "")) != _codebook_fingerprint():
+        return None
+    return artifact
 
 
 def predict_scores(text: str, artifact: dict[str, object]) -> dict[str, float]:

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from app.models.guardrail_decision import GLSignal
@@ -42,20 +43,56 @@ G2_PRIORITY = [
     "NEUTRAL_FACT",
     "GENERIC_INTENT",
 ]
+AGE_BANDS = CODEBOOK.age_bands
 AGE_POLICY = {
-    "5-8": {"max_words": 90, "depth": "simple_concrete", "tone": "warm_simple"},
-    "9-12": {"max_words": 130, "depth": "simple_factual", "tone": "calm_supportive"},
-    "13-17": {"max_words": 170, "depth": "balanced_explanatory", "tone": "calm_supportive"},
+    band: {
+        "max_words": spec.max_words,
+        "max_answer_style": spec.max_answer_style,
+        "depth": spec.depth,
+        "tone": spec.tone,
+    }
+    for band, spec in AGE_BANDS.items()
+    if spec.max_words is not None and spec.depth
 }
+
+
+AGE_RANGES = [
+    (5, 6, "5-6"),
+    (7, 8, "7-8"),
+    (9, 10, "9-10"),
+    (11, 12, "11-12"),
+    (13, 14, "13-14"),
+    (15, 16, "15-16"),
+    (17, 17, "17"),
+]
 
 
 def active_gls(gl_signals: dict[str, GLSignal]) -> set[str]:
     return {gl_id for gl_id, signal in gl_signals.items() if signal.triggered}
 
 
-def canonicalize_age_band(age_band: str) -> str:
-    aliases = {"8-10": "5-8", "5-8": "5-8", "9-12": "9-12", "13-17": "13-17"}
-    return aliases.get(age_band, "9-12")
+def age_band_from_age(age: int) -> str:
+    for low, high, band in AGE_RANGES:
+        if low <= age <= high:
+            return band
+    return "11-12"
+
+
+def _lower_age_from_band(age_band: str) -> int | None:
+    match = re.match(r"^\s*(\d{1,2})(?:-(\d{1,2}))?\s*$", age_band)
+    if not match:
+        return None
+    return max(5, min(int(match.group(1)), 17))
+
+
+def resolve_age_band(age: int, requested_age_band: str | None = None) -> str:
+    if requested_age_band and requested_age_band in AGE_POLICY:
+        return requested_age_band
+    if requested_age_band:
+        lower_age = _lower_age_from_band(requested_age_band)
+        if lower_age is not None:
+            return age_band_from_age(lower_age)
+    return age_band_from_age(age)
 
 
 def map_g1(gls: set[str]) -> str:
@@ -138,7 +175,7 @@ def build_decision_from_g4(g4: str, g3: str, g2_list: list[str]) -> dict[str, An
 
 
 def build_prompt_contract(g4: str, g3: str, g2_list: list[str], age_band: str) -> dict[str, Any]:
-    age_cfg = AGE_POLICY[canonicalize_age_band(age_band)]
+    age_cfg = AGE_POLICY[age_band]
     modifiers = g3_modifiers(g2_list)
     must_do: list[str] = []
     must_not_do: list[str] = []
@@ -186,6 +223,7 @@ def build_prompt_contract(g4: str, g3: str, g2_list: list[str], age_band: str) -
     return {
         "age_band": age_band,
         "max_words": age_cfg["max_words"],
+        "max_answer_style": age_cfg["max_answer_style"],
         "depth": age_cfg["depth"],
         "tone": "calm_child_safe_supportive" if g3 in {"SV3", "SV4"} else age_cfg["tone"],
         "must_do": list(dict.fromkeys(must_do)),

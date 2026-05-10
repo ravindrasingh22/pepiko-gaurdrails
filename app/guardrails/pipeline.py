@@ -17,12 +17,31 @@ from app.llm.ollama_client import generate
 from app.models.child_profile import ChildProfile
 from app.models.guardrail_decision import GuardrailDecision
 from app.models.schemas import GuardrailRunResponse
+from training.slm_classifier.codebook import parse_codebook
 
 
-def _terminal_answer(decision: GuardrailDecision) -> str:
-    if decision.response_mode in {"trusted_adult", "trusted_adult_escalation"}:
-        return "This sounds important. Please talk to a trusted adult right now so they can help you safely."
-    return "I can't help with that. Let's choose a safe next step together."
+CODEBOOK = parse_codebook()
+GL_NAME_MAP = {item.gl_id: item.name for item in CODEBOOK.labels}
+GL_PURPOSE_MAP = {item.gl_id: item.purpose for item in CODEBOOK.labels}
+G1_DESCRIPTION_MAP = {
+    "FACT": "Pure descriptive or factual question about how the world works.",
+    "BELIEF": "Question about religion, ideology, worldview, or belief systems.",
+    "DEATH_GRIEF": "Question about death, loss, dying, or grief.",
+    "VIOLENCE": "Question involving violence, conflict, harm, extremism, or dangerous acts.",
+    "SCIENCE": "Question about biology, chemistry, physics, nature, or general science.",
+    "TECHNOLOGY": "Question about computing, internet, AI, devices, or digital systems.",
+    "SAFETY_HAZARD": "Question about dangerous real-world outcomes, accidents, or unsafe interactions.",
+    "CIVIC_LAW": "Question about laws, rules, civic processes, or integrity.",
+    "GENERIC": "Catch-all category for questions that do not clearly fit other G1 values.",
+}
+G4_DESCRIPTION_MAP = {
+    "ALLOW": "Answer directly in an age-appropriate, calm, simple, and factual way.",
+    "TRANSFORM": "Reframe the question safely and answer in an age-appropriate way without over-directing the child.",
+    "TRANSFORM_HOLD": "Ask exactly one safe clarification question before answering.",
+    "BLOCK": "Do not provide instructions or details. Give a safe minimal refusal.",
+    "BLOCK_HARD": "Hard block: no content engagement, no instructions, no alternate topic discussion.",
+    "BLOCK_ESCALATE": "Do not engage the content. Give a safe refusal and escalate toward trusted-adult support.",
+}
 
 
 def _compact_decision(decision: GuardrailDecision) -> dict[str, object]:
@@ -37,6 +56,7 @@ def _compact_decision(decision: GuardrailDecision) -> dict[str, object]:
         "active_gls": active_gls,
         "gl_signals": active_signals,
         "gates": decision.gates or decision.gate_values,
+        "gate_values": decision.gates or decision.gate_values,
         "decision": decision.decision,
         "policy_bucket": decision.policy_bucket,
         "safety_category": decision.safety_category,
@@ -49,24 +69,97 @@ def _compact_decision(decision: GuardrailDecision) -> dict[str, object]:
     }
 
 
-def _dedupe_stage_outputs_for_run(stage_outputs: dict[str, object]) -> dict[str, object]:
-    deduped = dict(stage_outputs)
-    deduped.pop("prompt_contract", None)
-    for key in ("slm_classifier", "llm_safety_classifier", "age_policy_engine", "conversation_guard"):
-        payload = deduped.get(key)
-        if isinstance(payload, dict):
-            payload = dict(payload)
-            payload.pop("prompt_contract", None)
-            deduped[key] = payload
-    return deduped
-
-
 def _final_prompt_for_decision(
     child_profile: ChildProfile,
     message: str,
     decision: GuardrailDecision,
 ) -> str:
     return prompt_contract.build(child_profile, message, decision, [])
+
+
+def _templated_prompt(raw_prompt: str, age_band: str, g1: str, g2: list[str], g3: str, modifiers: list[str], g4: str, question: str) -> str:
+    modifier_text = ", ".join(modifiers) if modifiers else "none"
+    header = f"[Age: {age_band} | G1: {g1} | G2: {';'.join(g2)} | G3: {g3} | {modifier_text} | G4: {g4}]"
+    templated = raw_prompt.replace(
+        header,
+        f"[Age: {{age_band}} | G1: {{g1}} | G2: {{g2}} | G3: {{g3}} | {{modifiers}} | G4: {{g4}}]",
+    )
+    return templated.replace(question, "{question}")
+
+
+def _expanded_prompt(decision: GuardrailDecision, message: str, age_band: str, topic: str, g1: str, g2: list[str], g3: str, modifiers: list[str], g4: str, guidelines: list[str]) -> str:
+    contract = decision.prompt_contract
+    g2_descriptions = [
+        CODEBOOK.g2_specs[item].description
+        for item in g2
+        if item in CODEBOOK.g2_specs and CODEBOOK.g2_specs[item].description
+    ]
+    guideline_descriptions = [
+        f"{gl}: {GL_NAME_MAP.get(gl, gl)}"
+        for gl in guidelines
+    ]
+    modifier_text = ", ".join(modifiers) if modifiers else "none"
+    guideline_text = "; ".join(guideline_descriptions) if guideline_descriptions else "GL-01: Age calibration"
+    g2_text = "; ".join(g2)
+    g2_desc_text = " ".join(g2_descriptions) if g2_descriptions else "No additional risk framing detected."
+    max_words = int(contract.get("max_words", 120))
+    depth = str(contract.get("depth", "age_calibrated"))
+    style = str(contract.get("max_answer_style", "age-calibrated"))
+    tone = str(contract.get("tone", "age_calibrated"))
+    return (
+        f"[Age: {age_band} | Topic: {topic} | G1: {g1} | G2: {g2_text} | G3: {g3} | Modifiers: {modifier_text} | G4: {g4}] "
+        f"You are PikuAI, a child-safe learning assistant. "
+        f"Question: {message} "
+        f"Topic classification: {topic}. "
+        f"G1 meaning: {G1_DESCRIPTION_MAP.get(g1, g1)} "
+        f"G2 meaning: {g2_desc_text} "
+        f"G3 meaning: severity {g3} with modifiers {modifier_text}. "
+        f"G4 action: {G4_DESCRIPTION_MAP.get(g4, g4)} "
+        f"Applicable guidelines: {guideline_text}. "
+        f"Age band policy: {age_band}; keep under {max_words} words; depth {depth}; style {style}; tone {tone}. "
+        f"Return a response that follows the G4 action exactly."
+    )
+
+
+def _run_response_from_decision(decision: GuardrailDecision, message: str) -> GuardrailRunResponse:
+    gates = decision.gates or decision.gate_values
+    topic = str(gates.get("topic", "General Learning"))
+    age_band = str(decision.input.get("age_band", "11-12"))
+    guidelines = list(decision.active_gls or decision.guideline_tags)
+    g1 = str(gates.get("G1", "GENERIC"))
+    g2 = list(gates.get("G2_all", [gates.get("G2", "NEUTRAL_FACT")]))
+    g3 = str(gates.get("G3", "SV0"))
+    g4 = str(gates.get("G4", "ALLOW"))
+    modifiers = list(decision.prompt_contract.get("modifiers", []))
+    raw_prompt = str(decision.prompt_contract.get("generated_prompt", _final_prompt_for_decision(ChildProfile(age=12, age_group=age_band, language="en"), message, decision)))
+    return GuardrailRunResponse(
+        topic=topic,
+        question=message,
+        age_band=age_band,
+        guidelines=guidelines,
+        g1=g1,
+        g2=g2,
+        g3={"severity": g3, "modifiers": modifiers},
+        g4=g4,
+        raw_generated_prompt=raw_prompt,
+        generated_prompt=_expanded_prompt(decision, message, age_band, topic, g1, g2, g3, modifiers, g4, guidelines),
+        metadata={
+            "age_band": age_band,
+            "g1": g1,
+            "g2": g2,
+            "g3": g3,
+            "modifiers": modifiers,
+            "g4": g4,
+            "question": message,
+            "topic": topic,
+            "guidelines": guidelines,
+            "g1_description": G1_DESCRIPTION_MAP.get(g1, g1),
+            "g2_descriptions": [CODEBOOK.g2_specs[item].description for item in g2 if item in CODEBOOK.g2_specs],
+            "g4_description": G4_DESCRIPTION_MAP.get(g4, g4),
+            "guideline_descriptions": {gl: {"name": GL_NAME_MAP.get(gl, gl), "purpose": GL_PURPOSE_MAP.get(gl, "")} for gl in guidelines},
+            "prompt_template": _templated_prompt(raw_prompt, age_band, g1, g2, g3, modifiers, g4, message),
+        },
+    )
 
 
 def _should_call_llm_safety_classifier(decision: GuardrailDecision, normalized_text: str, recent_context: list[str]) -> bool:
@@ -167,65 +260,4 @@ async def run_piku_guardrail_pipeline(
         recent_context=recent_context,
     )
 
-    if decision.is_terminal:
-        final_answer = _terminal_answer(decision)
-        return GuardrailRunResponse(
-            final_policy_bucket=decision.policy_bucket,
-            final_response_mode=decision.response_mode,
-            llm_called=False,
-            parent_visible=decision.parent_visible,
-            safe_to_show=True,
-            final_answer=final_answer,
-            prompt_contract=decision.prompt_contract,
-            final_prompt=_final_prompt_for_decision(child_profile, message, decision),
-            audit_log=audit_log,
-            stage_outputs=_dedupe_stage_outputs_for_run(stage_outputs),
-        )
-
-    if decision.policy_bucket != "allowed":
-        final_answer = _terminal_answer(decision)
-        return GuardrailRunResponse(
-            final_policy_bucket=decision.policy_bucket,
-            final_response_mode=decision.response_mode,
-            llm_called=False,
-            parent_visible=decision.parent_visible,
-            safe_to_show=True,
-            final_answer=final_answer,
-            prompt_contract=decision.prompt_contract,
-            final_prompt=_final_prompt_for_decision(child_profile, message, decision),
-            audit_log=audit_log,
-            stage_outputs=_dedupe_stage_outputs_for_run(stage_outputs),
-        )
-
-    decision, stage_outputs, audit_log, _, prompt, raw_answer = await run_llm_sequence(
-        child_profile=child_profile,
-        message=message,
-        session_id=session_id,
-        recent_context=recent_context,
-    )
-
-    validation = output_validator.validate(child_profile, message, raw_answer, decision)
-    stage_outputs["output_validator"] = validation
-    audit_logger.log(audit_log, "output_validator", validation)
-
-    final_answer = raw_answer if validation["safe_to_show"] else safe_rewriter.repair_or_fallback(
-        raw_answer,
-        validation,
-        decision,
-        child_profile,
-    )
-    stage_outputs["safe_rewriter"] = {"rewritten": not validation["safe_to_show"]}
-    audit_logger.log(audit_log, "safe_rewriter", {"rewritten": not validation["safe_to_show"]})
-
-    return GuardrailRunResponse(
-        final_policy_bucket=decision.policy_bucket,
-        final_response_mode=decision.response_mode,
-        llm_called=True,
-        parent_visible=decision.parent_visible,
-        safe_to_show=validation["safe_to_show"],
-        final_answer=final_answer,
-        prompt_contract=decision.prompt_contract,
-        final_prompt=prompt,
-        audit_log=audit_log,
-        stage_outputs=_dedupe_stage_outputs_for_run(stage_outputs),
-    )
+    return _run_response_from_decision(decision, message)

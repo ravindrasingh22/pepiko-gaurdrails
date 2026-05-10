@@ -4,7 +4,7 @@ from app.models.guardrail_decision import GuardrailDecision
 
 
 def test_age_policy_marks_parent_visible() -> None:
-    profile = ChildProfile(age=9, age_group="8-10", language="en")
+    profile = ChildProfile(age=9, age_group="9-10", language="en")
     decision = GuardrailDecision(
         policy_bucket="soft_block",
         safety_category="secrecy_from_parent",

@@ -15,16 +15,17 @@ class GuardrailRunRequest(BaseModel):
 
 
 class GuardrailRunResponse(BaseModel):
-    final_policy_bucket: str
-    final_response_mode: str
-    llm_called: bool
-    parent_visible: bool
-    safe_to_show: bool
-    final_answer: str
-    prompt_contract: dict[str, Any] = Field(default_factory=dict)
-    final_prompt: str = ""
-    audit_log: list[AuditEvent]
-    stage_outputs: dict[str, Any]
+    topic: str
+    question: str
+    age_band: str
+    guidelines: list[str] = Field(default_factory=list)
+    g1: str
+    g2: list[str] = Field(default_factory=list)
+    g3: dict[str, Any] = Field(default_factory=dict)
+    g4: str
+    raw_generated_prompt: str = ""
+    generated_prompt: str = ""
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class ClassificationTestRequest(BaseModel):

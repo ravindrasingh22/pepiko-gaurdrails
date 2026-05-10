@@ -1,9 +1,11 @@
 from training.slm_classifier.artifact_backend import ARTIFACT_PATH, train_artifact
 from training.slm_classifier.data_pipeline import CANONICAL_DATASET, GL_COLUMNS, write_manifest
+from training.slm_classifier.source_normalizer import write_canonical_jsonl
 
 
 def main() -> None:
     manifest = write_manifest()
+    write_canonical_jsonl()
     artifact = train_artifact()
     print("SLM classifier artifact training complete.")
     print(f"Canonical dataset: {CANONICAL_DATASET}")
