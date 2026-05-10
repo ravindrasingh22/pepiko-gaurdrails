@@ -1,7 +1,9 @@
 import csv
+import json
 from pathlib import Path
 
-from training.slm_classifier.source_normalizer import CANONICAL_COLUMNS, discover_source_files, expand_authoring_rows, write_normalized_csv
+from training.slm_classifier.data_pipeline import DATASET_SPLITS_PATH, LABEL_VOCAB_PATH, build_dataset_splits, build_group_id
+from training.slm_classifier.source_normalizer import CANONICAL_COLUMNS, discover_source_files, expand_authoring_rows, write_canonical_jsonl_with_metadata, write_normalized_csv
 
 
 def _write_current_authoring_sheet(path: Path) -> None:
@@ -69,3 +71,43 @@ def test_normalized_csv_writes_age_band_as_text(tmp_path: Path) -> None:
 
     assert rows
     assert rows[0]["age_band"] == '="5-6"'
+
+
+def test_dataset_split_groups_keep_age_band_variants_together(tmp_path: Path) -> None:
+    source_path = tmp_path / "school-learning.csv"
+    _write_current_authoring_sheet(source_path)
+    rows = expand_authoring_rows(source_path)
+
+    split_manifest = build_dataset_splits(rows)
+    all_groups = set(split_manifest.train_ids) | set(split_manifest.dev_ids) | set(split_manifest.test_ids)
+
+    question_groups = {}
+    for row in rows:
+        key = row["question"]
+        question_groups.setdefault(key, set()).add(build_group_id(row))
+    assert split_manifest.train_ids
+    assert all_groups
+    assert all(len(group_ids) == 1 for group_ids in question_groups.values())
+
+
+def test_canonical_jsonl_writes_split_and_vocab_metadata(tmp_path: Path) -> None:
+    source_path = tmp_path / "school-learning.csv"
+    target_jsonl = tmp_path / "canonical.jsonl"
+    split_path = tmp_path / "splits.json"
+    vocab_path = tmp_path / "label_vocab.json"
+    _write_current_authoring_sheet(source_path)
+
+    write_canonical_jsonl_with_metadata(
+        source_path=source_path,
+        target_path=target_jsonl,
+        split_target_path=split_path,
+        vocab_target_path=vocab_path,
+    )
+
+    assert target_jsonl.exists()
+    assert split_path.exists()
+    assert vocab_path.exists()
+    splits = json.loads(split_path.read_text(encoding="utf-8"))
+    vocab = json.loads(vocab_path.read_text(encoding="utf-8"))
+    assert "train_ids" in splits
+    assert "gl_columns" in vocab

@@ -5,6 +5,7 @@ import json
 
 from app.guardrails import slm_classifier
 from app.guardrails.gate_mapper import age_band_from_age, resolve_age_band
+from training.slm_classifier.slm_backend import available_cores, resolve_core
 
 
 def _normalize_input(question: str, age_band: str, language: str, recent_context: str) -> dict[str, object]:
@@ -34,18 +35,11 @@ def _normalize_input(question: str, age_band: str, language: str, recent_context
     }
 
 
-def _run_classifier(mode: str, question: str, age_band: str, language: str, recent_context: str) -> dict[str, object]:
-    normalized = _normalize_input(question, age_band, language, recent_context)
-    if mode == "artifact":
-        decision = slm_classifier.classify_artifact(normalized)
-        backend = "artifact"
-    else:
-        decision = slm_classifier.classify_heuristic(normalized)
-        backend = "heuristic"
-
+def _serialize_decision(mode: str, backend: str, question: str, age_band: str, language: str, recent_context: str, decision: object, core: str | None = None) -> dict[str, object]:
     return {
         "mode": mode,
         "backend": backend,
+        "core_model": core,
         "input": {
             "question": question,
             "age_band": age_band,
@@ -55,18 +49,41 @@ def _run_classifier(mode: str, question: str, age_band: str, language: str, rece
         "active_gls": decision.active_gls or decision.guideline_tags,
         "gates": decision.gates or decision.gate_values,
         "decision": decision.decision,
-        "prompt_contract": decision.prompt_contract,
         "confidence": decision.confidence,
+        "classifier_metadata": decision.classifier_metadata,
     }
+
+
+def _run_classifier(mode: str, question: str, age_band: str, language: str, recent_context: str, core: str = "smol") -> dict[str, object]:
+    normalized = _normalize_input(question, age_band, language, recent_context)
+    if mode == "slm":
+        if core == "both":
+            results = {}
+            for item in available_cores():
+                decision = slm_classifier.classify_slm(normalized, core=item)
+                results[item] = _serialize_decision(mode, "slm", question, age_band, language, recent_context, decision, core=item)
+            return {"mode": mode, "backend": "slm", "core_model": "both", "results": results}
+        resolved_core = resolve_core(core)
+        decision = slm_classifier.classify_slm(normalized, core=resolved_core)
+        backend = "slm"
+        return _serialize_decision(mode, backend, question, age_band, language, recent_context, decision, core=resolved_core)
+    elif mode == "artifact":
+        decision = slm_classifier.classify_artifact(normalized)
+        backend = "artifact"
+    else:
+        decision = slm_classifier.classify_heuristic(normalized)
+        backend = "heuristic"
+    return _serialize_decision(mode, backend, question, age_band, language, recent_context, decision)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run the guardrail classifier for a single question.")
-    parser.add_argument("--mode", choices=["artifact", "heuristic"], default="artifact")
+    parser.add_argument("--mode", choices=["slm", "artifact", "heuristic"], default="slm")
     parser.add_argument("--question", required=True)
     parser.add_argument("--age-band", default="9-12")
     parser.add_argument("--language", default="en")
     parser.add_argument("--recent-context", default="none")
+    parser.add_argument("--core", choices=["smol", "deberta", "both"], default="smol")
     args = parser.parse_args()
 
     print(
@@ -77,6 +94,7 @@ def main() -> None:
                 age_band=args.age_band,
                 language=args.language,
                 recent_context=args.recent_context,
+                core=args.core,
             ),
             indent=2,
         )

@@ -26,6 +26,9 @@ class GuardrailRunResponse(BaseModel):
     raw_generated_prompt: str = ""
     generated_prompt: str = ""
     metadata: dict[str, Any] = Field(default_factory=dict)
+    classifier: dict[str, Any] = Field(default_factory=dict)
+    final_policy_bucket: str = ""
+    stage_outputs: dict[str, Any] = Field(default_factory=dict)
 
 
 class ClassificationTestRequest(BaseModel):

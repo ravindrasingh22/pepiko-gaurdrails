@@ -172,4 +172,10 @@ def build_decision_from_artifact(
         guideline_tags=payload["active_gls"],
         gate_values=payload["gates"],
         prompt_contract=payload["prompt_contract"],
+        classifier_metadata={
+            "backend": "artifact",
+            "backend_version": f"lexical-artifact-v{ARTIFACT_VERSION}",
+            "codebook_fingerprint": _codebook_fingerprint(),
+            "dataset_fingerprint": str(artifact.get("codebook_fingerprint", "")),
+        },
     )

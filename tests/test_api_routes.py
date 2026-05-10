@@ -19,6 +19,8 @@ def test_run_endpoint_returns_full_pipeline_trace() -> None:
     assert response.status_code == 200
     payload = response.json()
     assert payload["final_policy_bucket"] == "allowed"
+    assert "classifier" in payload
+    assert "classifier_metadata" in payload["classifier"]
     assert "slm_classifier" in payload["stage_outputs"]
     assert "output_validator" in payload["stage_outputs"]
     assert payload["stage_outputs"]["normalizer"]["resolved_age_band"] == "7-8"

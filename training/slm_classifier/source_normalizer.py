@@ -7,7 +7,15 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from app.guardrails.gate_mapper import AGE_POLICY
-from training.slm_classifier.data_pipeline import CANONICAL_DATASET, GL_COLUMNS
+from training.slm_classifier.data_pipeline import (
+    CANONICAL_DATASET,
+    DATASET_SPLITS_PATH,
+    GL_COLUMNS,
+    LABEL_VOCAB_PATH,
+    validate_dataset_rows,
+    write_dataset_splits,
+    write_label_vocab,
+)
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -33,6 +41,20 @@ CANONICAL_COLUMNS = [
     "g2",
     "g3",
     "g4",
+]
+G2_PRIORITY = [
+    "UNSAFE_CONTENT",
+    "GROOMING",
+    "COERCIVE_CONTROL",
+    "VULN_EXPLOIT",
+    "DANGEROUS",
+    "HATE_GROUP",
+    "PD",
+    "LP",
+    "COMPARATIVE",
+    "EMOTIONAL",
+    "NEUTRAL_FACT",
+    "GENERIC_INTENT",
 ]
 
 
@@ -71,7 +93,28 @@ def _parse_guideline_tags(raw: str) -> list[str]:
 
 
 def _clean_gate_value(raw: str) -> str:
-    return (raw or "").split("|", 1)[0].strip()
+    value = (raw or "").split("|", 1)[0].strip()
+    aliases = {
+        "BLOCK + ESCALATE": "BLOCK_ESCALATE",
+        "BLOCK (Hard)": "BLOCK_HARD",
+        "TRANSFORM (hold)": "TRANSFORM_HOLD",
+    }
+    return aliases.get(value, value)
+
+
+def _clean_g2_value(raw: str) -> str:
+    value = _clean_gate_value(raw)
+    aliases = {
+        "GAMBLING": "PD",
+    }
+    value = aliases.get(value, value)
+    if "," not in value:
+        return value
+    parts = [item.strip() for item in value.split(",") if item.strip()]
+    for item in G2_PRIORITY:
+        if item in parts:
+            return item
+    return parts[0] if parts else ""
 
 
 def _gl_vector(tags: list[str]) -> dict[str, int]:
@@ -161,9 +204,13 @@ def load_authoring_rows(path: Path = DEFAULT_SOURCE) -> list[AuthoringRow]:
                 continue
             topic = (row[schema.topic_idx] if len(row) > schema.topic_idx else "").strip() or "Unknown"
             g1 = _clean_gate_value(row[schema.g1_idx] if len(row) > schema.g1_idx else "")
-            g2 = _clean_gate_value(row[schema.g2_idx] if len(row) > schema.g2_idx else "")
+            g2 = _clean_g2_value(row[schema.g2_idx] if len(row) > schema.g2_idx else "")
             g3 = _clean_gate_value(row[schema.g3_idx] if len(row) > schema.g3_idx else "")
             g4 = _clean_gate_value(row[schema.g4_idx] if len(row) > schema.g4_idx else "")
+            if not any((g1, g2, g3, g4)):
+                # Some source sheets include category/header rows in the question column.
+                # They are not trainable examples and must be skipped before dataset validation.
+                continue
             guideline_tags = _parse_guideline_tags(row[schema.guideline_tags_idx] if len(row) > schema.guideline_tags_idx else "")
             if not guideline_tags:
                 guideline_tags = _infer_guideline_tags(g1, g2, g3, g4)
@@ -269,12 +316,24 @@ def write_merged_normalized_csv(paths: list[Path] | None = None, target_path: Pa
 
 
 def write_canonical_jsonl(source_path: Path | None = None, target_path: Path = CANONICAL_DATASET) -> Path:
+    return write_canonical_jsonl_with_metadata(source_path=source_path, target_path=target_path)
+
+
+def write_canonical_jsonl_with_metadata(
+    source_path: Path | None = None,
+    target_path: Path = CANONICAL_DATASET,
+    split_target_path: Path | None = None,
+    vocab_target_path: Path | None = None,
+) -> Path:
     rows = expand_all_sources([source_path] if isinstance(source_path, Path) else None)
+    validate_dataset_rows(rows)
     target_path.parent.mkdir(parents=True, exist_ok=True)
     with target_path.open("w", encoding="utf-8") as handle:
         for row in rows:
             payload = {key: row[key] for key in ["sample_id", "question", "age_band", "language", "recent_context", *GL_COLUMNS, "g1", "g2", "g3", "g4"]}
             handle.write(json.dumps(payload, ensure_ascii=True) + "\n")
+    write_dataset_splits(rows, target_path=split_target_path or DATASET_SPLITS_PATH)
+    write_label_vocab(target_path=vocab_target_path or LABEL_VOCAB_PATH)
     return target_path
 
 

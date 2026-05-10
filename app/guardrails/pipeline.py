@@ -18,9 +18,11 @@ from app.models.child_profile import ChildProfile
 from app.models.guardrail_decision import GuardrailDecision
 from app.models.schemas import GuardrailRunResponse
 from training.slm_classifier.codebook import parse_codebook
+from training.slm_classifier.runtime_config import load_classifier_runtime_config
 
 
 CODEBOOK = parse_codebook()
+CLASSIFIER_RUNTIME = load_classifier_runtime_config()
 GL_NAME_MAP = {item.gl_id: item.name for item in CODEBOOK.labels}
 GL_PURPOSE_MAP = {item.gl_id: item.purpose for item in CODEBOOK.labels}
 G1_DESCRIPTION_MAP = {
@@ -66,7 +68,23 @@ def _compact_decision(decision: GuardrailDecision) -> dict[str, object]:
         "confidence": decision.confidence,
         "signals": decision.signals,
         "prompt_contract": decision.prompt_contract,
+        "classifier_metadata": decision.classifier_metadata,
     }
+
+
+def _decision_mismatches(primary: GuardrailDecision, shadow: GuardrailDecision) -> list[str]:
+    mismatches: list[str] = []
+    if set(primary.active_gls or primary.guideline_tags) != set(shadow.active_gls or shadow.guideline_tags):
+        mismatches.append("gl_mismatch")
+    primary_gates = primary.gates or primary.gate_values
+    shadow_gates = shadow.gates or shadow.gate_values
+    if primary_gates.get("G1") != shadow_gates.get("G1") or primary_gates.get("G2_all") != shadow_gates.get("G2_all"):
+        mismatches.append("gate_mismatch")
+    if primary_gates.get("G3") != shadow_gates.get("G3"):
+        mismatches.append("severity_mismatch")
+    if primary_gates.get("G4") != shadow_gates.get("G4"):
+        mismatches.append("escalation_block_mismatch")
+    return mismatches
 
 
 def _final_prompt_for_decision(
@@ -121,7 +139,7 @@ def _expanded_prompt(decision: GuardrailDecision, message: str, age_band: str, t
     )
 
 
-def _run_response_from_decision(decision: GuardrailDecision, message: str) -> GuardrailRunResponse:
+def _run_response_from_decision(decision: GuardrailDecision, message: str, stage_outputs: dict[str, object] | None = None) -> GuardrailRunResponse:
     gates = decision.gates or decision.gate_values
     topic = str(gates.get("topic", "General Learning"))
     age_band = str(decision.input.get("age_band", "11-12"))
@@ -159,6 +177,20 @@ def _run_response_from_decision(decision: GuardrailDecision, message: str) -> Gu
             "guideline_descriptions": {gl: {"name": GL_NAME_MAP.get(gl, gl), "purpose": GL_PURPOSE_MAP.get(gl, "")} for gl in guidelines},
             "prompt_template": _templated_prompt(raw_prompt, age_band, g1, g2, g3, modifiers, g4, message),
         },
+        classifier={
+            "active_gls": guidelines,
+            "gl_signals": {
+                gl_id: signal.model_dump()
+                for gl_id, signal in decision.gl_signals.items()
+                if gl_id in set(guidelines)
+            },
+            "gates": gates,
+            "decision": decision.decision,
+            "confidence": decision.confidence,
+            "classifier_metadata": decision.classifier_metadata,
+        },
+        final_policy_bucket=decision.policy_bucket,
+        stage_outputs=dict(stage_outputs or {}),
     )
 
 
@@ -193,15 +225,31 @@ async def run_classification_sequence(
     if rule_decision and rule_decision.is_terminal:
         return rule_decision, stage_outputs, audit_log
 
-    slm_decision = slm_classifier.classify(normalized)
-    stage_outputs["slm_classifier"] = _compact_decision(slm_decision)
-    audit_logger.log(audit_log, "slm_classifier", {"confidence": slm_decision.confidence})
+    primary_decision = slm_classifier.classify(normalized)
+    stage_outputs["slm_classifier"] = _compact_decision(primary_decision)
+    audit_logger.log(audit_log, "slm_classifier", {"confidence": primary_decision.confidence})
 
-    safety_decision = slm_decision
-    if _should_call_llm_safety_classifier(slm_decision, str(normalized["text"]), list(context.get("recent_context", []))):
+    if CLASSIFIER_RUNTIME.rollout_mode == "shadow":
+        shadow_backend = "slm" if CLASSIFIER_RUNTIME.selected_backend != "slm" else "heuristic"
+        try:
+            shadow_decision = slm_classifier.classify_slm(normalized) if shadow_backend == "slm" else slm_classifier.classify_heuristic(normalized)
+            stage_outputs["slm_classifier_shadow"] = {
+                "backend": shadow_backend,
+                "decision": _compact_decision(shadow_decision),
+                "disagreements": _decision_mismatches(primary_decision, shadow_decision),
+            }
+        except Exception as exc:
+            stage_outputs["slm_classifier_shadow"] = {
+                "backend": shadow_backend,
+                "error": str(exc),
+                "disagreements": ["shadow_failed"],
+            }
+
+    safety_decision = primary_decision
+    if _should_call_llm_safety_classifier(primary_decision, str(normalized["text"]), list(context.get("recent_context", []))):
         safety_decision = llm_safety_classifier.classify(normalized)
     stage_outputs["llm_safety_classifier"] = _compact_decision(safety_decision)
-    audit_logger.log(audit_log, "llm_safety_classifier", {"used_fallback": safety_decision != slm_decision})
+    audit_logger.log(audit_log, "llm_safety_classifier", {"used_fallback": safety_decision != primary_decision})
 
     age_decision = age_policy_engine.apply(child_profile, safety_decision)
     stage_outputs["age_policy_engine"] = _compact_decision(age_decision)
@@ -259,5 +307,6 @@ async def run_piku_guardrail_pipeline(
         session_id=session_id,
         recent_context=recent_context,
     )
+    stage_outputs.setdefault("output_validator", {"safe_to_show": True, "source": "pipeline_summary"})
 
-    return _run_response_from_decision(decision, message)
+    return _run_response_from_decision(decision, message, stage_outputs)

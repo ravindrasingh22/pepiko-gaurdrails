@@ -4,6 +4,7 @@ import re
 
 from app.guardrails.gate_mapper import AGE_POLICY, GUIDELINES, resolve_age_band
 from app.models.guardrail_decision import GLSignal, GuardrailDecision
+from training.slm_classifier.runtime_config import load_classifier_runtime_config
 
 TOKEN_RE = re.compile(r"[a-z0-9']+")
 
@@ -366,6 +367,18 @@ def _build_decision(normalized: dict[str, object]) -> GuardrailDecision:
         signals={"topic": topic, "g2_labels": ";".join(g2)},
         gate_values=gates,
         prompt_contract=contract,
+        classifier_metadata={
+            "backend": "heuristic",
+            "backend_version": "rules-v1",
+            "rollout_mode": load_classifier_runtime_config().rollout_mode,
+            "head_confidences": {
+                "GL": {gl_id: (0.99 if gl_id in guidelines else 0.01) for gl_id in GUIDELINES},
+                "G1": 0.99,
+                "G2": 0.99,
+                "G3": 0.99,
+                "G4": 0.99,
+            },
+        },
     )
 
 
@@ -374,8 +387,31 @@ def classify_heuristic(normalized: dict[str, object]) -> GuardrailDecision:
 
 
 def classify_artifact(normalized: dict[str, object]) -> GuardrailDecision:
-    return _build_decision(normalized)
+    decision = _build_decision(normalized)
+    return decision.model_copy(
+        update={
+            "classifier_metadata": {
+                **decision.classifier_metadata,
+                "backend": "artifact",
+                "backend_version": "lexical-artifact-v1",
+            }
+        }
+    )
+
+
+def classify_slm(normalized: dict[str, object], core: str | None = None) -> GuardrailDecision:
+    from training.slm_classifier.slm_backend import build_decision_from_slm
+
+    return build_decision_from_slm(normalized, core=core)
 
 
 def classify(normalized: dict[str, object]) -> GuardrailDecision:
-    return _build_decision(normalized)
+    config = load_classifier_runtime_config()
+    if config.selected_backend == "slm":
+        try:
+            return classify_slm(normalized)
+        except Exception:
+            return classify_heuristic(normalized)
+    if config.selected_backend == "artifact":
+        return classify_artifact(normalized)
+    return classify_heuristic(normalized)

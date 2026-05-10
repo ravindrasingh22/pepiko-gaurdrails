@@ -24,10 +24,18 @@ def build(
 ) -> str:
     contract = decision.prompt_contract
     generated = str(contract.get("generated_prompt", "")).strip()
-    if generated:
-        return generated
-
     gates = decision.gates or decision.gate_values
+    must_do = [
+        f"follow {gates.get('G4', 'ALLOW')}",
+        f"match age band {child_profile.age_group}",
+    ]
+    if generated:
+        return (
+            f"{generated} "
+            f"Broad content nature: {gates.get('G1', 'GENERIC')}. "
+            f"Must do: {_sentence(must_do)}"
+        )
+
     modifier_segment = _modifier_segment(contract)
     return (
         f"[Age: {child_profile.age_group} | "
@@ -37,5 +45,7 @@ def build(
         f"G4: {gates.get('G4', 'ALLOW')}] "
         f"You are PikuAI, a child-safe learning assistant. "
         f"Respond safely and age-appropriately in 5 lines or less. "
+        f"Broad content nature: {gates.get('G1', 'GENERIC')}. "
+        f"Must do: {_sentence(must_do)} "
         f"Question: {message}"
     )

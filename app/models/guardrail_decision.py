@@ -27,3 +27,4 @@ class GuardrailDecision(BaseModel):
     signals: dict[str, bool | str] = Field(default_factory=dict)
     gate_values: dict[str, Any] = Field(default_factory=dict)
     prompt_contract: dict[str, Any] = Field(default_factory=dict)
+    classifier_metadata: dict[str, Any] = Field(default_factory=dict)

@@ -66,6 +66,28 @@ AGE_RANGES = [
     (17, 17, "17"),
 ]
 
+G1_PRIORITY = [
+    "VIOLENCE",
+    "SAFETY_HAZARD",
+    "TECHNOLOGY",
+    "SCIENCE",
+    "BELIEF",
+    "DEATH_GRIEF",
+    "CIVIC_LAW",
+    "FACT",
+    "GENERIC",
+]
+
+G1_RULES = {
+    "SCIENCE": ("space", "earth", "moon", "sun", "planet", "star", "galaxy", "galaxies", "universe", "black hole", "gravity", "white dwarf", "physics", "animal", "plant", "chemical", "dark energy", "hawking radiation", "relativity", "chandrasekhar"),
+    "TECHNOLOGY": ("computer", "internet", "ai", "chatgpt", "phone", "app", "password", "wifi", "software", "code", "network", "device", "laptop", "hack"),
+    "BELIEF": ("god", "religion", "faith", "heaven", "temple", "prayer", "pray", "mosque", "church", "gurdwara", "ideology"),
+    "DEATH_GRIEF": ("died", "death", "funeral", "grief", "miss someone", "why do people die", "loss"),
+    "VIOLENCE": ("kill", "hurt", "fight", "weapon", "bomb", "terrorist", "attack", "radicalisation", "radicalization"),
+    "SAFETY_HAZARD": ("fire", "shock", "electricity", "burn", "explosion", "knife", "chemical", "hazard", "risk", "dangerous", "poison", "fumes", "sharp", "choke", "short circuit"),
+    "CIVIC_LAW": ("fake document", "cheat exam", "illegal", "bribe", "visa", "piracy", "tamper", "rig", "cheat", "advantage", "foul", "fake an injury", "waste time", "cross border", "without papers", "tax fraud", "bypass checks"),
+}
+
 
 def active_gls(gl_signals: dict[str, GLSignal]) -> set[str]:
     return {gl_id for gl_id, signal in gl_signals.items() if signal.triggered}
@@ -95,8 +117,37 @@ def resolve_age_band(age: int, requested_age_band: str | None = None) -> str:
     return age_band_from_age(age)
 
 
-def map_g1(gls: set[str]) -> str:
-    if "GL-05" in gls or "GL-10" in gls or "GL-11" in gls or "GL-12" in gls or "GL-13" in gls:
+def _contains_any(text: str, terms: tuple[str, ...]) -> bool:
+    lowered = text.lower()
+    tokens = set(re.findall(r"[a-z0-9']+", lowered))
+    for term in terms:
+        if " " in term:
+            if term in lowered:
+                return True
+            continue
+        if term in tokens:
+            return True
+    return False
+
+
+def _infer_g1_from_question(question: str) -> str | None:
+    lowered = question.lower().strip()
+    if not lowered:
+        return None
+    matches = {label for label, terms in G1_RULES.items() if _contains_any(lowered, terms)}
+    if not matches:
+        return "FACT" if re.match(r"^(what|why|how|when|where|who|explain|define|tell me)\b", lowered) else None
+    for label in G1_PRIORITY:
+        if label in matches:
+            return label
+    return None
+
+
+def map_g1(gls: set[str], question: str = "") -> str:
+    inferred = _infer_g1_from_question(question)
+    if inferred:
+        return inferred
+    if "GL-05" in gls:
         return "VIOLENCE"
     if "GL-06" in gls:
         return "DEATH_GRIEF"
@@ -240,7 +291,7 @@ def build_guardrail_decision(
     gl_signals: dict[str, GLSignal],
 ) -> dict[str, Any]:
     gls = active_gls(gl_signals)
-    g1 = map_g1(gls)
+    g1 = map_g1(gls, question)
     g2_list = map_g2_list(gls)
     g2_primary = map_g2_primary(g2_list)
     g3 = map_g3(g2_list)

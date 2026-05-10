@@ -1,7 +1,8 @@
 import asyncio
 
-from app.guardrails.pipeline import run_piku_guardrail_pipeline
+from app.guardrails.pipeline import run_classification_sequence, run_piku_guardrail_pipeline
 from app.models.child_profile import ChildProfile
+from training.slm_classifier.slm_backend import train_slm_classifier
 
 
 def test_pipeline_soft_block() -> None:
@@ -61,3 +62,20 @@ def test_run_pipeline_returns_compact_prompt_payload() -> None:
     assert response.raw_generated_prompt.startswith("[Age: 7-8 | G1: SCIENCE | G2: NEUTRAL_FACT")
     assert response.metadata["g1"] == "SCIENCE"
     assert "{age_band}" in response.metadata["prompt_template"]
+
+
+def test_classification_sequence_emits_shadow_classifier_comparison() -> None:
+    train_slm_classifier()
+    profile = ChildProfile(age=8, age_group="7-8", language="en")
+
+    _, stage_outputs, _ = asyncio.run(
+        run_classification_sequence(
+            child_profile=profile,
+            message="Who is God?",
+            session_id="shadow-session",
+            recent_context=[],
+        )
+    )
+
+    assert "slm_classifier_shadow" in stage_outputs
+    assert "disagreements" in stage_outputs["slm_classifier_shadow"]
