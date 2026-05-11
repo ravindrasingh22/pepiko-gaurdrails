@@ -22,3 +22,4 @@ data/redteam/*
 !data/redteam/.gitkeep
 data/corrections/*
 !data/corrections/.gitkeep
+slm-train.log
