@@ -28,8 +28,7 @@ That endpoint owns the whole flow. There are no public per-stage guardrail endpo
 
 - `notebooks/` are for experimentation, training, evaluation, and release validation only.
 - Production runtime logic lives in Python modules under `app/`.
-- The SLM is responsible for GL detection and related safety-category evidence only.
-- `G1` and `G2` may be exposed as normalized classifier-stage outputs, but they remain deterministic policy-governed values aligned to `GL-codebook.csv` and `Contracts.csv`.
+- The classifier stage is responsible for detecting `GL` signals and assigning `G1` and `G2`.
 - `G3` and `G4` are derived deterministically from active `G2` values using the codebook gate tables.
 - Decision fields and prompt contract values are derived deterministically in backend code and policy configs.
 - `PromptContract` is a structured internal object first, and only later rendered into a model-specific prompt string.
@@ -49,9 +48,9 @@ Child Message
 ↓  
 3. Rule-Based Safety Filter  
 ↓  
-4. GL Signal Classifier  
+4. GL / G1 / G2 Classifier  
 ↓  
-5. Deterministic Gate Mapper (`G1` → `G2` → `G3` → `G4`)  
+5. Deterministic Gate Mapper (`G3` → `G4`)  
 ↓  
 6. Policy / Prompt Contract Builder  
 ↓  
@@ -87,24 +86,20 @@ Normalize the child input into a consistent internal form before any classifier 
 
 Run deterministic policy checks for terms, patterns, or explicit safety rules that should short-circuit or strongly constrain downstream handling.
 
-### 4. GL Signal Classifier
+### 4. GL / G1 / G2 Classifier
 
-Run the primary SmolLM2 classifier to detect `GL-01` through `GL-13`. This stage is multi-label signal detection only. It should not directly invent `G1`, `G2`, `G3`, `G4`, or final policy action.
-
-At the end of this stage, the system may attach a normalized classifier output object that includes policy-aligned `G1` and `G2` values for downstream use. Those values should be treated as a deterministic mapping layer attached to classification, not as unconstrained free-form model output.
+Run the primary SmolLM2 classifier to detect `GL-01` through `GL-13`, assign one `G1` LOV, and assign one or more `G2` LOVs. This is the classifier-stage contract consumed by the gate engine.
 
 ### 5. Deterministic Gate Mapper
 
-Convert active GL signals into:
+Convert classifier outputs into:
 
-- `G1`: broad content nature
-- `G2`: framing or intent type
 - `G3`: safeguarding severity
 - `G4`: final action and response style
 
 More precisely:
 
-- `G1` and `G2` are resolved using the controlled LOV dictionary in `GL-codebook.csv`.
+- `G1` and `G2` are produced by the classifier using the controlled LOV dictionary in `GL-codebook.csv`.
 - `G3` is computed deterministically from the active `G2` severity floors and emitted modifiers.
 - `G4` is computed deterministically from `G3` plus additive guideline behavior.
 
@@ -328,7 +323,7 @@ The training pipeline should detect any raw source that has not yet been convert
 
 - `data/processed/piku_gl_classifier_manifest.json`
 
-Classifier training rows should include GL labels plus expected gate outputs for audit and evaluation, but the model objective remains GL detection only.
+Classifier training rows should include `GL`, `G1`, and `G2` labels, plus expected gate outputs for audit and evaluation. The gate engine still derives `G3` and `G4` deterministically.
 
 ## Audit and Review Rules
 

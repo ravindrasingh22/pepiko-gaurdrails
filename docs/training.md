@@ -23,8 +23,8 @@ These three docs should be treated as the primary design references for training
 
 The intended split is:
 
-- The SLM learns guideline and safety-category signals.
-- `G1` and `G2` may appear in training rows as audit or derived supervision fields, but they should be understood as normalized classifier-stage outputs governed by `GL-codebook.csv` and `Contracts.csv`.
+- The classifier stage detects `GL-01` to `GL-13`.
+- The classifier stage also assigns `G1` and `G2`.
 - `G3` and `G4` are deterministic gate-engine outputs derived from `G2` definitions in `GL-codebook.csv`.
 - Age policy is runtime context only. It must not change classifier labels, `G3` severity, or `G4` action.
 
@@ -74,8 +74,8 @@ This means training should not treat age as a reason to alter safety category as
 
 ### Training split of responsibility
 
-- Model training learns GL detection only.
-- Runtime normalization may expose `G1` and `G2` immediately after classification, but those values are still policy-governed outputs and must remain consistent with `GL-codebook.csv`.
+- Model training learns or predicts `GL`, `G1`, and `G2`.
+- `G1` and `G2` must remain consistent with the LOV dictionary and classifier notes in `GL-codebook.csv`.
 - `G3`, `G4`, response decisions, and prompt contracts are derived deterministically from configs and codebook-driven policy.
 - Prompt templates and checklist logic must not be folded into model training. They belong to prompt-management policy, not classifier learning.
 

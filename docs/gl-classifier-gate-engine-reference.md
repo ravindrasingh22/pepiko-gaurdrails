@@ -9,18 +9,20 @@ The main sources for this document are:
 - [GL-codebook.csv](/Users/ravindrasingh/Documents/AI-Agents/PikuAI/pikuai-gaurdrails/docs/GL-codebook.csv)
 - [Contracts.csv](/Users/ravindrasingh/Documents/AI-Agents/PikuAI/pikuai-gaurdrails/docs/Contracts.csv)
 
-Important alignment note:
+Backtrace from the source docs:
 
-- `GL-codebook.csv` and `Contracts.csv` describe a classifier-facing view where `G1` and `G2` are the first structured outputs used by the gate engine.
-- [training.md](/Users/ravindrasingh/Documents/AI-Agents/PikuAI/pikuai-gaurdrails/docs/training.md) and [architecture.md](/Users/ravindrasingh/Documents/AI-Agents/PikuAI/pikuai-gaurdrails/docs/architecture.md) currently state that the SLM learns `GL-01` to `GL-13` only, and that `G1`, `G2`, `G3`, and `G4` are deterministic backend outputs.
+- `Contracts.csv` explicitly says `Use the classifier to assign G1 and G2 values`.
+- `Contracts.csv` then shows `Classifier Output (G1+G2)` as the handoff into the gate engine.
+- `GL-codebook.csv` defines the dictionaries and classifier notes for both `G1` and `G2`.
+- `GL-codebook.csv` defines `G3` as a computation over active `G2` LOVs and `G4` as a computation over `G3` plus modifiers.
 
-Operational interpretation:
+Canonical interpretation for this repo:
 
-- The safer and more internally consistent design is:
-  1. classifier detects GL signals
-  2. deterministic mapping derives `G1` and `G2`
-  3. gate engine computes `G3` and `G4`
-- If the product wants the classifier API to return `G1` and `G2`, that should be documented as a post-classifier normalized output contract, not necessarily as the learned model output itself.
+1. classifier detects `GL` signals
+2. classifier also assigns `G1`
+3. classifier also assigns `G2`
+4. gate engine derives `G3`
+5. gate engine derives `G4`
 
 This document follows that interpretation.
 
@@ -95,8 +97,8 @@ The intended runtime reading of the CSVs is:
 
 1. child question is normalized
 2. classifier detects guideline-relevant signals
-3. system resolves `G1` as the broad topic
-4. system resolves one or more `G2` LOVs as framing/risk labels
+3. classifier resolves `G1` as the broad topic
+4. classifier resolves one or more `G2` LOVs as framing/risk labels
 5. gate engine computes `G3` from active `G2` values
 6. gate engine computes `G4` from `G3` plus additive guideline behavior
 7. age policy is applied after classification, without changing safety severity
@@ -104,7 +106,7 @@ The intended runtime reading of the CSVs is:
 The guideline layer and the gate layer are related but not identical:
 
 - GLs describe policy families and special handling conditions.
-- `G1` and `G2` are the compact classifier-facing dictionary used for runtime gating.
+- `G1` and `G2` are classifier outputs using the controlled LOV dictionaries.
 - `G3` and `G4` are fully derived and deterministic.
 
 ## 4. Understanding G1 and G2 as LOVs
@@ -261,12 +263,13 @@ This section should be read carefully because the CSVs and the current docs desc
 
 ### 7.1 What the classifier should learn
 
-Per `training.md` and `architecture.md`, the classifier should learn safety/category signals, not age policy and not gate actions.
+Per the codebook and contracts docs, the classifier stage should learn or assign the category outputs needed for `GL`, `G1`, and `G2`. It should not learn age policy and it should not learn gate actions.
 
 Recommended training responsibility:
 
 - learn GL signal detection
-- optionally learn helper logits or internal evidence used to map to `G1` and `G2`
+- learn or assign `G1`
+- learn or assign `G2`
 - do not learn age adaptation
 - do not learn `G3` or `G4` as policy behavior
 
@@ -308,9 +311,9 @@ That is the correct separation of concerns.
 
 ## 8. Classifier Logic at Runtime
 
-The runtime classifier contract should be documented in two layers.
+The runtime classifier contract should be documented as one classifier-stage output that includes `GL`, `G1`, and `G2`, followed by deterministic gate-engine derivation of `G3` and `G4`.
 
-### 8.1 Model layer
+### 8.1 Classifier layer
 
 Input:
 
@@ -321,11 +324,9 @@ Input:
 Output:
 
 - active GL signals with confidence
-- optionally internal mapping evidence for `G1` and `G2`
-
-### 8.2 Normalized classifier output layer
-
-The system can then expose a classifier-stage output object that already includes deterministic `G1` and `G2`.
+- `G1`
+- one or more `G2` LOVs
+- optional rationales or evidence
 
 Recommended contract:
 
@@ -351,11 +352,11 @@ Recommended contract:
 }
 ```
 
-Answer to the user’s question: yes, this can be returned as the normalized classifier output contract for `G1 + G2`, but it should be understood as a safety envelope precursor, not the final safety decision.
+Answer to the user’s question: yes, this can be returned as the classifier output contract for `GL + G1 + G2`, and it is the direct precursor that the gate engine consumes to derive `G3` and `G4`.
 
 One correction is needed:
 
-- if the system follows `training.md` and `architecture.md`, `GL-01` alone is probably incomplete for this example because the dangerous behavior should also imply an active dangerous guideline family. The exact GL id depends on the final mapping policy, but the example should not imply that only age calibration was triggered.
+- if the classifier detects dangerous behavior, the active `guidelines` list for this example should probably include more than `GL-01`. The exact GL set depends on the final GL-to-question policy, but the example should not imply that only age calibration triggered.
 
 ## 9. SafetyEnvelope After Gate Engine
 
@@ -404,7 +405,9 @@ This is aligned with the Gate 3 and Gate 4 tables in `GL-codebook.csv`.
 The stage interpretation is:
 
 1. `Classifier`
-   - resolves `G1` and `G2`
+   - detects `GL`
+   - assigns `G1`
+   - assigns `G2`
    - should be read as model output plus deterministic normalization layer
 2. `Gate Engine`
    - computes `G3`
@@ -418,16 +421,11 @@ The stage interpretation is:
 5. `Prompt Checklist`
    - validates the final prompt against contract rules
 
-The main alignment issue is terminology:
+The key alignment rule is:
 
-- `Contracts.csv` reads as if the classifier itself emits `G1` and `G2`
-- `training.md` and `architecture.md` say the SLM learns GLs only
-
-Recommended resolution:
-
-- document `G1` and `G2` as classifier-stage normalized outputs
-- document `G3` and `G4` as gate-engine outputs
-- keep age policy outside classifier learning
+- classifier owns `GL`, `G1`, and `G2`
+- gate engine owns `G3` and `G4`
+- age policy stays outside classifier learning
 
 ## 11. Prompt Manager Logic
 
@@ -574,20 +572,19 @@ If any check fails:
 The cleanest end-to-end contract is:
 
 1. normalize the child question
-2. run classifier for GL signals
-3. deterministically map to `G1` and `G2`
-4. deterministically derive `G3`
-5. deterministically derive `G4`
-6. append age policy settings
-7. build SafetyEnvelope
-8. choose prompt template
-9. apply prompt rules
-10. validate with prompt checklist
-11. only then render/send the final prompt
+2. run classifier for `GL`, `G1`, and `G2`
+3. deterministically derive `G3`
+4. deterministically derive `G4`
+5. append age policy settings
+6. build SafetyEnvelope
+7. choose prompt template
+8. apply prompt rules
+9. validate with prompt checklist
+10. only then render/send the final prompt
 
 This preserves the intended safety envelope:
 
-- classifier decides category signals
-- gate engine decides safety action
+- classifier decides `GL`, `G1`, and `G2`
+- gate engine decides `G3` and `G4`
 - age policy decides response depth only
 - prompt manager must not soften or override the gate result
