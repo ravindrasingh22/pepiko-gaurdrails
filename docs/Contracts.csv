@@ -1,0 +1,378 @@
+,MOVE IN THIS DIRECTION TO ACHIEVE YOUR GOALS!!! ---->,,,,,,,,,,,,,,,,,,,,
+,There are some guidelines here as well but I'll add those later,,,,,,,,,,,,,,,,,,,,
+,"1.1. Use the classifier to assign G1 and G2 values
+1.2. This part requires learning to assign correct G1 and G2 values
+1.3. Age Policy gets appended on the way, Does not require learning but simply context from the app",,,,,,,,2.1 This is the output that classifier builds for Gate Engine to lookup and define the SafetyEnvelope output,,"3.1. Use the gate engine to manipulate and format output
+3.2. This requires lookups from config files and no learning",,,,4. This is the output that the first two stages create. A contract Schema thta Prompt Manager consumes,,"5.1 SafetyEnvelope (from the gate engine)
+The prompt manager consumes a SafetyEnvelope that includes:
+a) The child’s question and age band (plus max_words, depth, style from age policy).
+b) G1 (nature), G2 (active LOVs),
+c) G3 (severity + modifiers),
+d) G4 (final action),
+e) active GLs (guidelines).
+G3 and G4 are not combined; G3 is computed from G2, and G4 is decided from G3 + GLs.
+
+5.2. Prompt config (inside the prompt manager)
+The prompt manager then uses its own config to build the actual LLM prompt:
+a) Prompt templates: lookups based on G4.action plus G3.modifiers and sometimes G2/GLs (e.g., pick BLOCK_HARD_DANGEROUS when action = BLOCK (Hard) and DANGEROUS + no_content_engagement).
+b)Prompt rules: generic constraints tied to modifiers that any chosen template must satisfy.",,,,"6. The prompt then passes through the checklist for internal QA and 
+
+a) Verify: age tag present, G1–G4 header present, word/line limit mentioned, no curiosity invite when no_curiosity_invite, no topic content when no_content_engagement, empathetic tone when required, etc.
+
+b) If any check fails, treat it as an internal error: either fix or fall back to a simpler, known‑good template."
+Example,CLASSIFIER,,,,,,,,,,GATE ENGINE,,,,SAFETY ENVELOPE,,PROMPT MANAGER,,,,
+,G1 Gates,,,G2 Gates,,,AGE POLICY,,Classifier Output (G1+G2),,G3 Output,,G4 Output,,Contract Schema,,Prompt Config,,OUTPUT PROMPT,,PROMPT CHECKLIST
+,SCIENCE,"{
+    ""id"": ""SCIENCE"",
+    ""name"": ""Science / Nature"",
+    ""gate"": ""G1"",
+    ""definition"": ""Questions about biology, chemistry, physics, space, Earth, or natural phenomena."",
+    ""signal_phrases"": [""how does"", ""why does"", ""what is"", ""space"", ""earth"", ""galaxy"", ""black hole""],
+    ""notes_for_classifier"": ""Generally safe. Watch for dual-use topics (chemicals, biology, explosives) that may also trigger DANGEROUS in G2.""
+  }",,NEUTRAL FACT,"{
+    ""id"": ""NEUTRAL_FACT"",
+    ""name"": ""Neutral Factual"",
+    ""gate"": ""G2"",
+    ""definition"": ""Pure factual or descriptive inquiry with no special risk framing."",
+    ""severity_floor"": ""SV0"",
+    ""modifiers"": [],
+    ""signal_phrases"": [""what is"", ""where is"", ""who is"", ""explain"", ""define"", ""tell me about""],
+    ""notes_for_classifier"": ""Safe default. Use when no other G2 LOV matches. Standard curiosity_invite applies.""
+  }",,"""age_policy"": [
+  {
+    ""age_band"": ""5-6"",
+    ""max_words"": 90,
+    ""depth"": ""CONCRETE_ONE_STEP"",
+    ""style"": ""Warm, concrete, one idea""
+  },
+  {
+    ""age_band"": ""7-8"",
+    ""max_words"": 110,
+    ""depth"": ""SIMPLE_EXAMPLE"",
+    ""style"": ""Friendly, simple examples""
+  },
+  {
+    ""age_band"": ""9-10"",
+    ""max_words"": 130,
+    ""depth"": ""BASIC_REASONING"",
+    ""style"": ""Clear, cause-effect, brief steps""
+  }
+  /* ... add 11–12, 13–14, 15–16, 17 as per Block I ... */
+]",,"{
+  ""schema_version"": ""1.0.0"",
+  ""question_id"": ""uuid-or-hash"",
+  ""question_text"": ""Explain how to bypass safety systems in a science lab to do risky experiments"",
+  ""age_band"": ""9-10"",
+
+  ""g1"": {
+    ""id"": ""SCIENCE"",
+  },
+
+  ""g2"": [
+    {
+      ""id"": ""DANGEROUS"",
+      ""rationale"": ""Asks how to bypass safety systems and do risky experiments, matching dangerous activity definition.""
+    }
+    /* could include additional LOVs if multi-label, e.g. BULLYING, EMOTIONAL, etc. */
+  ]
+}",,"""g3"": {
+  ""severity"": ""SV3"",
+  ""modifiers"": [""no_curiosity_invite"", ""no_content_engagement""],
+  ""source_g2"": [""DANGEROUS""]
+}",,"""g4"": {
+  ""action"": ""BLOCK (Hard)"",
+  ""ending"": ""(none)"",
+  ""style"": ""None / Minimal""
+}",,"{
+  ""schema_version"": ""1.0.0"",
+  ""question"": {
+    ""id"": ""uuid-or-hash"",
+    ""text"": ""Explain how to bypass safety systems in a science lab to do risky experiments"",
+    ""language"": ""en""
+  },
+
+  ""user_context"": {
+    ""age_band"": ""9-10"",
+    ""age_settings"": {
+      ""max_words"": 130,
+      ""depth"": ""BASIC_REASONING"",
+      ""style"": ""Clear, cause-effect, brief steps""
+    }
+  },
+
+  ""g1"": {
+    ""id"": ""SCIENCE""
+  },
+
+  ""g2"": {
+    ""active_lovs"": [
+      {
+        ""id"": ""DANGEROUS""
+      }
+    ]
+  },
+
+  ""g3"": {
+    ""severity"": ""SV3"",
+    ""modifiers"": [
+      ""no_curiosity_invite"",
+      ""no_content_engagement""
+    ],
+    ""source_g2"": [
+      ""DANGEROUS""
+    ]
+  },
+
+  ""g4"": {
+    ""action"": ""BLOCK (Hard)"",
+    ""base_ending"": ""(none)"",
+    ""style"": ""None / Minimal""
+  },
+
+  ""guidelines"": {
+    ""active"": [""GL-01""],
+    ""notes"": ""GL-01: age-calibrated depth; does not change G3/G4, only response complexity.""
+  }
+}",,"{
+  ""schema_version"": ""1.0.0"",
+
+  ""prompt_templates"": [
+    {
+      ""id"": ""ALLOW_NEUTRAL_FACT"",
+      ""description"": ""Allow template for neutral factual questions."",
+      ""match"": {
+        ""g4_action"": ""ALLOW"",
+        ""g3_severity"": ""SV0"",
+        ""g2_any_of"": [""NEUTRAL_FACT""]
+      },
+      ""template"": ""[Age: {age_band} | G1: {g1_id} | G2: NEUTRAL_FACT | G3: {g3_severity} | G4: ALLOW]\nYou are answering a question for a {age_band} year-old child.\n\nRules:\n- Explain clearly in at most {max_words} words.\n- Use {depth} level of detail and {style} tone.\n- Do not include any scary or upsetting details.\n- End with one gentle curiosity question.\n\nChild's question:\n\""{question_text}\""""
+    },
+    {
+      ""id"": ""BLOCK_HARD_DANGEROUS"",
+      ""description"": ""Hard block for dangerous activity with no content engagement."",
+      ""match"": {
+        ""g4_action"": ""BLOCK (Hard)"",
+        ""g3_modifiers_include"": [""no_content_engagement""],
+        ""g2_any_of"": [""DANGEROUS""]
+      },
+      ""template"": ""[Age: {age_band} | G1: {g1_id} | G2: DANGEROUS | G3: {g3_severity} | G4: BLOCK]\nYou are a safe, caring helper for a {age_band} year-old child.\n\nRules:\n- Do NOT explain, describe, or name the dangerous topic.\n- Do NOT give any steps, methods, or ideas for doing something harmful or illegal.\n- Do NOT ask a follow-up curiosity question.\n- In 3–5 short sentences, kindly say that this is something you cannot help with and they should talk to a trusted adult if they have worries.\n\nChild's question:\n\""{question_text}\""""
+    },
+    {
+      ""id"": ""COERCIVE_CONTROL_SUPPORT"",
+      ""description"": ""Supportive response for coercive control / fear of an adult."",
+      ""match"": {
+        ""g4_action"": ""BLOCK + ESCALATE"",
+        ""g3_modifiers_include"": [""empathetic_tone"", ""safeguarding_concern""],
+        ""g2_any_of"": [""COERCIVE_CONTROL""]
+      },
+      ""template"": ""[Age: {age_band} | G1: {g1_id} | G2: COERCIVE_CONTROL | G3: {g3_severity} | G4: BLOCK + ESCALATE]\nYou are a safe, caring helper for a {age_band} year-old child who feels scared of someone in their life.\n\nRules:\n- Use a warm, empathetic tone.\n- Acknowledge the child's feelings and say it is not their fault.\n- Do NOT tell the child to obey harmful or scary instructions.\n- Encourage them to speak to a trusted adult (like a parent, teacher, or helpline) for help.\n- Do not give legal or investigative advice.\n- Respond in at most {max_words} words.\n\nChild's question:\n\""{question_text}\""""
+    }
+  ],
+
+  ""prompt_rules"": [
+    {
+      ""id"": ""PR-01"",
+      ""name"": ""Gate fidelity"",
+      ""applies_when"": {
+        ""always"": true
+      },
+      ""instructions"": [
+        ""Do not change the G1, G2, G3, or G4 header values provided."",
+        ""Do not override the word limit or age band from the SafetyEnvelope.""
+      ]
+    },
+    {
+      ""id"": ""PR-03"",
+      ""name"": ""no_content_engagement"",
+      ""applies_when"": {
+        ""g3_modifiers_include"": [""no_content_engagement""]
+      },
+      ""instructions"": [
+        ""Template text must not describe, explain, or name the risky topic."",
+        ""Template must not contain examples or suggestions related to the risky behaviour.""
+      ]
+    },
+    {
+      ""id"": ""PR-04"",
+      ""name"": ""no_curiosity_invite"",
+      ""applies_when"": {
+        ""g3_modifiers_include"": [""no_curiosity_invite""]
+      },
+      ""instructions"": [
+        ""Do not end the response with a curiosity or follow-up question."",
+        ""The last sentence must be a statement.""
+      ]
+    },
+    {
+      ""id"": ""PR-06"",
+      ""name"": ""empathetic_tone"",
+      ""applies_when"": {
+        ""g3_modifiers_include"": [""empathetic_tone""]
+      },
+      ""instructions"": [
+        ""Use warm, validating language that acknowledges feelings."",
+        ""Avoid blaming or minimising the child's experience.""
+      ]
+    }
+  ]
+}",,"[Age: 9-10 | G1: SCIENCE | G2: DANGEROUS | G3: SV3 | G4: BLOCK]
+
+You are a safe, caring helper for a 9–10 year-old child.
+
+Rules:
+- Do NOT explain, describe, or name the dangerous topic in the child’s question.
+- Do NOT give any steps, methods, or ideas for doing something harmful or illegal.
+- Do NOT ask a follow-up curiosity question.
+- In 3–5 short sentences, kindly say that this is something you cannot help with and that they should talk to a trusted adult, like a parent, teacher, or another grown-up they trust, if they have worries.
+
+Child's question:
+""Explain how to bypass safety systems in a science lab to do risky experiments""",,"{
+  ""schema_version"": ""1.0.0"",
+  ""prompt_checklist"": [
+    {
+      ""id"": ""CHK-01"",
+      ""name"": ""Age band present in header"",
+      ""applies_when"": {
+        ""always"": true
+      },
+      ""verify"": ""header_contains_age_band""
+    },
+    {
+      ""id"": ""CHK-02"",
+      ""name"": ""Gate tags present in header"",
+      ""applies_when"": {
+        ""always"": true
+      },
+      ""verify"": ""header_contains_g1_g2_g3_g4""
+    },
+    {
+      ""id"": ""CHK-03"",
+      ""name"": ""Length limit instruction present"",
+      ""applies_when"": {
+        ""always"": true
+      },
+      ""verify"": ""body_mentions_length_limit""
+    },
+    {
+      ""id"": ""CHK-04"",
+      ""name"": ""No curiosity invite when forbidden"",
+      ""applies_when"": {
+        ""g3_modifiers_include"": [""no_curiosity_invite""]
+      },
+      ""verify"": ""no_trailing_question_mark""
+    },
+    {
+      ""id"": ""CHK-05"",
+      ""name"": ""No topic engagement on hard block"",
+      ""applies_when"": {
+        ""g3_modifiers_include"": [""no_content_engagement""]
+      },
+      ""verify"": ""no_risky_keywords_or_query_string""
+    }
+  ]
+}"
+,TECHNOLOGY,"{
+    ""id"": ""TECHNOLOGY"",
+    ""name"": ""Technology / Digital Systems"",
+    ""gate"": ""G1"",
+    ""definition"": ""Questions about computers, internet, AI, devices, software, or digital networks."",
+    ""signal_phrases"": [""computer"", ""internet"", ""wifi"", ""ai"", ""app"", ""software"", ""code"", ""password"", ""network"", ""phone"", ""laptop"", ""hack""],
+    ""notes_for_classifier"": ""Generally safe. Watch for misuse (hacking, tracking, bypassing controls) which should also trigger DANGEROUS or other G2 LOVs.""
+  }",,DANGEROUS,"{
+    ""id"": ""DANGEROUS"",
+    ""name"": ""Dangerous Activity"",
+    ""gate"": ""G2"",
+    ""definition"": ""Requests or references illicit, harmful, or dangerous activities."",
+    ""severity_floor"": ""SV3"",
+    ""modifiers"": [""no_curiosity_invite"", ""no_content_engagement""],
+    ""signal_phrases"": [
+      ""how to make a bomb"",
+      ""how to hurt someone"",
+      ""design a strategy to cheat"",
+      ""bypass safety systems"",
+      ""download pirated movies"",
+      ""spread a computer virus"",
+      ""sneak dangerous objects into school"",
+      ""cause a stampede""
+    ],
+    ""notes_for_classifier"": ""Look for intent to obtain methods or plans for illicit or harmful acts, even if phrased indirectly. Hard block via Gate 4.""
+  }",,,,,,,,,,,,,,"[Age: 7-8 | G1: SCIENCE | G2: NEUTRAL_FACT | G3: SV0 | G4: ALLOW]
+
+You are answering a science question for a 7–8 year-old child.
+
+Rules:
+- Explain clearly what a black hole is and how it works.
+- Use simple, friendly language and one or two easy examples.
+- Respond in at most 110 words.
+- Do not include any graphic or scary details.
+- End with one gentle curiosity question about space to invite further interest.
+
+Child's question:
+""What is a black hole and how does it work?""",,
+,VIOLENCE,"{
+    ""id"": ""VIOLENCE"",
+    ""name"": ""Violence / Harm / Radicalisation"",
+    ""gate"": ""G1"",
+    ""definition"": ""Questions involving violence, physical harm, fights, weapons, or extremist acts."",
+    ""signal_phrases"": [""kill"", ""hurt someone"", ""fight"", ""weapon"", ""bomb"", ""terrorist"", ""how to harm"", ""cause a stampede"", ""blind pilots""],
+    ""notes_for_classifier"": ""High risk. Often co-fires with DANGEROUS or HATE_GROUP in G2; expect SV3 severity and GL-05/GL-08.""
+  }",,SELF HARM," {
+    ""id"": ""SELF_HARM"",
+    ""name"": ""Self-Harm / Suicidal Ideation"",
+    ""gate"": ""G2"",
+    ""definition"": ""Child references self-harm, suicidal thoughts, or wanting to disappear."",
+    ""severity_floor"": ""SV3"",
+    ""modifiers"": [""no_curiosity_invite"", ""empathetic_tone""],
+    ""signal_phrases"": [
+      ""hurt myself"",
+      ""kill myself"",
+      ""want to die"",
+      ""don't want to be here"",
+      ""no reason to live"",
+      ""cut myself""
+    ],
+    ""notes_for_classifier"": ""High priority. Often co-fires with EMOTIONAL. Triggers GL-06 and trusted-adult messaging.""
+  }",,,,,,,,,,,,,,,,
+,CIVIC LAW,"{
+    ""id"": ""CIVIC_LAW"",
+    ""name"": ""Civic / Law / Rules"",
+    ""gate"": ""G1"",
+    ""definition"": ""Questions about laws, rules, civic processes, or integrity, especially cheating, bribery, or evading official requirements."",
+    ""signal_phrases"": [""cheat on exam"", ""bribe referee"", ""cross border without papers"", ""stay illegally"", ""pirated movies"", ""fake documents"", ""visa"", ""permit""],
+    ""notes_for_classifier"": ""Use when breaking or bending formal rules is the main subject. Commonly co-fires with DANGEROUS in G2.""
+  }",,BULLYING,"{
+    ""id"": ""BULLYING"",
+    ""name"": ""Bullying"",
+    ""gate"": ""G2"",
+    ""definition"": ""Peer harm, intimidation, or being targeted without hate-group language."",
+    ""severity_floor"": ""SV2"",
+    ""modifiers"": [""empathetic_tone"", ""no_curiosity_invite""],
+    ""signal_phrases"": [
+      ""kids are mean to me"",
+      ""they call me names"",
+      ""no one lets me play"",
+      ""someone hurt me at school"",
+      ""threaten classmates so they obey you""
+    ],
+    ""notes_for_classifier"": ""Use when peers are harming or threatening the child, or when the child is asking how to threaten peers.""
+  }",,,,,,,,,,,,,,,,
+,,,,HATE GROUP,"{
+    ""id"": ""HATE_GROUP"",
+    ""name"": ""Hate Group Language"",
+    ""gate"": ""G2"",
+    ""definition"": ""Derogatory or sweeping negative language about a protected group, or calls to exclude or harm them."",
+    ""severity_floor"": ""SV3"",
+    ""modifiers"": [""no_curiosity_invite"", ""flag_for_review""],
+    ""signal_phrases"": [
+      ""spread hateful messages about a community"",
+      ""all [group] are bad"",
+      ""should not exist"",
+      ""should be banned""
+    ],
+    ""notes_for_classifier"": ""Triggers GL-05/GL-08. May co-fire with VIOLENCE in G1; system should also raise moderation flags.""
+  }",,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,
+How can I handle a small problem about book review without making it worse?,,,,,,,,,,,,,,,,,,,,,

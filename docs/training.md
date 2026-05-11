@@ -1,5 +1,15 @@
 # Training Jobs
 
+## Documentation hierarchy
+
+Training must stay aligned with these documentation artifacts:
+
+- [GL-codebook.csv](/Users/ravindrasingh/Documents/AI-Agents/PikuAI/pikuai-gaurdrails/docs/GL-codebook.csv): normative dictionary for `G1`, `G2`, `G3`, `G4`, guideline semantics, age policy, and prompt authoring constraints.
+- [Contracts.csv](/Users/ravindrasingh/Documents/AI-Agents/PikuAI/pikuai-gaurdrails/docs/Contracts.csv): stage-by-stage contract showing how classifier output flows into gate engine, SafetyEnvelope, prompt manager, and prompt checklist.
+- [gl-classifier-gate-engine-reference.md](/Users/ravindrasingh/Documents/AI-Agents/PikuAI/pikuai-gaurdrails/docs/gl-classifier-gate-engine-reference.md): prose interpretation of the two CSVs and the recommended runtime split of responsibilities.
+
+These three docs should be treated as the primary design references for training labels and runtime contract expectations. If notebooks, scripts, or examples diverge from them, the docs should be reconciled first rather than letting training drift.
+
 ## SLM GL classifier
 
 - Objective: train SmolLM2 to detect `GL-01` through `GL-13` as a multi-label classifier.
@@ -8,6 +18,17 @@
 - Canonical dataset target: `data/processed/piku_gl_classifier_train.jsonl`
 - Source discovery manifest: `data/processed/piku_gl_classifier_manifest.json`
 - Model output target: `models/piku-slm-guardrail-smollm2-135m/`
+
+### Responsibility split
+
+The intended split is:
+
+- The SLM learns guideline and safety-category signals.
+- `G1` and `G2` may appear in training rows as audit or derived supervision fields, but they should be understood as normalized classifier-stage outputs governed by `GL-codebook.csv` and `Contracts.csv`.
+- `G3` and `G4` are deterministic gate-engine outputs derived from `G2` definitions in `GL-codebook.csv`.
+- Age policy is runtime context only. It must not change classifier labels, `G3` severity, or `G4` action.
+
+This means training should not treat age as a reason to alter safety category assignment. Age only changes downstream answer constraints such as `max_words`, `depth`, and style.
 
 ### Canonical classifier row
 
@@ -48,11 +69,27 @@
   `sample_id, question, age_band, language, recent_context, gl_01..gl_13, g1, g2, g3, g4`
 - For `docs/Religion-politics-idealogy.csv`, create one training row per `question x age_band`.
 - Keep age-specific reference answers only as optional audit columns; they are not classifier inputs.
+- `GL-codebook.csv` is the canonical dictionary for allowed LOV ids, severity floors, modifier semantics, and age runtime settings.
+- `Contracts.csv` is the canonical contract for how classifier-stage outputs are consumed by the gate engine, SafetyEnvelope builder, prompt manager, and prompt checklist.
 
 ### Training split of responsibility
 
-- Model training learns only GL detection.
-- `G1`, `G2`, `G3`, `G4`, response decisions, and prompt contracts are derived deterministically from configs in `configs/`.
+- Model training learns GL detection only.
+- Runtime normalization may expose `G1` and `G2` immediately after classification, but those values are still policy-governed outputs and must remain consistent with `GL-codebook.csv`.
+- `G3`, `G4`, response decisions, and prompt contracts are derived deterministically from configs and codebook-driven policy.
+- Prompt templates and checklist logic must not be folded into model training. They belong to prompt-management policy, not classifier learning.
+
+### Normalization guidance
+
+Before any classifier inference or training feature extraction:
+
+- normalize whitespace and punctuation
+- preserve the canonical question text
+- preserve language hints
+- avoid age-conditioned preprocessing
+- avoid introducing prompt text, answer text, or other generation artifacts into classifier inputs
+
+The classifier must see the question as a classification problem, not as a response-generation problem.
 
 ## Child-safe answer LLM
 

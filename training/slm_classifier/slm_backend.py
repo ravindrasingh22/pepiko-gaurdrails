@@ -96,6 +96,22 @@ def _paths_for_core(core: str | None = None) -> dict[str, Path]:
         "training_config": model_dir / "training_config.json",
     }
 
+def _load_tokenizer(model_name: str) -> Any:
+    try:
+        tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
+    except Exception as exc:
+        print(f"[SLM] fast tokenizer failed for {model_name}: {exc}")
+        tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=False)
+
+    if tokenizer.pad_token is None:
+        if tokenizer.eos_token is not None:
+            tokenizer.pad_token = tokenizer.eos_token
+        elif tokenizer.unk_token is not None:
+            tokenizer.pad_token = tokenizer.unk_token
+        else:
+            tokenizer.add_special_tokens({"pad_token": "[PAD]"})
+
+    return tokenizer
 
 def _codebook_fingerprint() -> str:
     return hashlib.sha256(DOC_CODEBOOK_PATH.read_bytes()).hexdigest()[:16]
@@ -282,6 +298,7 @@ class MultiTaskSLMClassifier(nn.Module):  # pragma: no cover - exercised through
     def forward(self, input_ids: Any, attention_mask: Any) -> dict[str, Any]:
         outputs = self.backbone(input_ids=input_ids, attention_mask=attention_mask)
         pooled = self._pool(outputs.last_hidden_state, attention_mask)
+        pooled = pooled.to(self.gl_head.weight.dtype)
         pooled = self.dropout(pooled)
         return {
             "gl_logits": self.gl_head(pooled),
@@ -292,10 +309,15 @@ class MultiTaskSLMClassifier(nn.Module):  # pragma: no cover - exercised through
         }
 
 
-def _device() -> Any:
+def _prefers_cpu_on_mps(model_name: str | None = None) -> bool:
+    normalized = str(model_name or "").strip().lower()
+    return "deberta" in normalized
+
+
+def _device(model_name: str | None = None) -> Any:
     if torch is None:
         raise RuntimeError("Torch is not available.")
-    if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+    if hasattr(torch.backends, "mps") and torch.backends.mps.is_available() and not _prefers_cpu_on_mps(model_name):
         return torch.device("mps")
     return torch.device("cpu")
 
@@ -334,7 +356,7 @@ def _evaluate_loss(model: Any, loader: Any, gl_loss_fn: Any, g1_loss_fn: Any, g2
     total_batches = 0
     with torch.no_grad():
         for batch in loader:
-            batch = {key: value.to(_device()) for key, value in batch.items()}
+            batch = {key: value.to(_device(getattr(model.backbone, "name_or_path", None))) for key, value in batch.items()}
             outputs = model(input_ids=batch["input_ids"], attention_mask=batch["attention_mask"])
             loss = _compute_loss(outputs, batch, gl_loss_fn, g1_loss_fn, g2_loss_fn, g3_loss_fn, g4_loss_fn)
             total_loss += float(loss.item())
@@ -355,7 +377,15 @@ def train_slm_classifier(
 ) -> dict[str, Any]:
     resolved_core = resolve_core(core)
     model_dir = model_dir or model_dir_for_core(resolved_core)
-    paths = _paths_for_core(resolved_core)
+    #paths = _paths_for_core(resolved_core)
+    paths = {
+    "model_dir": model_dir,
+    "metadata": model_dir / "training_metadata.json",
+    "label_vocab": model_dir / "label_vocab.json",
+    "thresholds": model_dir / "thresholds.json",
+    "state": model_dir / "pytorch_model.bin",
+    "training_config": model_dir / "training_config.json",
+    }
     rows = _iter_rows(dataset_path)
     if not rows:
         raise ValueError(f"No rows available for SLM training: {dataset_path}")
@@ -384,9 +414,10 @@ def train_slm_classifier(
     if enable_training:
         if not (AutoModel and AutoTokenizer and torch and nn and DataLoader):
             raise RuntimeError("Transformers/Torch dependencies are not available for SLM training.")
-        device = _device()
+        device = _device(config["model_name"])
         label_vocab = _load_label_vocab()
-        tokenizer = AutoTokenizer.from_pretrained(config["model_name"])
+        #tokenizer = AutoTokenizer.from_pretrained(config["model_name"])
+        tokenizer = _load_tokenizer(config["model_name"])
         if tokenizer.pad_token is None:
             tokenizer.pad_token = tokenizer.eos_token
         train_dataset = CanonicalSLMDataset(train_rows, tokenizer, label_vocab, config["max_length"])
@@ -481,10 +512,11 @@ def load_slm_package(model_dir: Path | None = None, core: str | None = None) -> 
 def _load_trained_model(model_dir: Path, package: LoadedSLMPackage) -> tuple[Any, Any]:
     if not (AutoTokenizer and torch and nn and AutoModel):
         raise RuntimeError("Transformers/Torch dependencies are not available for SLM inference.")
-    tokenizer = AutoTokenizer.from_pretrained(model_dir)
+    #tokenizer = AutoTokenizer.from_pretrained(model_dir)
+    tokenizer = _load_tokenizer(package.training_config["model_name"])
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
-    device = _device()
+    device = _device(package.training_config["model_name"])
     model = MultiTaskSLMClassifier(package.training_config["model_name"], package.label_vocab)
     model.load_state_dict(torch.load(model_dir / "pytorch_model.bin", map_location=device))
     model = model.float().to(device)

@@ -17,7 +17,7 @@ MODEL_NAME = "microsoft/deberta-v3-xsmall"
 def _device() -> str:
     if torch is None:
         raise RuntimeError("Torch is not available.")
-    if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+    if hasattr(torch.backends, "mps") and torch.backends.mps.is_available() and "deberta" not in MODEL_NAME.lower():
         return "mps"
     return "cpu"
 

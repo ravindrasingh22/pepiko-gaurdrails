@@ -2,6 +2,20 @@
 
 This repo is the standalone guardrail service for PikuAI. It documents one production runtime flow for child-safe input handling, safe response generation, and auditable review.
 
+## Normative documents
+
+The following docs should be treated as normative for gate and prompt behavior:
+
+- [GL-codebook.csv](/Users/ravindrasingh/Documents/AI-Agents/PikuAI/pikuai-gaurdrails/docs/GL-codebook.csv)
+- [Contracts.csv](/Users/ravindrasingh/Documents/AI-Agents/PikuAI/pikuai-gaurdrails/docs/Contracts.csv)
+- [gl-classifier-gate-engine-reference.md](/Users/ravindrasingh/Documents/AI-Agents/PikuAI/pikuai-gaurdrails/docs/gl-classifier-gate-engine-reference.md)
+
+Role of each document:
+
+- `GL-codebook.csv` defines the dictionary and policy tables for `G1`, `G2`, `G3`, `G4`, guideline semantics, age-policy settings, prompt rules, and checklist expectations.
+- `Contracts.csv` defines the stage contract from classifier output to gate engine output to SafetyEnvelope to prompt manager and prompt checklist.
+- `gl-classifier-gate-engine-reference.md` explains the intended runtime interpretation of those contracts in prose.
+
 ## Runtime Contract
 
 Only one public runtime endpoint exists:
@@ -14,8 +28,10 @@ That endpoint owns the whole flow. There are no public per-stage guardrail endpo
 
 - `notebooks/` are for experimentation, training, evaluation, and release validation only.
 - Production runtime logic lives in Python modules under `app/`.
-- The SLM is responsible for GL detection only.
-- `G1`, `G2`, `G3`, `G4`, decision fields, and prompt contract values are derived deterministically in backend code and YAML configs.
+- The SLM is responsible for GL detection and related safety-category evidence only.
+- `G1` and `G2` may be exposed as normalized classifier-stage outputs, but they remain deterministic policy-governed values aligned to `GL-codebook.csv` and `Contracts.csv`.
+- `G3` and `G4` are derived deterministically from active `G2` values using the codebook gate tables.
+- Decision fields and prompt contract values are derived deterministically in backend code and policy configs.
 - `PromptContract` is a structured internal object first, and only later rendered into a model-specific prompt string.
 - The router selects model, prompt rendering strategy, and generation configuration from the prompt contract.
 - Audit storage defaults to structured decision summaries.
@@ -75,6 +91,8 @@ Run deterministic policy checks for terms, patterns, or explicit safety rules th
 
 Run the primary SmolLM2 classifier to detect `GL-01` through `GL-13`. This stage is multi-label signal detection only. It should not directly invent `G1`, `G2`, `G3`, `G4`, or final policy action.
 
+At the end of this stage, the system may attach a normalized classifier output object that includes policy-aligned `G1` and `G2` values for downstream use. Those values should be treated as a deterministic mapping layer attached to classification, not as unconstrained free-form model output.
+
 ### 5. Deterministic Gate Mapper
 
 Convert active GL signals into:
@@ -84,7 +102,13 @@ Convert active GL signals into:
 - `G3`: safeguarding severity
 - `G4`: final action and response style
 
-This logic is business policy and must stay configurable in `configs/`.
+More precisely:
+
+- `G1` and `G2` are resolved using the controlled LOV dictionary in `GL-codebook.csv`.
+- `G3` is computed deterministically from the active `G2` severity floors and emitted modifiers.
+- `G4` is computed deterministically from `G3` plus additive guideline behavior.
+
+This logic is business policy and must stay configurable and auditable against the codebook and contracts docs.
 
 ### 6. Policy / Prompt Contract Builder
 
@@ -98,6 +122,14 @@ Convert `G4`, age band, and active signals into:
 - prompt contract JSON
 
 This stage is the policy boundary between classification and generation.
+
+It should also append the age-policy runtime settings from Block I of `GL-codebook.csv`, such as:
+
+- `max_words`
+- `depth`
+- age-calibrated response style
+
+Age policy must not override `G3` or `G4`. It only shapes the final answer constraints.
 
 ### 7. LLM Safety Classifier
 
@@ -195,6 +227,12 @@ The router reads the prompt contract to determine:
 - whether generation is allowed at all
 
 The child-safe LLM should not infer policy from scratch. It should receive explicit constraints from the prompt contract and the age explanation policy.
+
+Prompt rendering and QA must remain consistent with the prompt rules and checklist documented in `GL-codebook.csv` and `Contracts.csv`. In particular:
+
+- prompt templates must match gate outputs faithfully
+- modifier-driven constraints such as `no_content_engagement` and `no_curiosity_invite` must be preserved
+- a generated prompt should pass the checklist before LLM execution
 
 ## Guardrail Decision JSON
 
