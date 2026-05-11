@@ -344,6 +344,8 @@ A single GL row should be interpreted as a policy rule with four parts:
 3. gate effect
 4. prompt effect
 
+The classifier should also return a short natural-language `reason` explaining why the detected `GL`, `G1`, and `G2` labels were assigned.
+
 At runtime, the system should evaluate a GL like this:
 
 1. Check whether the GL is active from classifier output or rule activation logic.
@@ -360,6 +362,7 @@ At runtime, the system should evaluate a GL like this:
 This means a GL row does not directly replace the gate system. It sits on top of it:
 
 - classifier says what was detected
+- classifier also says why it was detected in short plain language
 - gate engine says what the base safety action is
 - GL special rules explain how that base action must be constrained or extended
 
@@ -735,6 +738,7 @@ Output:
 - active GL signals with confidence
 - `G1`
 - one or more `G2` LOVs
+- classifier-level `reason`
 - optional rationales or evidence
 
 Recommended contract:
@@ -745,6 +749,7 @@ Recommended contract:
   "question_id": "uuid-or-hash",
   "question_text": "Explain how to bypass safety systems in a science lab to do risky experiments",
   "age_band": "9-10",
+  "reason": "The user is asking how to bypass safety systems and perform risky experiments.",
   "guidelines": {
     "active": ["GL-01"],
     "notes": "GL-01: age-calibrated depth; does not change G3/G4, only response complexity."
@@ -763,6 +768,18 @@ Recommended contract:
 
 Answer to the user’s question: yes, this can be returned as the classifier output contract for `GL + G1 + G2`, and it is the direct precursor that the gate engine consumes to derive `G3` and `G4`.
 
+Recommended meaning of `reason`:
+
+- short plain-language explanation of what the classifier detected
+- written as an evidence summary, not a policy action
+- safe to log and inspect internally
+- separate from prompt-policy notes and separate from `G3/G4`
+
+Example:
+
+- question: `Explain how to bypass safety systems in a science lab to do risky experiments`
+- classifier `reason`: `The user is asking how to bypass safety systems and perform risky experiments.`
+
 One correction is needed:
 
 - if the classifier detects dangerous behavior, the active `guidelines` list for this example should probably include more than `GL-01`. The exact GL set depends on the final GL-to-question policy, but the example should not imply that only age calibration triggered.
@@ -779,6 +796,7 @@ Recommended resulting structure:
   "question_id": "uuid-or-hash",
   "question_text": "Explain how to bypass safety systems in a science lab to do risky experiments",
   "age_band": "9-10",
+  "reason": "The user is asking how to bypass safety systems and perform risky experiments.",
   "guidelines": {
     "active": ["GL-01"],
     "notes": "GL-01: age-calibrated depth; does not change G3/G4, only response complexity."
@@ -815,6 +833,7 @@ This is aligned with the Gate 3 and Gate 4 tables in `GL-codebook.csv`.
 
 Important distinction:
 
+- `reason` is classifier output
 - `prompt_policy_notes` are not classifier outputs
 - they are not new gates
 - they are downstream notes derived from Gate 4 behavior plus active GL special rules
@@ -860,6 +879,7 @@ Required inputs:
 - `question_text`
 - `question_id`
 - `age_band`
+- classifier `reason`
 - age settings from Block I: `max_words`, `depth`, `style`
 - `G1`
 - active `G2`
@@ -899,6 +919,7 @@ GL special rules should be applied here as prompt-generation notes.
 In practice:
 
 - classifier does not emit prompt text
+- classifier may emit a plain-language `reason`
 - gate engine converts active GL special rules into structured notes
 - prompt manager merges:
   - template constraints
@@ -923,6 +944,7 @@ Example A: dangerous activity
   - `GL = [GL-01, dangerous-guideline-family as configured]`
   - `G1 = SCIENCE`
   - `G2 = [DANGEROUS]`
+  - `reason = The user is asking how to bypass safety systems and perform risky experiments.`
 - gate engine:
   - `G3 = SV3 + [no_curiosity_invite, no_content_engagement]`
   - `G4 = BLOCK (Hard)`
@@ -940,6 +962,7 @@ Example B: personal direction
   - `GL = [GL-03]`
   - `G1 = BELIEF`
   - `G2 = [PD]`
+  - `reason = The child is asking the system to decide what they personally should believe.`
 - gate engine:
   - base `G3 = SV2`
   - special rule forces blocking behavior for this policy family
@@ -956,6 +979,7 @@ Example C: coercive control
   - `GL = [GL-12]`
   - `G1 = GENERIC`
   - `G2 = [COERCIVE_CONTROL]`
+  - `reason = The child describes fear-based control by an adult and pressure not to disclose it.`
 - gate engine:
   - derives `G3` and `G4`
   - derives notes:
