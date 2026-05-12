@@ -23,3 +23,8 @@ data/redteam/*
 !data/redteam/.gitkeep
 data/corrections/*
 !data/corrections/.gitkeep
+
+slm-train.log
+slm-train-*.log
+deberta-train.log
+deberta-train-*.log
