@@ -46,6 +46,28 @@ G4_DESCRIPTION_MAP = {
 }
 
 
+def _g2_score_payload(decision: GuardrailDecision) -> dict[str, object]:
+    classifier_metadata = dict(decision.classifier_metadata or {})
+    head_confidences = dict(classifier_metadata.get("head_confidences", {}))
+    raw_g2_scores = head_confidences.get("G2", {})
+    if isinstance(raw_g2_scores, dict):
+        g2_scores = {str(label): float(score) for label, score in raw_g2_scores.items()}
+    else:
+        g2_scores = {}
+    active_g2 = list((decision.gates or decision.gate_values).get("G2_all", []))
+    threshold = float(classifier_metadata.get("g2_threshold", 0.5))
+    ranked = [
+        {"id": label, "score": score, "active": label in active_g2}
+        for label, score in sorted(g2_scores.items(), key=lambda item: item[1], reverse=True)
+    ]
+    active_ranked = [item for item in ranked if item["active"]]
+    return {
+        "threshold": threshold,
+        "active_lovs": active_ranked,
+        "all_lovs": ranked,
+    }
+
+
 def _compact_decision(decision: GuardrailDecision) -> dict[str, object]:
     active_gls = decision.active_gls or decision.guideline_tags
     active_signals = {
@@ -53,8 +75,10 @@ def _compact_decision(decision: GuardrailDecision) -> dict[str, object]:
         for gl_id, signal in decision.gl_signals.items()
         if gl_id in set(active_gls)
     }
+    g2_scores = _g2_score_payload(decision)
     return {
         "input": decision.input,
+        "reason": decision.reason,
         "active_gls": active_gls,
         "gl_signals": active_signals,
         "gates": decision.gates or decision.gate_values,
@@ -67,6 +91,7 @@ def _compact_decision(decision: GuardrailDecision) -> dict[str, object]:
         "parent_visible": decision.parent_visible,
         "confidence": decision.confidence,
         "signals": decision.signals,
+        "g2_scores": g2_scores,
         "prompt_contract": decision.prompt_contract,
         "classifier_metadata": decision.classifier_metadata,
     }
@@ -150,6 +175,10 @@ def _run_response_from_decision(decision: GuardrailDecision, message: str, stage
     g4 = str(gates.get("G4", "ALLOW"))
     modifiers = list(decision.prompt_contract.get("modifiers", []))
     raw_prompt = str(decision.prompt_contract.get("generated_prompt", _final_prompt_for_decision(ChildProfile(age=12, age_group=age_band, language="en"), message, decision)))
+    safety_envelope = dict(decision.prompt_contract.get("safety_envelope", {}))
+    template_id = str(decision.prompt_contract.get("template_id", ""))
+    checklist = dict(decision.prompt_contract.get("checklist", {}))
+    g2_scores = _g2_score_payload(decision)
     return GuardrailRunResponse(
         topic=topic,
         question=message,
@@ -173,9 +202,13 @@ def _run_response_from_decision(decision: GuardrailDecision, message: str, stage
             "guidelines": guidelines,
             "g1_description": G1_DESCRIPTION_MAP.get(g1, g1),
             "g2_descriptions": [CODEBOOK.g2_specs[item].description for item in g2 if item in CODEBOOK.g2_specs],
+            "g2_scores": g2_scores,
             "g4_description": G4_DESCRIPTION_MAP.get(g4, g4),
             "guideline_descriptions": {gl: {"name": GL_NAME_MAP.get(gl, gl), "purpose": GL_PURPOSE_MAP.get(gl, "")} for gl in guidelines},
             "prompt_template": _templated_prompt(raw_prompt, age_band, g1, g2, g3, modifiers, g4, message),
+            "template_id": template_id,
+            "safety_envelope": safety_envelope,
+            "prompt_checklist": checklist,
         },
         classifier={
             "active_gls": guidelines,
@@ -185,6 +218,7 @@ def _run_response_from_decision(decision: GuardrailDecision, message: str, stage
                 if gl_id in set(guidelines)
             },
             "gates": gates,
+            "g2_scores": g2_scores,
             "decision": decision.decision,
             "confidence": decision.confidence,
             "classifier_metadata": decision.classifier_metadata,

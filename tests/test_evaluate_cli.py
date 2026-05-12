@@ -27,6 +27,6 @@ def test_evaluate_classifier_slm_mode_returns_gate_metrics() -> None:
     assert results["mode"] == "slm"
     assert results["core_model"] == "smol"
     assert "gate_metrics" in results
-    assert "G4_accuracy" in results["gate_metrics"]
+    assert "G2_accuracy" in results["gate_metrics"]
     assert "macro_f1" in results["gl_summary"]
     assert "G1" in results["confusion"]

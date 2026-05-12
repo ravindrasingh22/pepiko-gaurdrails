@@ -16,6 +16,15 @@ def _write_current_authoring_sheet(path: Path) -> None:
         writer = csv.writer(handle)
         writer.writerows(rows)
 
+def _write_guideline_tags_authoring_sheet(path: Path) -> None:
+    rows = [
+        ["Topic", "Question", "Guideline Tags", "G1", "G2", "G3", "G4", "Generated Prompt"],
+        ["Science", "Why is the sky blue?", "GL-01", "SCIENCE", "NEUTRAL_FACT", "SV0", "ALLOW", "prompt"],
+    ]
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerows(rows)
+
 
 def test_source_normalizer_expands_authoring_sheet_into_canonical_rows(tmp_path: Path) -> None:
     source_path = tmp_path / "school-learning.csv"
@@ -24,11 +33,11 @@ def test_source_normalizer_expands_authoring_sheet_into_canonical_rows(tmp_path:
 
     assert rows
     assert set(CANONICAL_COLUMNS).issubset(rows[0].keys())
-    assert rows[0]["age_band"] == "5-6"
-    assert rows[1]["age_band"] == "7-8"
-    assert rows[2]["age_band"] == "9-10"
+    assert len(rows) == 2
     assert rows[0]["reference_answer"] == ""
     assert rows[0]["gl_01"] == 1
+    assert "g3" not in rows[0]
+    assert "g4" not in rows[0]
 
 
 def test_source_normalizer_infers_missing_guideline_tags_from_gates(tmp_path: Path) -> None:
@@ -41,6 +50,70 @@ def test_source_normalizer_infers_missing_guideline_tags_from_gates(tmp_path: Pa
     assert all(row["guideline_tags"] for row in inferred_rows)
     assert all(row["gl_01"] == 1 for row in inferred_rows)
     assert all(row["gl_09"] == 0 for row in inferred_rows)
+
+
+def test_source_normalizer_accepts_guideline_tags_header_alias(tmp_path: Path) -> None:
+    source_path = tmp_path / "science-learning.csv"
+    _write_guideline_tags_authoring_sheet(source_path)
+
+    rows = expand_authoring_rows(source_path)
+
+    assert len(rows) == 1
+    assert rows[0]["question"] == "Why is the sky blue?"
+    assert rows[0]["guideline_tags"] == "GL-01"
+    assert rows[0]["gl_01"] == 1
+
+
+def test_source_normalizer_parses_guideline_tags_with_unicode_dash_and_notes(tmp_path: Path) -> None:
+    source_path = tmp_path / "science-learning.csv"
+    rows = [
+        ["Topic", "Question", "Guideline Tags", "G1", "G2", "G3", "G4", "Generated Prompt"],
+        ["School", "Kids are mean to me at school", "GL‑01 (age‑calibration) + GL‑09 (bullying support)", "GENERIC", "BULLYING", "SV2", "TRANSFORM", "prompt"],
+    ]
+    with source_path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerows(rows)
+
+    parsed = expand_authoring_rows(source_path)
+
+    assert len(parsed) == 1
+    assert parsed[0]["guideline_tags"] == "GL-01,GL-09"
+    assert parsed[0]["gl_01"] == 1
+    assert parsed[0]["gl_09"] == 1
+
+
+def test_source_normalizer_parses_guideline_tags_with_spaces_around_dash(tmp_path: Path) -> None:
+    source_path = tmp_path / "science-learning.csv"
+    rows = [
+        ["Topic", "Question", "Guideline Tags", "G1", "G2", "G3", "G4", "Generated Prompt"],
+        ["Science", "Why is the sky blue?", "GL - 01, gl - 09", "SCIENCE", "NEUTRAL_FACT", "SV0", "ALLOW", "prompt"],
+    ]
+    with source_path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerows(rows)
+
+    parsed = expand_authoring_rows(source_path)
+
+    assert len(parsed) == 1
+    assert parsed[0]["guideline_tags"] == "GL-01,GL-09"
+    assert parsed[0]["gl_01"] == 1
+    assert parsed[0]["gl_09"] == 1
+
+
+def test_source_normalizer_defaults_missing_topic_to_generic(tmp_path: Path) -> None:
+    source_path = tmp_path / "generic-learning.csv"
+    rows = [
+        ["Topic", "Question", "GL", "G1", "G2", "G3", "G4", "Generated Prompt"],
+        ["", "What is kindness?", "GL-01", "GENERIC", "NEUTRAL_FACT", "SV0", "ALLOW", "prompt"],
+    ]
+    with source_path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerows(rows)
+
+    parsed = expand_authoring_rows(source_path)
+
+    assert len(parsed) == 1
+    assert parsed[0]["topic"] == "Generic"
 
 
 def test_source_discovery_skips_codebook_csv_and_picks_training_sheet(tmp_path: Path, monkeypatch) -> None:
@@ -59,7 +132,7 @@ def test_source_discovery_skips_codebook_csv_and_picks_training_sheet(tmp_path: 
     assert any("Topics, Rules & Questions" in path.name for path in sources)
 
 
-def test_normalized_csv_writes_age_band_as_text(tmp_path: Path) -> None:
+def test_normalized_csv_omits_age_band_column(tmp_path: Path) -> None:
     source_path = tmp_path / "school-learning.csv"
     target_path = tmp_path / "normalized.csv"
     _write_current_authoring_sheet(source_path)
@@ -70,10 +143,11 @@ def test_normalized_csv_writes_age_band_as_text(tmp_path: Path) -> None:
         rows = list(csv.DictReader(handle))
 
     assert rows
-    assert rows[0]["age_band"] == '="5-6"'
+    assert "age_band" not in rows[0]
+    assert "g3" not in rows[0]
+    assert "g4" not in rows[0]
 
-
-def test_dataset_split_groups_keep_age_band_variants_together(tmp_path: Path) -> None:
+def test_dataset_split_groups_keep_question_rows_stable(tmp_path: Path) -> None:
     source_path = tmp_path / "school-learning.csv"
     _write_current_authoring_sheet(source_path)
     rows = expand_authoring_rows(source_path)

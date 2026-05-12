@@ -10,7 +10,12 @@ from training.slm_classifier.infer import _normalize_input
 
 def _final_prompt(mode: str, question: str, age_band: str, language: str, recent_context: str) -> str:
     normalized = _normalize_input(question, age_band, language, recent_context)
-    decision = slm_classifier.classify(normalized)
+    if mode == "artifact":
+        decision = slm_classifier.classify_artifact(normalized)
+    elif mode == "heuristic":
+        decision = slm_classifier.classify_heuristic(normalized)
+    else:
+        decision = slm_classifier.classify_slm(normalized)
     profile = ChildProfile(
         age=int(normalized["child_profile"]["age"]),
         age_group=age_band,
@@ -21,7 +26,7 @@ def _final_prompt(mode: str, question: str, age_band: str, language: str, recent
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Print the final assembled child-facing prompt.")
-    parser.add_argument("--mode", choices=["artifact", "heuristic"], default="artifact")
+    parser.add_argument("--mode", choices=["artifact", "heuristic", "slm"], default="artifact")
     parser.add_argument("--question", required=True)
     parser.add_argument("--age-band", default="9-12")
     parser.add_argument("--language", default="en")

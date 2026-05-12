@@ -11,6 +11,7 @@ from app.guardrails.gate_mapper import GUIDELINES, build_guardrail_decision
 from app.models.guardrail_decision import GLSignal, GuardrailDecision
 from training.slm_classifier.codebook import DOC_CODEBOOK_PATH
 from training.slm_classifier.data_pipeline import CANONICAL_DATASET, GL_COLUMNS, build_input_text
+from training.slm_classifier.source_normalizer import write_canonical_jsonl_with_metadata
 
 
 ARTIFACT_PATH = Path(__file__).resolve().parents[2] / "models" / "slm_classifier_artifact.json"
@@ -45,6 +46,8 @@ def _feature_score(pos_count: int, neg_count: int, pos_total: int, neg_total: in
 
 
 def train_artifact(dataset_path: Path = CANONICAL_DATASET, target_path: Path = ARTIFACT_PATH) -> dict[str, object]:
+    if not dataset_path.exists():
+        write_canonical_jsonl_with_metadata(target_path=dataset_path)
     rows = _iter_rows(dataset_path)
     if not rows:
         raise ValueError(f"No training rows found in {dataset_path}")

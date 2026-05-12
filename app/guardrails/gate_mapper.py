@@ -190,29 +190,105 @@ def g3_modifiers(g2_list: list[str]) -> list[str]:
     return list(dict.fromkeys(modifiers))
 
 
-def map_g4(g3: str) -> str:
+def map_g4(g3: str, g2_list: list[str], modifiers: list[str]) -> str:
+    mod_set = set(modifiers)
+    if "clarification_required" in mod_set:
+        return "TRANSFORM_HOLD"
+    if any(item in {"UNSAFE_CONTENT", "GROOMING"} for item in g2_list) or ("no_content_engagement" in mod_set and g3 == "SV3"):
+        return "BLOCK_HARD"
+    if any(item in {"SELF_HARM"} for item in g2_list):
+        return "BLOCK_ESCALATE"
     if g3 == "SV0":
         return "ALLOW"
     if g3 in {"SV1", "SV2"}:
         return "TRANSFORM"
+    if "safeguarding_concern" in mod_set:
+        return "BLOCK_ESCALATE"
     return "BLOCK"
+
+
+def build_classifier_reason(g1: str, g2_list: list[str], gls: set[str], question: str = "", primary_g2: str | None = None) -> str:
+    resolved_primary_g2 = primary_g2 or map_g2_primary(g2_list)
+    lowered = question.lower().strip()
+    if resolved_primary_g2 == "PD":
+        if g1 == "BELIEF":
+            return "The child is asking for personal guidance about what they should believe or choose, so the system should avoid directing the child's beliefs."
+        return "The child is asking for personal guidance about what they should do or choose, so the system should avoid giving direct personal direction."
+    if resolved_primary_g2 == "GROOMING":
+        return "The question includes unsafe secrecy or boundary-crossing behaviour involving an adult or trusted person, which triggers grooming-safety handling."
+    if resolved_primary_g2 == "UNSAFE_CONTENT":
+        return "The question refers to explicitly unsafe sexual content, which requires a hard safety block."
+    if resolved_primary_g2 == "EMOTIONAL":
+        return "The child appears upset, distressed, or in need of emotional support, so the response should acknowledge feelings before answering."
+    if resolved_primary_g2 == "DANGEROUS":
+        if "bypass" in lowered and "safety" in lowered:
+            return "The child is asking how to bypass safety measures, which is treated as dangerous guidance."
+        return "The question seeks harmful, dangerous, or unsafe guidance, so the system should avoid procedural help."
+    g1_reason_map = {
+        "FACT": "The question is asking for factual or descriptive information.",
+        "BELIEF": "The question is about belief, religion, or worldview.",
+        "DEATH_GRIEF": "The question is about death, grief, or loss.",
+        "VIOLENCE": "The question is about violence, harm, or dangerous acts.",
+        "SCIENCE": "The question is about science or nature.",
+        "TECHNOLOGY": "The question is about technology or digital systems.",
+        "SAFETY_HAZARD": "The question is about safety risks or hazards.",
+        "CIVIC_LAW": "The question is about rules, law, cheating, or institutional integrity.",
+        "GENERIC": "The question does not fit a more specific broad topic cleanly.",
+    }
+    g2_reason_map = {
+        "NEUTRAL_FACT": "It is framed as a neutral factual question.",
+        "COMPARATIVE": "It asks to compare or rank beliefs or groups.",
+        "PD": "It asks for personal direction or endorsement.",
+        "LP": "It includes a loaded or biased premise.",
+        "HATE_GROUP": "It uses negative or derogatory group framing.",
+        "DANGEROUS": "It asks about bypassing safety, harmful activity, or dangerous instructions.",
+        "EMOTIONAL": "It shows emotional distress or upset.",
+        "BULLYING": "It describes bullying or peer harm.",
+        "GROOMING": "It shows grooming-related secrecy or unsafe adult-child dynamics.",
+        "UNSAFE_CONTENT": "It refers to sexually unsafe or explicitly disallowed content.",
+        "COERCIVE_CONTROL": "It describes fear-based or controlling behaviour by another person.",
+        "VULN_EXPLOIT": "It suggests exploitation of vulnerability or manipulation.",
+        "SELF_HARM": "It includes self-harm or suicidal signals.",
+        "AMBIGUOUS_RISK": "It could have both safe and unsafe interpretations.",
+        "GENERIC_INTENT": "It has general intent without a stronger specific framing signal.",
+    }
+    gl_reason_map = {
+        "GL-01": "Age-calibrated response handling applies.",
+        "GL-03": "Personal-direction guidance applies.",
+        "GL-05": "Dangerous or harmful activity guidance applies.",
+        "GL-06": "Emotional-support guidance applies.",
+        "GL-07": "Complexity-threshold guidance applies for younger children.",
+        "GL-10": "Grooming-safety guidance applies.",
+        "GL-11": "Unsafe-content blocking guidance applies.",
+        "GL-12": "Coercive-control safeguarding guidance applies.",
+        "GL-13": "Vulnerability-exploitation safeguarding guidance applies.",
+    }
+    parts: list[str] = []
+    if g1 in g1_reason_map:
+        parts.append(g1_reason_map[g1])
+    if g2_list:
+        parts.append(" ".join(g2_reason_map[item] for item in g2_list if item in g2_reason_map))
+    gl_notes = [gl_reason_map[item] for item in sorted(gls) if item in gl_reason_map and item != "GL-01"]
+    if gl_notes:
+        parts.append(" ".join(gl_notes))
+    return " ".join(part.strip() for part in parts if part.strip())
 
 
 def build_decision_from_g4(g4: str, g3: str, g2_list: list[str]) -> dict[str, Any]:
     risk_by_severity = {"SV0": "low", "SV1": "low", "SV2": "medium", "SV3": "high", "SV4": "critical"}
-    if g4 == "BLOCK":
+    if g4 in {"BLOCK", "BLOCK_HARD", "BLOCK_ESCALATE"}:
         return {
             "allow_llm": False,
             "allow_rag": False,
             "response_mode": "safe_refusal",
             "risk_level": risk_by_severity.get(g3, "high"),
-            "parent_visible": any(item in {"GROOMING", "UNSAFE_CONTENT", "COERCIVE_CONTROL", "VULN_EXPLOIT"} for item in g2_list),
+            "parent_visible": g4 in {"BLOCK_HARD", "BLOCK_ESCALATE"} or any(item in {"GROOMING", "UNSAFE_CONTENT", "COERCIVE_CONTROL", "VULN_EXPLOIT"} for item in g2_list),
         }
-    if g4 == "TRANSFORM":
+    if g4 in {"TRANSFORM", "TRANSFORM_HOLD"}:
         return {
             "allow_llm": True,
             "allow_rag": False,
-            "response_mode": "guide_or_redirect" if any(item in {"PD", "EMOTIONAL", "DANGEROUS"} for item in g2_list) else "neutral_age_calibrated_explain",
+            "response_mode": "clarify_then_answer" if g4 == "TRANSFORM_HOLD" else ("guide_or_redirect" if any(item in {"PD", "EMOTIONAL", "DANGEROUS"} for item in g2_list) else "neutral_age_calibrated_explain"),
             "risk_level": risk_by_severity.get(g3, "medium"),
             "parent_visible": False,
         }
@@ -225,9 +301,11 @@ def build_decision_from_g4(g4: str, g3: str, g2_list: list[str]) -> dict[str, An
     }
 
 
-def build_prompt_contract(g4: str, g3: str, g2_list: list[str], age_band: str) -> dict[str, Any]:
+def build_prompt_contract(g4: str, g3: str, g2_list: list[str], age_band: str, gls: set[str] | None = None) -> dict[str, Any]:
     age_cfg = AGE_POLICY[age_band]
-    modifiers = g3_modifiers(g2_list)
+    active_gls = gls or set()
+    primary_g2 = map_g2_primary(g2_list)
+    modifiers = g3_modifiers([primary_g2])
     must_do: list[str] = []
     must_not_do: list[str] = []
     if g4 == "ALLOW":
@@ -246,16 +324,40 @@ def build_prompt_contract(g4: str, g3: str, g2_list: list[str], age_band: str) -
             must_do.append("end with a curiosity invite")
         if "clarification_required" in modifiers:
             must_do.append("end with one safe clarifying question")
-    if g4 == "BLOCK":
-        if "no_reason_given" not in modifiers:
+            must_not_do.extend(
+                [
+                    "answer the topic before clarification",
+                    "provide substantive explanation before the child clarifies intent",
+                ]
+            )
+    if g4 in {"BLOCK", "BLOCK_HARD", "BLOCK_ESCALATE"}:
+        if "no_content_engagement" in modifiers:
+            must_do.append("avoid any engagement with the blocked topic")
+            must_not_do.extend(
+                [
+                    "describe or name the blocked topic",
+                    "give a neutral alternate question about the blocked topic",
+                    "explain how or why to do the blocked activity",
+                ]
+            )
+        elif "no_reason_given" not in modifiers:
             must_do.append("refuse briefly and give a neutral alternate question")
         else:
             must_do.append("refuse briefly with zero engagement")
+        if g4 == "BLOCK_HARD":
+            must_do.append("use hard block behavior with no content engagement")
+        if g4 == "BLOCK_ESCALATE":
+            must_do.append("include trusted-adult escalation language")
         if "safeguarding_concern" in modifiers:
             must_do.append("tell the child to talk to a trusted adult")
         if "empathetic_tone" in modifiers:
             must_do.append("use an empathetic tone")
         must_not_do.extend(["provide instructions", "provide materials", "provide steps"])
+    if "no_curiosity_invite" in modifiers:
+        must_do.append("end without a follow-up or curiosity question")
+        must_not_do.append("ask a follow-up question")
+    if "no_reason_given" in modifiers:
+        must_not_do.append("explain the refusal in detail")
     for g2 in g2_list:
         if g2 == "COMPARATIVE":
             must_do.append("do not rank beliefs")
@@ -271,6 +373,15 @@ def build_prompt_contract(g4: str, g3: str, g2_list: list[str], age_band: str) -
             must_do.append("treat secrecy with an adult as unsafe")
         if g2 == "UNSAFE_CONTENT":
             must_do.append("do not engage with explicit content")
+    if "GL-07" in active_gls and age_band in {"5-6", "7-8"}:
+        must_do.extend(
+            [
+                "override prompt complexity for the 5-8 band",
+                "simplify language and concept level before answering",
+                "use concrete words and at most one simple example",
+                "avoid abstract explanation and technical jargon",
+            ]
+        )
     return {
         "age_band": age_band,
         "max_words": age_cfg["max_words"],
@@ -294,13 +405,16 @@ def build_guardrail_decision(
     g1 = map_g1(gls, question)
     g2_list = map_g2_list(gls)
     g2_primary = map_g2_primary(g2_list)
-    g3 = map_g3(g2_list)
-    g4 = map_g4(g3)
+    g3_inputs = [g2_primary]
+    g3 = map_g3(g3_inputs)
+    modifiers = g3_modifiers(g3_inputs)
+    g4 = map_g4(g3, g2_list, modifiers)
     return {
         "input": {"question": question, "age_band": age_band, "language": language, "recent_context": recent_context},
+        "reason": build_classifier_reason(g1, g2_list, gls, question, g2_primary),
         "gl_signals": gl_signals,
         "active_gls": sorted(gls),
         "gates": {"G1": g1, "G2": g2_primary, "G2_all": g2_list, "G3": g3, "G4": g4},
         "decision": build_decision_from_g4(g4, g3, g2_list),
-        "prompt_contract": build_prompt_contract(g4, g3, g2_list, age_band),
+        "prompt_contract": build_prompt_contract(g4, g3, g2_list, age_band, gls),
     }

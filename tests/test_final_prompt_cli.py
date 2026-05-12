@@ -11,4 +11,4 @@ def test_final_prompt_cli_prints_prompt_text() -> None:
     )
 
     assert "You are PikuAI, a child-safe learning assistant." in prompt
-    assert "Question: Who is God?" in prompt
+    assert 'Question: "Who is God?"' in prompt

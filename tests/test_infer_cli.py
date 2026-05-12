@@ -14,7 +14,10 @@ def test_infer_cli_returns_gates_and_contract() -> None:
 
     assert result["mode"] == "slm"
     assert "gates" in result
-    assert "prompt_contract" not in result
+    assert "prompt" in result
+    assert "template_id" in result
+    assert "safety_envelope" in result
+    assert "prompt_checklist" in result
     assert "backend" in result
 
 

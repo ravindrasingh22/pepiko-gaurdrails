@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import re
 
-from app.guardrails.gate_mapper import AGE_POLICY, GUIDELINES, resolve_age_band
+from app.guardrails.gate_mapper import AGE_POLICY, GUIDELINES, build_classifier_reason, build_prompt_contract as build_gate_prompt_contract, resolve_age_band
 from app.models.guardrail_decision import GLSignal, GuardrailDecision
 from training.slm_classifier.runtime_config import load_classifier_runtime_config
 
 TOKEN_RE = re.compile(r"[a-z0-9']+")
+G2_ACTIVATION_THRESHOLD = 0.5
 
 SPELLING_MAP = {
     "childern": "children",
@@ -38,7 +39,7 @@ G1_PRIORITY = [
 ]
 
 G1_RULES = {
-    "SCIENCE": ("space", "earth", "moon", "sun", "planet", "star", "galaxy", "galaxies", "universe", "black hole", "gravity", "white dwarf", "physics", "animal", "plant", "chemical", "dark energy", "hawking radiation", "relativity", "chandrasekhar"),
+    "SCIENCE": ("space", "earth", "moon", "sun", "planet", "star", "galaxy", "galaxies", "universe", "black hole", "gravity", "white dwarf", "physics", "animal", "plant", "chemical", "dark energy", "hawking radiation", "relativity", "chandrasekhar", "science", "lab", "experiment"),
     "TECHNOLOGY": ("computer", "internet", "ai", "chatgpt", "phone", "app", "password", "wifi", "software", "code", "hack"),
     "BELIEF": ("god", "religion", "faith", "heaven", "temple", "prayer", "pray", "mosque", "church", "gurdwara"),
     "DEATH_GRIEF": ("died", "death", "funeral", "grief", "miss someone", "why do people die"),
@@ -57,6 +58,9 @@ G2_RULES = {
         r"\bhow to make .*weapon\b",
         r"\bhow to hurt\b",
         r"\bhow to poison\b",
+        r"\bbypass safety systems\b",
+        r"\brisky experiments?\b",
+        r"\bscience lab\b",
         r"\bhow to start fire\b",
         r"\bhow to cut meat\b",
         r"\bsecretly hurt\b",
@@ -200,7 +204,7 @@ def compute_g4(g1: str, g2_labels: list[str], severity: str, modifiers: list[str
     mods = set(modifiers)
     if "clarification_required" in mods:
         return "TRANSFORM_HOLD"
-    if "UNSAFE_CONTENT" in g2_labels or "GROOMING" in g2_labels:
+    if "UNSAFE_CONTENT" in g2_labels or "GROOMING" in g2_labels or ("no_content_engagement" in mods and severity == "SV3"):
         return "BLOCK_HARD"
     if "SELF_HARM" in g2_labels:
         return "BLOCK_ESCALATE"
@@ -294,6 +298,36 @@ def build_generated_prompt(age_band: str, g1: str, g2: list[str], g3: str, modif
     return f"{header} {body} Question: {question}"
 
 
+def build_classifier_reason(g1: str, g2: list[str], guidelines: list[str], question: str) -> str:
+    lower = question.lower()
+    primary_g2 = g2[0] if g2 else "GENERIC_INTENT"
+    if primary_g2 == "PD":
+        if g1 == "BELIEF":
+            return "The child is asking for personal guidance about what they should believe or choose, so the system should avoid directing the child's beliefs."
+        return "The child is asking for personal guidance about what they should do or choose, so the system should avoid giving direct personal direction."
+    if primary_g2 == "GROOMING":
+        return "The question includes unsafe secrecy or boundary-crossing behaviour involving an adult or trusted person, which triggers grooming-safety handling."
+    if primary_g2 == "UNSAFE_CONTENT":
+        return "The question refers to explicitly unsafe sexual content, which requires a hard safety block."
+    if primary_g2 == "EMOTIONAL":
+        return "The child appears upset, distressed, or in need of emotional support, so the response should acknowledge feelings before answering."
+    if primary_g2 == "DANGEROUS" and ("bypass safety" in lower or "risky experiment" in lower or ("bypass" in lower and "safety" in lower)):
+        return "The user is asking how to bypass safety systems and perform risky experiments."
+    if primary_g2 == "COERCIVE_CONTROL":
+        return "The user describes fear-based control or pressure from another person."
+    if primary_g2 == "DANGEROUS":
+        return "The user is asking about harmful, dangerous, or unsafe activity."
+    if g1 == "BELIEF" and any(item == "NEUTRAL_FACT" for item in g2):
+        return "The user is asking a neutral factual question about belief, religion, or worldview."
+    if g1 == "SCIENCE" and "GL-07" in guidelines:
+        return "The user is asking a complex science question that needs simplification for a younger child."
+    if g1 == "SCIENCE":
+        return "The user is asking a science or nature question."
+    if g1 == "TECHNOLOGY":
+        return "The user is asking a technology or digital-systems question."
+    return "The user is asking a question that has been classified for child-safety guidance."
+
+
 def _gl_signals(guidelines: list[str], age_band: str) -> dict[str, GLSignal]:
     active = set(guidelines)
     signals: dict[str, GLSignal] = {}
@@ -321,12 +355,12 @@ def _build_decision(normalized: dict[str, object]) -> GuardrailDecision:
     topic = classify_topic(clean_question)
     g1 = classify_g1(clean_question)
     g2 = classify_g2(clean_question) or ["NEUTRAL_FACT"]
-    g3, modifiers = compute_g3(g2)
+    primary_g2 = g2[0]
+    g3, modifiers = compute_g3([primary_g2])
     g4 = compute_g4(g1, g2, g3, modifiers)
     guidelines = assign_gl(age_band, g1, g2, message)
     prompt = build_generated_prompt(age_band, g1, g2, g3, modifiers, g4, message)
-    contract = _age_contract(age_band)
-    contract["modifiers"] = modifiers
+    contract = build_gate_prompt_contract(g4, g3, g2, age_band, set(guidelines))
     contract["generated_prompt"] = prompt
     contract["resolved_age_band"] = age_band
 
@@ -349,16 +383,17 @@ def _build_decision(normalized: dict[str, object]) -> GuardrailDecision:
         "risk_level": {"SV0": "low", "SV1": "low", "SV2": "medium", "SV3": "high"}.get(g3, "medium"),
         "parent_visible": g4 in {"BLOCK_ESCALATE", "BLOCK_HARD"},
     }
-    gates = {"topic": topic, "G1": g1, "G2": g2[0], "G2_all": g2, "G3": g3, "G4": g4}
+    gates = {"topic": topic, "G1": g1, "G2": primary_g2, "G2_all": g2, "G3": g3, "G4": g4}
 
     return GuardrailDecision(
         input={"question": message, "age_band": age_band, "language": language, "recent_context": recent_context},
+        reason=build_classifier_reason(g1, g2, guidelines, message),
         gl_signals=_gl_signals(guidelines, age_band),
         active_gls=guidelines,
         gates=gates,
         decision=decision_fields,
         policy_bucket=policy_bucket,
-        safety_category=g2[0],
+        safety_category=primary_g2,
         response_mode=response_mode,
         risk_level=str(decision_fields["risk_level"]),
         parent_visible=bool(decision_fields["parent_visible"]),
@@ -371,10 +406,11 @@ def _build_decision(normalized: dict[str, object]) -> GuardrailDecision:
             "backend": "heuristic",
             "backend_version": "rules-v1",
             "rollout_mode": load_classifier_runtime_config().rollout_mode,
+            "g2_threshold": G2_ACTIVATION_THRESHOLD,
             "head_confidences": {
                 "GL": {gl_id: (0.99 if gl_id in guidelines else 0.01) for gl_id in GUIDELINES},
                 "G1": 0.99,
-                "G2": 0.99,
+                    "G2": {label: (0.99 if label in g2 else 0.01) for label in G2_META.keys()},
                 "G3": 0.99,
                 "G4": 0.99,
             },

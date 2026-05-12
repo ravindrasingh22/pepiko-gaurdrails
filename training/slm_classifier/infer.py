@@ -3,8 +3,9 @@ from __future__ import annotations
 import argparse
 import json
 
-from app.guardrails import slm_classifier
+from app.guardrails import prompt_contract, slm_classifier
 from app.guardrails.gate_mapper import age_band_from_age, resolve_age_band
+from app.models.child_profile import ChildProfile
 from training.slm_classifier.slm_backend import available_cores, resolve_core
 
 
@@ -36,6 +37,25 @@ def _normalize_input(question: str, age_band: str, language: str, recent_context
 
 
 def _serialize_decision(mode: str, backend: str, question: str, age_band: str, language: str, recent_context: str, decision: object, core: str | None = None) -> dict[str, object]:
+    child_profile = ChildProfile(
+        age=int(decision.input.get("age", 12) if isinstance(getattr(decision, "input", {}), dict) else 12),
+        age_group=str(decision.input.get("age_band", age_band) if isinstance(getattr(decision, "input", {}), dict) else age_band),
+        language=language,
+    )
+    prompt = prompt_contract.build(child_profile, question, decision, [])
+    gates = decision.gates or decision.gate_values
+    classifier_metadata = dict(decision.classifier_metadata or {})
+    head_confidences = dict(classifier_metadata.get("head_confidences", {}))
+    raw_g2_scores = head_confidences.get("G2", {})
+    contract = dict(decision.prompt_contract or {})
+    g2_scores = (
+        [
+            {"id": str(label), "score": float(score), "active": str(label) in set(gates.get("G2_all", []))}
+            for label, score in sorted(raw_g2_scores.items(), key=lambda item: float(item[1]), reverse=True)
+        ]
+        if isinstance(raw_g2_scores, dict)
+        else []
+    )
     return {
         "mode": mode,
         "backend": backend,
@@ -46,11 +66,35 @@ def _serialize_decision(mode: str, backend: str, question: str, age_band: str, l
             "language": language,
             "recent_context": recent_context,
         },
+        "reason": decision.reason,
         "active_gls": decision.active_gls or decision.guideline_tags,
-        "gates": decision.gates or decision.gate_values,
+        "gates": gates,
         "decision": decision.decision,
         "confidence": decision.confidence,
-        "classifier_metadata": decision.classifier_metadata,
+        "g2_scores": {
+            "threshold": float(classifier_metadata.get("g2_threshold", 0.5)),
+            "active_lovs": [item for item in g2_scores if item["active"]],
+        },
+        "policy": {
+            "severity": str(gates.get("G3", "")),
+            "modifiers": list(contract.get("modifiers", [])),
+            "action": str(gates.get("G4", "")),
+            "response_mode": str(decision.response_mode),
+            "risk_level": str(decision.risk_level),
+            "parent_visible": bool(decision.parent_visible),
+        },
+        "special_rules": {
+            "template_id": contract.get("template_id", ""),
+            "safety_envelope": contract.get("safety_envelope", {}),
+            "checklist": contract.get("checklist", {}),
+        },
+        "prompt": prompt,
+        "classifier": {
+            "backend_version": classifier_metadata.get("backend_version"),
+            "inference_device": classifier_metadata.get("inference_device"),
+            "trained": classifier_metadata.get("trained"),
+            "core_model": classifier_metadata.get("core_model", core),
+        },
     }
 
 

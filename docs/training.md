@@ -12,12 +12,20 @@ These three docs should be treated as the primary design references for training
 
 ## SLM GL classifier
 
-- Objective: train SmolLM2 to detect `GL-01` through `GL-13` as a multi-label classifier.
+- Objective: train the selected classifier backbone to detect `GL-01` through `GL-13` as a multi-label classifier.
 - Notebooks: `02_guardrail_dataset_builder.ipynb`, `03_slm_classifier_train_smolLM2_135M.ipynb`, `04_slm_classifier_eval_thresholds.ipynb`
 - Scripts: `training/slm_classifier/`
 - Canonical dataset target: `data/processed/piku_gl_classifier_train.jsonl`
 - Source discovery manifest: `data/processed/piku_gl_classifier_manifest.json`
-- Model output target: `models/piku-slm-guardrail-smollm2-135m/`
+- Supported backbones:
+  - `smol` -> `HuggingFaceTB/SmolLM2-135M`
+  - `deberta` -> `microsoft/deberta-v3-xsmall`
+- Model output targets:
+  - `models/piku-slm-guardrail-smollm2-135m/`
+  - `models/piku-slm-guardrail-deberta-v3-xsmall/`
+- CLI examples:
+  - `python -m training.slm_classifier.train --core smol`
+  - `python -m training.slm_classifier.train --core deberta`
 
 ### Responsibility split
 
@@ -34,9 +42,8 @@ This means training should not treat age as a reason to alter safety category as
 
 ```json
 {
-  "sample_id": "religion_001_5_8",
+  "sample_id": "religion_001",
   "question": "Who is God?",
-  "age_band": "5-8",
   "language": "en",
   "recent_context": "none",
   "gl_01": 1,
@@ -66,8 +73,8 @@ This means training should not treat age as a reason to alter safety category as
 - The training pipeline writes a manifest so unfinished sources are easy to detect before training.
 - Do not use generated prompts or model answers as classifier inputs.
 - Authoring sheets may stay wide and human-friendly, but training ingestion must flatten them to:
-  `sample_id, question, age_band, language, recent_context, gl_01..gl_13, g1, g2, g3, g4`
-- For `docs/Religion-politics-idealogy.csv`, create one training row per `question x age_band`.
+  `sample_id, question, language, recent_context, gl_01..gl_13, g1, g2, g3, g4`
+- For `docs/Religion-politics-idealogy.csv`, create one training row per question.
 - Keep age-specific reference answers only as optional audit columns; they are not classifier inputs.
 - `GL-codebook.csv` is the canonical dictionary for allowed LOV ids, severity floors, modifier semantics, and age runtime settings.
 - `Contracts.csv` is the canonical contract for how classifier-stage outputs are consumed by the gate engine, SafetyEnvelope builder, prompt manager, and prompt checklist.

@@ -12,6 +12,7 @@ class GLSignal(BaseModel):
 
 class GuardrailDecision(BaseModel):
     input: dict[str, Any] = Field(default_factory=dict)
+    reason: str = ""
     gl_signals: dict[str, GLSignal] = Field(default_factory=dict)
     active_gls: list[str] = Field(default_factory=list)
     gates: dict[str, Any] = Field(default_factory=dict)

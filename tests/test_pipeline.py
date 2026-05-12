@@ -3,6 +3,7 @@ import asyncio
 from app.guardrails.pipeline import run_classification_sequence, run_piku_guardrail_pipeline
 from app.models.child_profile import ChildProfile
 from training.slm_classifier.slm_backend import train_slm_classifier
+from training.slm_classifier.runtime_config import load_classifier_runtime_config
 
 
 def test_pipeline_soft_block() -> None:
@@ -77,5 +78,8 @@ def test_classification_sequence_emits_shadow_classifier_comparison() -> None:
         )
     )
 
-    assert "slm_classifier_shadow" in stage_outputs
-    assert "disagreements" in stage_outputs["slm_classifier_shadow"]
+    if load_classifier_runtime_config().rollout_mode == "shadow":
+        assert "slm_classifier_shadow" in stage_outputs
+        assert "disagreements" in stage_outputs["slm_classifier_shadow"]
+    else:
+        assert "slm_classifier_shadow" not in stage_outputs

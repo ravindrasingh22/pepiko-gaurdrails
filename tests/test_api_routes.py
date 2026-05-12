@@ -41,6 +41,7 @@ def test_classification_endpoint_returns_gate_values() -> None:
     payload = response.json()
     assert payload["decision"]["gate_values"]["G1"] == "BELIEF"
     assert payload["decision"]["gate_values"]["G2"] == "PD"
+    assert payload["decision"]["reason"]
 
 
 def test_classification_endpoint_uses_codebook_age_band_from_runtime() -> None:

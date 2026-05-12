@@ -7,9 +7,10 @@ from pathlib import Path
 
 from app.guardrails import slm_classifier
 from training.slm_classifier.artifact_backend import build_decision_from_artifact, load_artifact
-from training.slm_classifier.data_pipeline import CANONICAL_DATASET, GL_COLUMNS, load_dataset_splits, select_rows_for_split
+from training.slm_classifier.data_pipeline import CANONICAL_DATASET, GL_COLUMNS, load_dataset_splits, parse_g2_values, select_rows_for_split
 from training.slm_classifier.infer import _normalize_input
 from training.slm_classifier.slm_backend import build_decision_from_slm, resolve_core
+from training.slm_classifier.source_normalizer import write_canonical_jsonl_with_metadata
 
 
 def _iter_rows(path: Path) -> list[dict[str, object]]:
@@ -43,6 +44,8 @@ def evaluate_classifier(
     split: str = "test",
     core: str = "smol",
 ) -> dict[str, object]:
+    if not dataset_path.exists():
+        write_canonical_jsonl_with_metadata(target_path=dataset_path)
     rows = _iter_rows(dataset_path)
     if dataset_path == CANONICAL_DATASET:
         split_rows = select_rows_for_split(rows, split, load_dataset_splits())
@@ -63,25 +66,24 @@ def evaluate_classifier(
     artifact = load_artifact() if mode == "artifact" else None
 
     counts = {gl_column: {"tp": 0, "fp": 0, "fn": 0, "tn": 0} for gl_column in GL_COLUMNS}
-    gate_correct = {"G1": 0, "G2": 0, "G3": 0, "G4": 0, "exact_match": 0}
+    gate_correct = {"G1": 0, "G2": 0, "exact_match": 0}
     gate_total = len(rows)
     slice_totals: dict[str, dict[str, int]] = {
-        "dangerous_violence": {"rows": 0, "correct_g4": 0},
-        "civic_law_integrity": {"rows": 0, "correct_g4": 0},
-        "technology": {"rows": 0, "correct_g4": 0},
-        "safety_hazard": {"rows": 0, "correct_g4": 0},
-        "grief_emotional": {"rows": 0, "correct_g4": 0},
-        "grooming_unsafe_content": {"rows": 0, "correct_g4": 0},
+        "dangerous_violence": {"rows": 0, "correct_g2": 0},
+        "civic_law_integrity": {"rows": 0, "correct_g2": 0},
+        "technology": {"rows": 0, "correct_g2": 0},
+        "safety_hazard": {"rows": 0, "correct_g2": 0},
+        "grief_emotional": {"rows": 0, "correct_g2": 0},
+        "grooming_unsafe_content": {"rows": 0, "correct_g2": 0},
     }
     for row in rows:
         question = str(row["question"])
-        age_band = str(row["age_band"])
         language = str(row.get("language", "en"))
         recent_context = str(row.get("recent_context", "none"))
         if mode == "artifact" and artifact is not None:
             decision = build_decision_from_artifact(
                 question=question,
-                age_band=age_band,
+                age_band="11-12",
                 language=language,
                 recent_context=recent_context,
                 artifact=artifact,
@@ -90,7 +92,7 @@ def evaluate_classifier(
             decision = build_decision_from_slm(
                 normalized=_normalize_input(
                     question=question,
-                    age_band=age_band,
+                    age_band="11-12",
                     language=language,
                     recent_context=recent_context,
                 ),
@@ -99,7 +101,7 @@ def evaluate_classifier(
         else:
             normalized = _normalize_input(
                 question=question,
-                age_band=age_band,
+                age_band="11-12",
                 language=language,
                 recent_context=recent_context,
             )
@@ -119,33 +121,31 @@ def evaluate_classifier(
                 counts[gl_column]["tn"] += 1
 
         predicted_gates = decision.gates or decision.gate_values
-        gold_gates = {key.upper(): str(row[key]) for key in ("g1", "g2", "g3", "g4")}
+        gold_gates = {
+            "G1": str(row["g1"]),
+            "G2": str(row["g2"]),
+            "G2_all": parse_g2_values(row.get("g2_all", row.get("g2", ""))),
+        }
         predicted_g1 = str(predicted_gates.get("G1", ""))
         predicted_g2 = str(predicted_gates.get("G2", ""))
-        predicted_g3 = str(predicted_gates.get("G3", ""))
-        predicted_g4 = str(predicted_gates.get("G4", ""))
+        predicted_g2_all = parse_g2_values(predicted_gates.get("G2_all", predicted_g2))
         if predicted_g1 == gold_gates["G1"]:
             gate_correct["G1"] += 1
-        if predicted_g2 == gold_gates["G2"]:
+        if set(predicted_g2_all) == set(gold_gates["G2_all"]):
             gate_correct["G2"] += 1
-        if predicted_g3 == gold_gates["G3"]:
-            gate_correct["G3"] += 1
-        if predicted_g4 == gold_gates["G4"]:
-            gate_correct["G4"] += 1
         if all(
             (
                 predicted_g1 == gold_gates["G1"],
-                predicted_g2 == gold_gates["G2"],
-                predicted_g3 == gold_gates["G3"],
-                predicted_g4 == gold_gates["G4"],
+                set(predicted_g2_all) == set(gold_gates["G2_all"]),
             )
         ):
             gate_correct["exact_match"] += 1
         summary["confusion"]["G1"][f"{gold_gates['G1']}->{predicted_g1}"] += 1
-        summary["confusion"]["G2"][f"{gold_gates['G2']}->{predicted_g2}"] += 1
+        summary["confusion"]["G2"][f"{';'.join(gold_gates['G2_all'])}->{';'.join(predicted_g2_all)}"] += 1
 
+        gold_g2_set = set(gold_gates["G2_all"])
         slice_names: list[str] = []
-        if gold_gates["G2"] == "DANGEROUS" or gold_gates["G1"] == "VIOLENCE":
+        if "DANGEROUS" in gold_g2_set or gold_gates["G1"] == "VIOLENCE":
             slice_names.append("dangerous_violence")
         if gold_gates["G1"] == "CIVIC_LAW":
             slice_names.append("civic_law_integrity")
@@ -153,14 +153,14 @@ def evaluate_classifier(
             slice_names.append("technology")
         if gold_gates["G1"] == "SAFETY_HAZARD":
             slice_names.append("safety_hazard")
-        if gold_gates["G1"] == "DEATH_GRIEF" or gold_gates["G2"] == "EMOTIONAL":
+        if gold_gates["G1"] == "DEATH_GRIEF" or "EMOTIONAL" in gold_g2_set:
             slice_names.append("grief_emotional")
-        if gold_gates["G2"] in {"GROOMING", "UNSAFE_CONTENT"}:
+        if gold_g2_set.intersection({"GROOMING", "UNSAFE_CONTENT"}):
             slice_names.append("grooming_unsafe_content")
         for slice_name in slice_names:
             slice_totals[slice_name]["rows"] += 1
-            if predicted_g4 == gold_gates["G4"]:
-                slice_totals[slice_name]["correct_g4"] += 1
+            if set(predicted_g2_all) == gold_g2_set:
+                slice_totals[slice_name]["correct_g2"] += 1
 
     gl_f1s: list[float] = []
     micro_tp = micro_fp = micro_fn = 0
@@ -189,8 +189,6 @@ def evaluate_classifier(
     summary["gate_metrics"] = {
         "G1_accuracy": _accuracy(gate_correct["G1"], gate_total),
         "G2_accuracy": _accuracy(gate_correct["G2"], gate_total),
-        "G3_accuracy": _accuracy(gate_correct["G3"], gate_total),
-        "G4_accuracy": _accuracy(gate_correct["G4"], gate_total),
         "gate_exact_match": _accuracy(gate_correct["exact_match"], gate_total),
     }
     summary["confusion"] = {
@@ -200,7 +198,7 @@ def evaluate_classifier(
     summary["slices"] = {
         key: {
             "rows": value["rows"],
-            "g4_accuracy": _accuracy(value["correct_g4"], value["rows"]),
+            "g2_accuracy": _accuracy(value["correct_g2"], value["rows"]),
         }
         for key, value in slice_totals.items()
     }
