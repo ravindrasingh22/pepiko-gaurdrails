@@ -6,6 +6,7 @@ __pycache__/
 .virtual_documents/
 .jupyter_ystore.db
 *.pyc
+*.log
 reports/*.html
 reports/*.png
 models/*
@@ -22,4 +23,3 @@ data/redteam/*
 !data/redteam/.gitkeep
 data/corrections/*
 !data/corrections/.gitkeep
-slm-train.log
