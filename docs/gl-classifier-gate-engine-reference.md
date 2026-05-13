@@ -69,8 +69,8 @@ The current system should treat these as canonical ids.
 
 - `NEUTRAL_FACT`
 - `COMPARATIVE`
-- `PERSONAL DIRECTION`
-- `LOADED PREMISE`
+- `PERSONAL_DIRECTION`
+- `LOADED_PREMISE`
 - `HATE_GROUP`
 - `DANGEROUS`
 - `EMOTIONAL`
@@ -91,8 +91,8 @@ The codebook mixes some legacy and current names. The runtime should normalize t
 
 Canonical interpretation:
 
-- `PERSONAL DIRECTION` is the current canonical `G2` label
-- `LOADED PREMISE` is the current canonical `G2` label
+- `PERSONAL_DIRECTION` is the current canonical `G2` label
+- `LOADED_PREMISE` is the current canonical `G2` label
 - `UNSAFE_SEXUAL_CONTENT` is the current canonical `G2` label
 
 Observed legacy or inconsistent variants in the CSV or older docs:
@@ -187,12 +187,12 @@ Current Gate 2 interpretation:
   - severity floor: `SV1`
   - modifiers: none
 
-- `PERSONAL DIRECTION`
+- `PERSONAL_DIRECTION`
   - meaning: asks what the child personally should believe, choose, or do
   - severity floor: `SV2`
   - modifiers: none
 
-- `LOADED PREMISE`
+- `LOADED_PREMISE`
   - meaning: embeds a biased, prejudiced, or false assumption
   - severity floor: `SV1`
   - modifiers: none
@@ -269,7 +269,7 @@ Examples of valid multi-label outcomes:
 - `BULLYING + EMOTIONAL`
 - `COMPARATIVE + PERSONAL DIRECTION`
 - `DEATH_GRIEF` in `G1` with `EMOTIONAL` or `SELF_HARM` in `G2`
-- `BELIEF` in `G1` with `LOADED PREMISE` or `HATE_GROUP` in `G2`
+- `BELIEF` in `G1` with `LOADED_PREMISE` or `HATE_GROUP` in `G2`
 
 Important rule:
 
@@ -1129,8 +1129,8 @@ Why:
 Important class boundaries:
 
 - `NEUTRAL_FACT` vs `GENERIC_INTENT`
-- `COMPARATIVE` vs `PERSONAL DIRECTION`
-- `LOADED PREMISE` vs `HATE_GROUP`
+- `COMPARATIVE` vs `PERSONAL_DIRECTION`
+- `LOADED_PREMISE` vs `HATE_GROUP`
 - `EMOTIONAL` vs `SELF_HARM`
 - `AMBIGUOUS_RISK` vs `DANGEROUS`
 - `SAFETY_HAZARD` vs `DANGEROUS`
@@ -1168,7 +1168,7 @@ For better accuracy, the training data should be richer than only `question_text
   "question_text_normalized": "Which religion should I believe?",
   "age_band": "9-10",
   "g1": "BELIEF",
-  "g2": ["COMPARATIVE", "PERSONAL DIRECTION"],
+  "g2": ["COMPARATIVE", "PERSONAL_DIRECTION"],
   "active_gl": ["GL-01", "GL-02"],
   "intent_families": ["belief_ranking", "what_should_I_do"],
   "lexicon_evidence": ["which is better", "should I"],
@@ -1292,7 +1292,7 @@ Track:
       "rationale": "The question compares belief systems as better or worse."
     },
     {
-      "id": "PERSONAL DIRECTION",
+      "id": "PERSONAL_DIRECTION",
       "rationale": "The question asks the assistant to decide what the child should personally believe."
     }
   ]
@@ -1306,7 +1306,7 @@ Track:
   "g3": {
     "severity": "SV2",
     "modifiers": [],
-    "source_g2": ["COMPARATIVE", "PERSONAL DIRECTION"]
+    "source_g2": ["COMPARATIVE", "PERSONAL_DIRECTION"]
   },
   "g4": {
     "action": "BLOCK",
