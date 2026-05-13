@@ -117,17 +117,7 @@ Important non-goals:
 
 `G1` is always single-label.
 
-Current `G1` ids:
-
-- `FACT`
-- `BELIEF`
-- `DEATH_GRIEF`
-- `SCIENCE`
-- `TECHNOLOGY`
-- `CIVIC_LAW`
-- `GENERIC`
-
-Definitions for these ids should be read directly from Block A of `GL-codebook.csv`. This document does not redefine them.
+The canonical `G1` ids and their definitions should be read directly from Block A of `GL-codebook.csv`. This document does not restate those values.
 
 Rules for `G1`:
 
@@ -149,79 +139,9 @@ Rules for `G2`:
 - no matched `G2` may be silently dropped before aggregation
 - `G2` is the main source of safety semantics
 
-### 6.1 G2 ids, severity floors, and modifiers
+### 6.1 G2 source-of-truth rule
 
-Definitions for `G2` ids should be read directly from Block B of `GL-codebook.csv`. This document does not restate the codebook’s one-line definitions. The runtime concern here is how each `G2` row contributes a severity floor and modifier set into Gate 3.
-
-Current `G2` rows and their gate-facing outputs:
-
-- `NEUTRAL_FACT`
-  - severity floor: `SV0`
-  - modifiers: none
-
-- `COMPARATIVE`
-  - severity floor: `SV1`
-  - modifiers: none
-
-- `PERSONAL_DIRECTION`
-  - severity floor: `SV2`
-  - modifiers: none
-
-- `LOADED_PREMISE`
-  - severity floor: `SV1`
-  - modifiers: none
-
-- `HATE_GROUP`
-  - severity floor: `SV3`
-  - modifiers: `no_curiosity_invite`, `flag_for_review`
-
-- `DANGEROUS`
-  - severity floor: `SV3`
-  - modifiers: `no_curiosity_invite`, `no_content_engagement`
-
-- `EMOTIONAL`
-  - severity floor: `SV2`
-  - modifiers: `empathetic_tone`, `emotional_support_required`
-
-- `BULLYING`
-  - severity floor: `SV2`
-  - modifiers: `empathetic_tone`, `no_curiosity_invite`
-
-- `GROOMING`
-  - severity floor: `SV3`
-  - modifiers: `no_curiosity_invite`, `zero_engagement`, `safeguarding_concern`
-
-- `UNSAFE_SEXUAL_CONTENT`
-  - severity floor: `SV3`
-  - modifiers: `no_curiosity_invite`, `no_content_engagement`, `no_reason_given`, `zero_engagement`
-
-- `COERCIVE_CONTROL`
-  - severity floor: `SV3`
-  - modifiers: `empathetic_tone`
-
-- `VULN_EXPLOIT`
-  - severity floor: `SV3`
-  - modifiers: `no_curiosity_invite`, `safeguarding_concern`
-
-- `SELF_HARM`
-  - severity floor: `SV3`
-  - modifiers: `no_curiosity_invite`, `empathetic_tone`
-
-- `AMBIGUOUS_RISK`
-  - severity floor: `SV2`
-  - modifiers: `clarification_required`, `no_curiosity_invite`
-
-- `SAFETY_HAZARD`
-  - severity floor: `SV2`
-  - modifiers: `clarification_required`
-
-- `VIOLENCE`
-  - severity floor: `SV3`
-  - modifiers: `no_curiosity_invite`, `flag_for_review`
-
-- `GENERIC_INTENT`
-  - severity floor: `SV2`
-  - modifiers: none
+The canonical `G2` ids, their definitions, severity floors, and modifier tags should be read directly from Block B of `GL-codebook.csv`. This document does not restate those values. The runtime concern here is only how the classifier emits `G2`, how multiple `G2` labels coexist, and how Gate 3 consumes the resulting rows.
 
 ### 6.2 G2 multi-label rules
 
