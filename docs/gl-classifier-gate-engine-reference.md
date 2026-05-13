@@ -17,7 +17,7 @@ Canonical stage ownership:
 3. age policy is appended as runtime context, not learned output
 4. gate engine derives `G3` from `G2`
 5. gate engine derives `G4` from `G3`
-6. gate engine converts active GL special rules into structured prompt-policy notes
+6. gate engine reads classifier-generated active `GL` ids and converts the matching GL special rules into structured prompt-policy notes
 7. SafetyEnvelope packages question context, gate outputs, age settings, active GLs, and prompt-policy notes
 8. prompt manager selects a template and renders the final LLM prompt
 9. prompt checklist validates the rendered prompt before any model call
@@ -518,7 +518,7 @@ Recommended runtime procedure:
 2. validate whether the GL is coherent with `G1` and `G2`
 3. compute base `G3`
 4. compute base `G4`
-5. apply GL special rules as prompt-policy notes or explicit gate constraints
+5. read the classifier-generated active `GL` ids and apply the matching GL special rules as prompt-policy notes or explicit gate constraints
 
 GL rows do not directly render prompt text. They produce structured policy meaning.
 
