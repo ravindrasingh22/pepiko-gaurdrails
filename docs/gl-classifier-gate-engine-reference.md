@@ -2,7 +2,7 @@
 
 This document is a detailed runtime interpretation of [GL-codebook.csv](/Users/ravindrasingh/Documents/AI-Agents/PikuAI/pikuai-gaurdrails/docs/GL-codebook.csv) and [Contracts.csv](/Users/ravindrasingh/Documents/AI-Agents/PikuAI/pikuai-gaurdrails/docs/Contracts.csv). Its goal is to explain the full system flow from normalized child question through classifier output, Gate 3 aggregation, Gate 4 decisioning, SafetyEnvelope construction, prompt template selection, prompt-rule enforcement, checklist validation, and training-data design.
 
-This reference follows the codebook as the source of truth. Where the CSV contains naming inconsistencies, this document states the canonical runtime interpretation explicitly so implementation and training stay stable.
+This reference follows the codebook as the source of truth and uses the current canonical runtime ids throughout.
 
 The latest codebook revision standardizes most runtime ids to underscore form. This document follows those exact ids.
 
@@ -86,27 +86,6 @@ The current system should treat these as canonical ids.
 - `SAFETY_HAZARD`
 - `VIOLENCE`
 - `GENERIC_INTENT`
-
-### 3.3 Naming inconsistencies that must be normalized
-
-The codebook mixes some legacy and current names. The runtime should normalize them to one canonical form.
-
-Canonical interpretation:
-
-- `PERSONAL_DIRECTION` is the current canonical `G2` label
-- `LOADED_PREMISE` is the current canonical `G2` label
-- `UNSAFE_SEXUAL_CONTENT` is the current canonical `G2` label
-
-Observed legacy or inconsistent variants in older docs or earlier revisions:
-
-- `PERSONAL DIRECTION`
-- `LOADED PREMISE`
-- `SEXUAL_UNSAFE_CONTENT`
-- `UNSAFE_CONTENT`
-
-Required normalization rule:
-
-- any classifier, dataset, or config layer that still emits the legacy variants must map them into the canonical runtime ids before Gate 3 computation
 
 ## 4. End-To-End Flow
 
@@ -640,11 +619,10 @@ The most stable inference order is:
 2. run semantic classification for `G1`
 3. run semantic multi-label classification for `G2`
 4. optionally infer active `GL` families from the same classifier pass or from rule-matching over `G1` and `G2`
-5. normalize any legacy ids into canonical runtime ids
-6. aggregate `G2` into `G3`
-7. derive `G4` from `G3`
-8. apply `GL` special rules as structured notes or overrides where the codebook requires them
-9. package the result into the SafetyEnvelope
+5. aggregate `G2` into `G3`
+6. derive `G4` from `G3`
+7. apply `GL` special rules as structured notes or overrides where the codebook requires them
+8. package the result into the SafetyEnvelope
 
 Why this order matters:
 
