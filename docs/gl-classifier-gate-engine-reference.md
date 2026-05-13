@@ -26,7 +26,7 @@ Critical ownership rules:
 
 - classifier owns `G1` and `G2`
 - gate engine owns `G3` and `G4`
-- age policy adjusts response depth and length only
+- age policy appends the Block I runtime settings, including `Max_Answer_Style`, `Max_Words`, and `Depth`, without changing classifier or gate outputs
 - prompt manager must not soften, reinterpret, or override gate outputs
 
 ## 2. Codebook Blocks And Their Roles
@@ -51,7 +51,7 @@ How the blocks connect:
 - Block E constrains how some gate outputs must be applied in specific policy families
 - Blocks F, G, and H govern prompt generation fidelity
 - Block I provides age-calibration context
-- Block J supports classifier training and inference for `G2`
+- Block J supports classifier training and inference for `GL`, `G1`, and `G2`
 
 ## 3. Canonical Runtime Vocabulary
 
@@ -275,7 +275,9 @@ Base meaning from the codebook:
 
 ### 8.3 Gate 4 variant rows
 
-Modifier-driven variants from the codebook:
+This section is reference-only and should be read as example lookup patterns for how Gate 4 variant matching works. The actual variant rows, action ids, endings, and styles must always be taken directly from Block D of `GL-codebook.csv`.
+
+Reference examples:
 
 - `SV1 + no_curiosity_invite`
   - action: `TRANSFORM`
@@ -333,41 +335,58 @@ Modifier-driven variants from the codebook:
 - `no_content_engagement` is a hard prohibition on topic engagement
 - `no_curiosity_invite` suppresses ending questions even if a lower-severity base row normally allows one
 
-## 9. Modifier Semantics
+## 9. Classifier Notes And Modifier Handling
 
-The modifiers are not cosmetic. They are contract constraints.
+The codebook is the source of truth for modifier tags and their meanings. This document does not redefine them.
 
-Current modifier meanings:
+What matters here at runtime is:
 
-- `no_curiosity_invite`
-  - no ending question, no invitation to continue on topic
+- classifiers emit `G2`
+- each `G2` row in Block B carries classifier-facing guidance in `Notes for Classifier`
+- each `G2` row also carries modifier tags that Gate 3 must aggregate without reinterpretation
 
-- `no_content_engagement`
-  - do not explain, develop, or discuss the blocked topic
+### 9.1 How to use `Notes for Classifier`
 
-- `zero_engagement`
-  - stricter than ordinary block behavior; the response may be minimal or silent on content
+`Notes for Classifier` in Block A and Block B are important because they provide classifier-directional guidance that is not the same thing as gate computation.
 
-- `no_reason_given`
-  - do not give a child-facing explanation for the refusal
+These notes should be used for:
 
-- `clarification_required`
-  - ask one safe clarification question only before any substantive answer
+- training-data authoring
+  - to shape positive examples, near-boundary examples, and hard negatives
 
-- `empathetic_tone`
-  - response tone must acknowledge feelings, distress, or fear
+- inference-time rationale support
+  - to explain why a given `G1` or `G2` was selected
 
-- `emotional_support_required`
-  - response must offer age-appropriate support, not just neutral information
+- threshold tuning
+  - to understand which signals are strong matches versus soft contextual hints
 
-- `flag_for_review`
-  - system-side moderation or review should be triggered
+- ambiguity handling
+  - to identify cases that should co-fire multiple labels or move toward clarification paths
 
-- `safeguarding_concern`
-  - append trusted-adult referral behavior after the selected base ending rules
+- review and QA
+  - to evaluate whether classifier output is consistent with the intended policy family
 
-- `escalate`
-  - parent/guardian or system escalation occurs at system layer; do not reveal escalation to the child unless deployment policy explicitly requires it
+### 9.2 What `Notes for Classifier` should not do
+
+`Notes for Classifier` should not be treated as:
+
+- a replacement for the codebook row values
+- a replacement for semantic classification
+- a hard-coded keyword list that bypasses model interpretation
+- a second gate engine
+
+### 9.3 Modifier handling rule
+
+Modifier tags are not interpreted by the classifier as free-form prose. The classifier’s job is to emit `G2`. Gate 3 then receives the modifier tags indirectly through the matched Block B rows.
+
+The handling rule is:
+
+1. classifier emits `G2`
+2. runtime looks up the matched `G2` rows in Block B
+3. Gate 3 aggregates the row-provided severity floors and modifier tags
+4. Gate 4 consumes the aggregated packet
+
+So the classifier should learn toward the correct `G2` rows, while the gate engine remains the only component that computes modifier packets.
 
 ## 10. GL Guideline Family Contract
 
@@ -607,9 +626,9 @@ There are two acceptable ways to compute it:
 
 Recommended practical approach:
 
-- classifier predicts `G1` and `G2`
-- classifier or lightweight policy logic predicts active `GL`
-- runtime checks whether the predicted `GL` is coherent with `Uses_G1_LOVs` and `Uses_G2_LOVs`
+- classifier predicts `GL`, `G1`, and `G2` for the same question or question-plus-context input
+- runtime checks whether predicted `GL` is coherent with `Uses_G1_LOVs` and `Uses_G2_LOVs`
+- if desired, a lightweight policy-validation layer can flag mismatches, but it should not become the primary source of `GL`
 
 Examples:
 
@@ -802,7 +821,7 @@ Prompt rules from Block F are non-negotiable instructions for prompt generation.
 
 Block G gives explicit hard-case templates. These are not generic examples. They are approved template shapes for difficult cases.
 
-### 12.1 HBT-01 Dangerous hard block
+### 13.1 HBT-01 Dangerous hard block
 
 Applies when:
 
@@ -817,7 +836,7 @@ Required behavior:
 - do not ask a redirect question
 - end with brief trusted-adult or grown-up referral only if that policy is permitted for the case
 
-### 12.2 HBT-02 Ambiguous-risk clarification hold
+### 13.2 HBT-02 Ambiguous-risk clarification hold
 
 Applies when:
 
@@ -872,61 +891,26 @@ Operational rule:
 
 Age policy comes from Block I and is runtime context, not learned behavior.
 
-Current age bands and intended style:
-
-- `5-6`
-  - max words: `90`
-  - depth: `CONCRETE_ONE_STEP`
-  - style: warm, concrete, one idea
-
-- `7-8`
-  - max words: `110`
-  - depth: `SIMPLE_EXAMPLE`
-  - style: friendly, simple examples
-
-- `9-10`
-  - max words: `130`
-  - depth: `BASIC_REASONING`
-  - style: clear, cause-effect, brief steps
-
-- `11-12`
-  - max words: `160`
-  - depth: `GUIDED_REASONING`
-  - style: balanced, plain definitions
-
-- `13-14`
-  - max words: `200`
-  - depth: `STRUCTURED_CONTEXT`
-  - style: structured, critical thinking
-
-- `15-16`
-  - max words: `240`
-  - depth: `TEEN_SAFE_DETAIL`
-  - style: nuanced, teen-appropriate
-
-- `17`
-  - max words: `280`
-  - depth: `NEAR_ADULT_MINOR_SAFE`
-  - style: nuanced, responsible framing
+The age-band values and their `Max_Answer_Style`, `Max_Words`, and `Depth` settings should be read directly from Block I of `GL-codebook.csv`. This document does not restate those values.
 
 Rules:
 
 - age policy must be looked up after classification or in parallel as context
 - age policy must not mutate `G1`, `G2`, `G3`, or `G4`
-- age policy only affects response depth, tone, abstraction, and length
+- age policy appends the Block I runtime settings, including answer style, word budget, and depth controls, for downstream prompt rendering
 
 ## 16. Block J Intent Lexicon Contract
 
-Block J is the classifier intent lexicon. It supports how the classifier learns and recognizes `G2`.
+Block J is the classifier intent lexicon. It supports how the classifier learns and predicts `GL`, `G1`, and `G2`.
 
-### 15.1 Purpose
+### 16.1 Purpose
 
 Block J defines:
 
 - intent families per LOV
 - example phrase patterns per LOV
 - training anchors for dataset generation
-- runtime evidence cues for classifier rationale
+- runtime evidence cues for classifier rationale across `GL`, `G1`, and `G2`
 
 Block J does not define:
 
@@ -935,14 +919,26 @@ Block J does not define:
 - final action
 - prompt behavior
 
-Those remain in Blocks B, C, and D.
+Those remain in Blocks A through D.
 
-### 15.2 How Block J maps to Gate 2
+### 16.2 How Block J maps to classification
 
-Block B says what each `G2` means operationally.
-Block J says how the classifier can learn to recognize it linguistically.
+Block J should be used as classifier support for the full classification stage, not only for `G2`.
 
-Example mappings:
+Recommended reading:
+
+- Block A defines `G1`
+- Block B defines `G2`
+- Block E defines `GL` families and trigger expectations
+- Block J provides linguistic families and phrase anchors that help train or support classification across those outputs
+
+Operationally:
+
+- `G1` classification uses Block A definitions, classifier notes, and supporting lexicon-style evidence where available
+- `G2` classification uses Block B definitions, classifier notes, and Block J intent families
+- `GL` classification uses semantic detection consistent with Block E trigger conditions, plus coherence checks against emitted `G1` and `G2`
+
+Reference examples from Block J:
 
 - `NEUTRAL_FACT`
   - families: `factual_definition`, `mechanism_explanation`, `neutral_history_or_civics`
@@ -968,7 +964,7 @@ Example mappings:
   - families: `dangerous_experiment`, `accidental_risk`, `exposure_to_hazardous_substances_or_forces`
   - example phrases: `mix random chemicals`, `is it safe to breathe fumes`
 
-### 15.3 How Block J should be used in training
+### 16.3 How Block J should be used in training
 
 Recommended use:
 
@@ -976,7 +972,7 @@ Recommended use:
 2. expand each seed into paraphrases, child-language variants, misspellings, slang, and indirect formulations
 3. add hard negatives near class boundaries
 4. add multi-label examples
-5. train the classifier to predict semantic labels, not just phrase hits
+5. train the classifier to predict `GL`, `G1`, and `G2` as semantic labels, not just phrase hits
 
 Block J should support:
 
@@ -986,13 +982,13 @@ Block J should support:
 - threshold tuning
 - confusion analysis
 
-### 15.4 How Block J should be used at inference
+### 16.4 How Block J should be used at inference
 
 Recommended inference role:
 
-- semantic model predicts candidate `G2` labels
-- lexicon matches provide supporting evidence or ambiguity alerts
-- final label set is resolved with thresholds and conflict rules
+- semantic model predicts candidate `GL`, `G1`, and `G2` outputs
+- lexicon matches provide supporting evidence, ambiguity alerts, and rationale hooks
+- final outputs are resolved with thresholds, multi-label logic, and coherence checks
 
 Important rule:
 
@@ -1004,7 +1000,7 @@ Why:
 - children paraphrase unpredictably
 - intent is often implied rather than literally stated
 
-### 15.5 Critical boundaries the classifier must learn
+### 16.5 Critical boundaries the classifier must learn
 
 Important class boundaries:
 
@@ -1035,7 +1031,7 @@ Boundary examples:
 
 For better accuracy, the training data should be richer than only `question_text` plus one label. It should reflect the gate model, intent lexicon, multi-label behavior, and audit needs.
 
-### 16.1 Minimum recommended training record
+### 17.1 Minimum recommended training record
 
 ```json
 {
@@ -1059,7 +1055,7 @@ For better accuracy, the training data should be richer than only `question_text
 }
 ```
 
-### 16.2 Recommended full training schema
+### 17.2 Recommended full training schema
 
 ```json
 {
@@ -1103,7 +1099,7 @@ For better accuracy, the training data should be richer than only `question_text
 }
 ```
 
-### 16.3 Recommended dataset design rules
+### 17.3 Recommended dataset design rules
 
 - store both raw and normalized text
 - store multi-label `g2` as an array, never as a comma-separated string
@@ -1113,7 +1109,7 @@ For better accuracy, the training data should be richer than only `question_text
 - track source type so synthetic and real-world data can be measured separately
 - track `boundary_notes` for hard confusion classes
 
-### 16.4 Recommended example coverage
+### 17.4 Recommended example coverage
 
 Every `G2` should have:
 
@@ -1129,7 +1125,7 @@ Every `G2` should have:
 - harmful near-neighbors
 - multi-label compositions
 
-### 16.5 Recommended evaluation metrics
+### 17.5 Recommended evaluation metrics
 
 For better accuracy, do not rely only on overall accuracy.
 
