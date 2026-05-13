@@ -610,18 +610,289 @@ GL rows do not directly render prompt text. They produce structured policy meani
 - do not engage with exploitative dynamic
 - append trusted-adult prompt
 
-## 11. Prompt Rule Contract
+## 11. How GLs And Gate LOVs Are Computed During Inference
+
+This section explains how the system should compute `GL`, `G1`, `G2`, `G3`, and `G4` during inference, and why `GL` is useful in addition to the gate outputs.
+
+### 11.1 Inference objective
+
+At inference time, the system is trying to answer three different questions in sequence:
+
+1. what is the question broadly about
+2. how is the question framed and what risk pattern is present
+3. given that framing, what action and response style should the system take
+
+These map to:
+
+- `G1`: broad topic
+- `G2`: framing / risk
+- `G3`: aggregated severity + modifiers
+- `G4`: final action, ending, style
+- `GL`: policy-family explanation and special handling
+
+### 11.2 Recommended inference order
+
+The most stable inference order is:
+
+1. normalize raw question text
+2. run semantic classification for `G1`
+3. run semantic multi-label classification for `G2`
+4. optionally infer active `GL` families from the same classifier pass or from rule-matching over `G1` and `G2`
+5. normalize any legacy ids into canonical runtime ids
+6. aggregate `G2` into `G3`
+7. derive `G4` from `G3`
+8. apply `GL` special rules as structured notes or overrides where the codebook requires them
+9. package the result into the SafetyEnvelope
+
+Why this order matters:
+
+- `G1` and `G2` are the core classifier outputs
+- `G3` must be computed from `G2`, not from raw text
+- `G4` must be computed from `G3`, not directly from raw text
+- `GL` helps explain and refine the gate result, but should not replace the gate flow
+
+### 11.3 How G1 is computed during inference
+
+`G1` should be computed as a single-label topic classification.
+
+Recommended signals:
+
+- semantic meaning of the question
+- Block A definitions
+- soft lexical support from characteristic patterns
+
+Examples:
+
+- `Why do stars shine?`
+  - likely `G1 = SCIENCE`
+
+- `What is a visa?`
+  - likely `G1 = FACT` or `GENERIC` depending on classifier policy
+
+- `How can I cheat on a school exam?`
+  - likely `G1 = CIVIC_LAW`
+
+Important rule:
+
+- `G1` should stay topical even when `G2` becomes severe
+- do not turn topic classification into a risk label
+
+### 11.4 How G2 is computed during inference
+
+`G2` should be computed as multi-label semantic classification.
+
+Recommended inputs:
+
+- normalized question text
+- Block B operational definitions
+- Block J intent families and phrase evidence
+- optional recent context if product policy allows it
+
+Recommended decision pattern:
+
+1. produce candidate `G2` scores from the classifier
+2. use Block J evidence to support, explain, or disambiguate candidates
+3. apply class thresholds
+4. allow multi-label outputs where justified
+5. apply boundary-resolution rules for confusing pairs
+
+Examples:
+
+- `Kids keep calling me names and I feel terrible`
+  - likely `G2 = [BULLYING, EMOTIONAL]`
+
+- `Which religion is better?`
+  - likely `G2 = [COMPARATIVE]`
+
+- `Which religion should I believe?`
+  - likely `G2 = [COMPARATIVE, PERSONAL DIRECTION]`
+
+- `How do I get into the locked building?`
+  - likely `G2 = [AMBIGUOUS_RISK]`
+
+- `How do I break in without getting caught?`
+  - likely `G2 = [DANGEROUS]`
+
+### 11.5 How GL is computed during inference
+
+`GL` should be treated as policy-family detection over the already-understood semantics of the question.
+
+There are two acceptable ways to compute it:
+
+- direct classifier output
+  - the classifier predicts active `GL` families alongside `G1` and `G2`
+
+- derived policy-family activation
+  - the system derives `GL` from trigger logic that is consistent with the codebook, using question semantics plus `G1` and `G2`
+
+Recommended practical approach:
+
+- classifier predicts `G1` and `G2`
+- classifier or lightweight policy logic predicts active `GL`
+- runtime checks whether the predicted `GL` is coherent with `Uses_G1_LOVs` and `Uses_G2_LOVs`
+
+Examples:
+
+- if `G1 = BELIEF` and `G2 = [COMPARATIVE]`, `GL-01` is likely active
+- if `G1 = BELIEF` and `G2 = [COMPARATIVE, PERSONAL DIRECTION]`, `GL-01` and `GL-02` may both be active
+- if `G2 = [GROOMING]`, `GL-07` is likely active
+- if `G2 = [UNSAFE_SEXUAL_CONTENT]`, `GL-08` is likely active
+
+Important rule:
+
+- `GL` should be consistent with `G1` and `G2`
+- if `GL` claims grooming but `G2` does not support grooming semantics, that should be treated as a mismatch for review or threshold tuning
+
+### 11.6 Why GL is helpful
+
+The gates alone tell the system what severity and action to take, but `GL` adds policy meaning that the gates do not fully express by themselves.
+
+`GL` is helpful for five reasons:
+
+- policy-family explanation
+  - `GL` explains what kind of policy situation was detected, not just its severity
+
+- better prompt constraints
+  - two cases may both end at `SV3`, but the required child-facing behavior differs
+  - example: grooming and unsafe sexual content are both severe, but their allowed response patterns differ
+
+- auditability
+  - `GL` makes it easier to explain why a certain pathway was chosen
+  - example: `GL-02 personal direction` explains why the system blocked advice even though base `SV2` would normally transform
+
+- analytics and tuning
+  - product and safety teams can measure policy-family distribution separately from generic severity
+  - this is useful for monitoring drift, coverage, and false positives
+
+- training quality
+  - `GL` labels help identify whether the classifier is learning the right type of policy distinction, not only the right severity bucket
+
+### 11.7 How GL and gates work together
+
+The cleanest interpretation is:
+
+- `G1` tells you the subject area
+- `G2` tells you the operative framing and risk pattern
+- `G3` compresses all `G2` outputs into one severity/modifier packet
+- `G4` determines the base response action
+- `GL` tells you which policy-family notes must still be respected on top of that base action
+
+This means:
+
+- the gates provide deterministic mechanics
+- `GL` provides policy semantics and downstream constraints
+
+### 11.8 Detailed inference example
+
+Question:
+
+- `Which religion should I believe if my friend says theirs is better?`
+
+Step 1. Normalize input
+
+- raw text is preserved
+- normalized text may collapse spacing, punctuation noise, and casing
+
+Step 2. Compute `G1`
+
+- semantic topic is religion / belief
+- result: `G1 = BELIEF`
+
+Step 3. Compute candidate `G2`
+
+- `which religion is better` supports `COMPARATIVE`
+- `should I believe` supports `PERSONAL DIRECTION`
+- final result: `G2 = [COMPARATIVE, PERSONAL DIRECTION]`
+
+Step 4. Compute active `GL`
+
+- `COMPARATIVE` in a belief domain supports `GL-01`
+- `PERSONAL DIRECTION` supports `GL-02`
+- result: `GL = [GL-01, GL-02]`
+
+Step 5. Compute `G3`
+
+- `COMPARATIVE -> SV1 + []`
+- `PERSONAL DIRECTION -> SV2 + []`
+- `G3_SV = MAX(SV1, SV2) = SV2`
+- `G3_MOD = {}`
+- `G3_FORWARD = (SV2, {})`
+
+Step 6. Compute base `G4`
+
+- `SV2` base row gives `TRANSFORM + curiosity_invite + neutral, balanced`
+
+Step 7. Apply `GL` special rules
+
+- `GL-02` personal direction says this case must block personal advice
+- it requires:
+  - brief reason
+  - specific neutral alternate question
+- final practical outcome becomes a block-style response even though the base `SV2` row would normally transform
+
+Step 8. Build SafetyEnvelope
+
+- include question, age context, `GL`, `G1`, `G2`, `G3`, `G4`, and policy notes
+
+Step 9. Prompt manager selection
+
+- prompt manager should not choose a generic `SV2 transform` template
+- it should choose a personal-direction-aware block template or render a template with the required block notes
+
+Why `GL` helped here:
+
+- `G3` and base `G4` alone would not fully explain why a personal belief-choice request must be blocked
+- `GL-02` carries the policy logic that converts a generic `SV2 transform` path into a specific personal-direction refusal
+
+### 11.9 Detailed safeguarding example
+
+Question:
+
+- `An older person online gives me gifts and says not to tell my parents`
+
+Inference path:
+
+- `G1 = GENERIC`
+- `G2 = [GROOMING]`
+- likely `GL = [GL-07]`
+- `G3 = SV3 + {no_curiosity_invite, zero_engagement, safeguarding_concern}`
+- base `G4` resolves on the severe block path
+- additive `safeguarding_concern` appends trusted-adult behavior
+- `GL-07` further clarifies:
+  - no premise engagement
+  - no explanation
+  - only minimal policy-approved trusted-adult prompt
+
+Why `GL` helped here:
+
+- `SV3` alone only says the case is severe
+- `GL-07` says what kind of severe case it is
+- that matters because grooming requires a different response pattern from other `SV3` cases such as violence or self-harm
+
+### 11.10 Inference invariants
+
+The following rules should always hold:
+
+- `G1` is single-label
+- `G2` may be multi-label
+- `GL` may be multi-label
+- `G3` is computed only from active `G2`
+- `G4` is computed from `G3`
+- `GL` may refine or constrain the application of `G4`, but it should not bypass the existence of the gate flow
+- inconsistent `GL`/`G2` combinations should be logged for review
+
+## 12. Prompt Rule Contract
 
 Prompt rules from Block F are non-negotiable instructions for prompt generation.
 
-### 11.1 PR-01 Gate Fidelity
+### 12.1 PR-01 Gate Fidelity
 
 - every prompt must reflect `G4 Action`, `Base Ending`, and `Response Style`
 - do not soften block behavior
 - do not omit active modifiers
 - do not paraphrase a hard block into a soft redirect
 
-### 11.2 PR-02 clarification_required = HOLD
+### 12.2 PR-02 clarification_required = HOLD
 
 - if `clarification_required` is present, turn 1 must contain exactly one safe clarification question
 - no answer
@@ -629,25 +900,25 @@ Prompt rules from Block F are non-negotiable instructions for prompt generation.
 - no redirect
 - no explanation
 
-### 11.3 PR-03 no_content_engagement = Absolute Silence On Topic
+### 12.3 PR-03 no_content_engagement = Absolute Silence On Topic
 
 - if `no_content_engagement` is present, the prompt must forbid topic explanation, reason-giving, or redirect question
 - if output text is allowed at all, it must be minimal and pre-approved
 
-### 11.4 PR-04 no_curiosity_invite = Suppress Ending Question
+### 12.4 PR-04 no_curiosity_invite = Suppress Ending Question
 
 - if `no_curiosity_invite` is present, prompt must not end with any question
 - no follow-up invitation
 - final sentence must be a statement
 
-### 11.5 PR-05 Age Band And Length Constraint Are Mandatory
+### 12.5 PR-05 Age Band And Length Constraint Are Mandatory
 
 - prompt header must include age band
 - prompt must include explicit line or length cap
 - prompt must instruct the model to match vocabulary, tone, and abstraction to the age band
 - age calibration must not change `G3` or `G4`
 
-## 12. Prompt Template Contract
+## 13. Prompt Template Contract
 
 Block G gives explicit hard-case templates. These are not generic examples. They are approved template shapes for difficult cases.
 
@@ -682,7 +953,7 @@ Required behavior:
 - no redirect
 - no topic explanation
 
-## 13. Prompt Checklist Contract
+## 14. Prompt Checklist Contract
 
 The checklist is the pre-send validation gate.
 
@@ -717,7 +988,7 @@ Operational rule:
 - if any checklist item fails, do not call the LLM
 - re-render or fall back to a known-good safe template
 
-## 14. Age Policy Runtime Contract
+## 15. Age Policy Runtime Contract
 
 Age policy comes from Block I and is runtime context, not learned behavior.
 
@@ -764,7 +1035,7 @@ Rules:
 - age policy must not mutate `G1`, `G2`, `G3`, or `G4`
 - age policy only affects response depth, tone, abstraction, and length
 
-## 15. Block J Intent Lexicon Contract
+## 16. Block J Intent Lexicon Contract
 
 Block J is the classifier intent lexicon. It supports how the classifier learns and recognizes `G2`.
 
@@ -880,7 +1151,7 @@ Boundary examples:
 - `How do I make a knife trap?`
   - likely `DANGEROUS`
 
-## 16. Recommended Training Data Schema
+## 17. Recommended Training Data Schema
 
 For better accuracy, the training data should be richer than only `question_text` plus one label. It should reflect the gate model, intent lexicon, multi-label behavior, and audit needs.
 
@@ -995,7 +1266,7 @@ Track:
 - false-negative rate on `SV3` classes
 - false-positive rate on benign `NEUTRAL_FACT` examples
 
-## 17. Recommended Runtime Schemas
+## 18. Recommended Runtime Schemas
 
 ### 17.1 Classifier output schema
 
@@ -1095,7 +1366,7 @@ Track:
 }
 ```
 
-## 18. Prompt Manager Runtime Contract
+## 19. Prompt Manager Runtime Contract
 
 The prompt manager consumes the SafetyEnvelope, not the raw question alone.
 
@@ -1131,7 +1402,7 @@ Representative matching examples:
 - clarification hold
   - match: `G4=TRANSFORM_HOLD`, `G2 includes AMBIGUOUS_RISK`, `G3_MOD includes clarification_required`
 
-## 19. Implementation And Test Priorities
+## 20. Implementation And Test Priorities
 
 To keep the system faithful to the codebook, tests should verify:
 
@@ -1148,7 +1419,7 @@ To keep the system faithful to the codebook, tests should verify:
 - template-to-gate fidelity
 - checklist failure on unsupported prompt content
 
-## 20. Final Alignment Summary
+## 21. Final Alignment Summary
 
 The correct complete reading of the codebook is:
 
