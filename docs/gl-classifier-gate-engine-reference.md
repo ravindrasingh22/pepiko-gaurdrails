@@ -117,22 +117,17 @@ Important non-goals:
 
 `G1` is always single-label.
 
-Operational meaning of each current `G1`:
+Current `G1` ids:
 
 - `FACT`
-  - factual, descriptive, neutral world-knowledge questions
 - `BELIEF`
-  - religion, worldview, ideology, moral belief systems
 - `DEATH_GRIEF`
-  - death, loss, bereavement, dying, grief
 - `SCIENCE`
-  - natural science, biology, physics, chemistry, nature, body, space
 - `TECHNOLOGY`
-  - computing, devices, AI, internet, software, digital systems
 - `CIVIC_LAW`
-  - laws, rules, cheating, evasion, institutional process misuse
 - `GENERIC`
-  - fallback category when none of the above fit clearly
+
+Definitions for these ids should be read directly from Block A of `GL-codebook.csv`. This document does not redefine them.
 
 Rules for `G1`:
 
@@ -154,92 +149,77 @@ Rules for `G2`:
 - no matched `G2` may be silently dropped before aggregation
 - `G2` is the main source of safety semantics
 
-### 6.1 G2 meanings, severity floors, and modifiers
+### 6.1 G2 ids, severity floors, and modifiers
 
-Current Gate 2 interpretation:
+Definitions for `G2` ids should be read directly from Block B of `GL-codebook.csv`. This document does not restate the codebook’s one-line definitions. The runtime concern here is how each `G2` row contributes a severity floor and modifier set into Gate 3.
+
+Current `G2` rows and their gate-facing outputs:
 
 - `NEUTRAL_FACT`
-  - meaning: purely factual or descriptive inquiry with no risk framing
   - severity floor: `SV0`
   - modifiers: none
 
 - `COMPARATIVE`
-  - meaning: compares or ranks beliefs / groups as better or worse
   - severity floor: `SV1`
   - modifiers: none
 
 - `PERSONAL_DIRECTION`
-  - meaning: asks what the child personally should believe, choose, or do
   - severity floor: `SV2`
   - modifiers: none
 
 - `LOADED_PREMISE`
-  - meaning: embeds a biased, prejudiced, or false assumption
   - severity floor: `SV1`
   - modifiers: none
 
 - `HATE_GROUP`
-  - meaning: derogatory or sweeping language about a protected group
   - severity floor: `SV3`
   - modifiers: `no_curiosity_invite`, `flag_for_review`
 
 - `DANGEROUS`
-  - meaning: requests harmful, illicit, evasive, or dangerous instructions
   - severity floor: `SV3`
   - modifiers: `no_curiosity_invite`, `no_content_engagement`
 
 - `EMOTIONAL`
-  - meaning: distress, sadness, fear, loneliness, anxiety, emotional pain
   - severity floor: `SV2`
   - modifiers: `empathetic_tone`, `emotional_support_required`
 
 - `BULLYING`
-  - meaning: peer harm, exclusion, intimidation, name-calling
   - severity floor: `SV2`
   - modifiers: `empathetic_tone`, `no_curiosity_invite`
 
 - `GROOMING`
-  - meaning: secrecy, gifts, covert adult-child manipulation, isolation requests
   - severity floor: `SV3`
   - modifiers: `no_curiosity_invite`, `zero_engagement`, `safeguarding_concern`
 
 - `UNSAFE_SEXUAL_CONTENT`
-  - meaning: explicit sexual content, CSAM-adjacent content, sexualized child content
   - severity floor: `SV3`
   - modifiers: `no_curiosity_invite`, `no_content_engagement`, `no_reason_given`, `zero_engagement`
 
 - `COERCIVE_CONTROL`
-  - meaning: fear-based control, threats, punishment, domination by authority
   - severity floor: `SV3`
   - modifiers: `empathetic_tone`
 
 - `VULN_EXPLOIT`
-  - meaning: targeted exploitation of vulnerability, blackmail, manipulative dependency
   - severity floor: `SV3`
   - modifiers: `no_curiosity_invite`, `safeguarding_concern`
 
 - `SELF_HARM`
-  - meaning: self-injury, suicidality, wanting to disappear, harm-to-self requests
   - severity floor: `SV3`
   - modifiers: `no_curiosity_invite`, `empathetic_tone`
 
 - `AMBIGUOUS_RISK`
-  - meaning: dual-use or unclear-risk query that requires clarification before any substantive answer
   - severity floor: `SV2`
   - modifiers: `clarification_required`, `no_curiosity_invite`
 
 - `SAFETY_HAZARD`
-  - meaning: hazardous experiment, dangerous physical setup, accident or exposure risk
   - severity floor: `SV2`
   - modifiers: `clarification_required`
 
 - `VIOLENCE`
-  - meaning: interpersonal harm, weapons, attacks, gang violence, terrorism, war violence
   - severity floor: `SV3`
   - modifiers: `no_curiosity_invite`, `flag_for_review`
 
 - `GENERIC_INTENT`
-  - meaning: non-risky fallback intent when no more specific `G2` applies
   - severity floor: `SV2`
   - modifiers: none
 
