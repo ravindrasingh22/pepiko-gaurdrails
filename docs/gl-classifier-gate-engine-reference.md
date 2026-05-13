@@ -1268,63 +1268,68 @@ Track:
 
 ## 18. Recommended Runtime Schemas
 
-### 17.1 Classifier output schema
+### 18.1 Classifier output schema
 
 ```json
 {
   "schema_version": "2.0.0",
   "question_id": "uuid-or-hash",
-  "question_text_raw": "How do I bypass safety systems in a science lab to do risky experiments?",
-  "question_text_normalized": "How do I bypass safety systems in a science lab to do risky experiments?",
+  "question_text_raw": "Which religion should I believe if my friend says theirs is better?",
+  "question_text_normalized": "Which religion should I believe if my friend says theirs is better?",
   "language": "en",
   "age_band": "9-10",
-  "reason": "The question requests help bypassing safety systems and doing risky experiments.",
+  "reason": "The question compares belief systems and asks the assistant to make a personal belief choice.",
   "gl": {
-    "active": [],
-    "notes": ""
+    "active": ["GL-01", "GL-02"],
+    "notes": "Comparative belief and personal-direction policy families are both active."
   },
   "g1": {
-    "id": "SCIENCE"
+    "id": "BELIEF"
   },
   "g2": [
     {
-      "id": "DANGEROUS",
-      "rationale": "Requests harmful or illicit procedural guidance."
+      "id": "COMPARATIVE",
+      "rationale": "The question compares belief systems as better or worse."
+    },
+    {
+      "id": "PERSONAL DIRECTION",
+      "rationale": "The question asks the assistant to decide what the child should personally believe."
     }
   ]
 }
 ```
 
-### 17.2 Gate engine output schema
+### 18.2 Gate engine output schema
 
 ```json
 {
   "g3": {
-    "severity": "SV3",
-    "modifiers": ["no_curiosity_invite", "no_content_engagement"],
-    "source_g2": ["DANGEROUS"]
+    "severity": "SV2",
+    "modifiers": [],
+    "source_g2": ["COMPARATIVE", "PERSONAL DIRECTION"]
   },
   "g4": {
-    "action": "BLOCK_HARD",
-    "ending": "(none)",
-    "style": "None / Minimal"
+    "action": "BLOCK",
+    "ending": "neutral_alternate_question",
+    "style": "Neutral, balanced"
   },
   "prompt_policy_notes": [
-    "Do not explain, name, or develop the blocked topic.",
-    "Do not provide steps, methods, or redirect questions."
+    "Do not decide what the child should personally believe.",
+    "Include a brief reason for not choosing for the child.",
+    "Include a specific neutral alternate question."
   ]
 }
 ```
 
-### 17.3 SafetyEnvelope schema
+### 18.3 SafetyEnvelope schema
 
 ```json
 {
   "schema_version": "2.0.0",
   "question": {
     "id": "uuid-or-hash",
-    "raw_text": "How do I bypass safety systems in a science lab to do risky experiments?",
-    "normalized_text": "How do I bypass safety systems in a science lab to do risky experiments?",
+    "raw_text": "Which religion should I believe if my friend says theirs is better?",
+    "normalized_text": "Which religion should I believe if my friend says theirs is better?",
     "language": "en"
   },
   "user_context": {
@@ -1336,32 +1341,36 @@ Track:
     }
   },
   "gl": {
-    "active": [],
-    "notes": ""
+    "active": ["GL-01", "GL-02"],
+    "notes": "Comparative belief and personal-direction policy families are both active."
   },
   "g1": {
-    "id": "SCIENCE"
+    "id": "BELIEF"
   },
   "g2": {
     "active_lovs": [
       {
-        "id": "DANGEROUS"
+        "id": "COMPARATIVE"
+      },
+      {
+        "id": "PERSONAL DIRECTION"
       }
     ]
   },
   "g3": {
-    "severity": "SV3",
-    "modifiers": ["no_curiosity_invite", "no_content_engagement"],
-    "source_g2": ["DANGEROUS"]
+    "severity": "SV2",
+    "modifiers": [],
+    "source_g2": ["COMPARATIVE", "PERSONAL DIRECTION"]
   },
   "g4": {
-    "action": "BLOCK_HARD",
-    "base_ending": "(none)",
-    "style": "None / Minimal"
+    "action": "BLOCK",
+    "base_ending": "neutral_alternate_question",
+    "style": "Neutral, balanced"
   },
   "prompt_policy_notes": [
-    "Do not explain, name, or develop the blocked topic.",
-    "Do not provide steps, methods, or redirect questions."
+    "Do not decide what the child should personally believe.",
+    "Include a brief reason for not choosing for the child.",
+    "Include a specific neutral alternate question."
   ]
 }
 ```
