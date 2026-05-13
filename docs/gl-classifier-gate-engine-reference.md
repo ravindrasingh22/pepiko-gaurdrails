@@ -4,6 +4,8 @@ This document is a detailed runtime interpretation of [GL-codebook.csv](/Users/r
 
 This reference follows the codebook as the source of truth. Where the CSV contains naming inconsistencies, this document states the canonical runtime interpretation explicitly so implementation and training stay stable.
 
+The latest codebook revision standardizes most runtime ids to underscore form. This document follows those exact ids.
+
 ## 1. Source Of Truth And Ownership
 
 The codebook defines the safety semantics. The contracts document defines the intended stage boundaries.
@@ -95,10 +97,10 @@ Canonical interpretation:
 - `LOADED_PREMISE` is the current canonical `G2` label
 - `UNSAFE_SEXUAL_CONTENT` is the current canonical `G2` label
 
-Observed legacy or inconsistent variants in the CSV or older docs:
+Observed legacy or inconsistent variants in older docs or earlier revisions:
 
-- `PERSONAL_DIRECTION`
-- `LOADED_PREMISE`
+- `PERSONAL DIRECTION`
+- `LOADED PREMISE`
 - `SEXUAL_UNSAFE_CONTENT`
 - `UNSAFE_CONTENT`
 
@@ -267,7 +269,7 @@ Current Gate 2 interpretation:
 Examples of valid multi-label outcomes:
 
 - `BULLYING + EMOTIONAL`
-- `COMPARATIVE + PERSONAL DIRECTION`
+- `COMPARATIVE + PERSONAL_DIRECTION`
 - `DEATH_GRIEF` in `G1` with `EMOTIONAL` or `SELF_HARM` in `G2`
 - `BELIEF` in `G1` with `LOADED_PREMISE` or `HATE_GROUP` in `G2`
 
@@ -418,7 +420,7 @@ Modifier-driven variants from the codebook:
   - process meaning: turn 1 must contain exactly one safe clarification question and nothing else substantive
 
 - `SV2 + escalate + empathetic_tone`
-  - action: `TRANSFORM + ESCALATE`
+  - action: `TRANSFORM_ESCALATE`
   - ending: `curiosity_invite`
   - style: empathetic
 
@@ -434,7 +436,7 @@ Modifier-driven variants from the codebook:
   - process meaning: no topic engagement, no reason, no alternate question
 
 - `SV3 + escalate + empathetic_tone + no_curiosity_invite`
-  - action: `BLOCK + ESCALATE`
+  - action: `BLOCK_ESCALATE`
   - ending: none
   - style: empathetic
 
@@ -705,7 +707,7 @@ Examples:
   - likely `G2 = [COMPARATIVE]`
 
 - `Which religion should I believe?`
-  - likely `G2 = [COMPARATIVE, PERSONAL DIRECTION]`
+  - likely `G2 = [COMPARATIVE, PERSONAL_DIRECTION]`
 
 - `How do I get into the locked building?`
   - likely `G2 = [AMBIGUOUS_RISK]`
@@ -734,7 +736,7 @@ Recommended practical approach:
 Examples:
 
 - if `G1 = BELIEF` and `G2 = [COMPARATIVE]`, `GL-01` is likely active
-- if `G1 = BELIEF` and `G2 = [COMPARATIVE, PERSONAL DIRECTION]`, `GL-01` and `GL-02` may both be active
+- if `G1 = BELIEF` and `G2 = [COMPARATIVE, PERSONAL_DIRECTION]`, `GL-01` and `GL-02` may both be active
 - if `G2 = [GROOMING]`, `GL-07` is likely active
 - if `G2 = [UNSAFE_SEXUAL_CONTENT]`, `GL-08` is likely active
 
@@ -801,19 +803,19 @@ Step 2. Compute `G1`
 Step 3. Compute candidate `G2`
 
 - `which religion is better` supports `COMPARATIVE`
-- `should I believe` supports `PERSONAL DIRECTION`
-- final result: `G2 = [COMPARATIVE, PERSONAL DIRECTION]`
+- `should I believe` supports `PERSONAL_DIRECTION`
+- final result: `G2 = [COMPARATIVE, PERSONAL_DIRECTION]`
 
 Step 4. Compute active `GL`
 
 - `COMPARATIVE` in a belief domain supports `GL-01`
-- `PERSONAL DIRECTION` supports `GL-02`
+- `PERSONAL_DIRECTION` supports `GL-02`
 - result: `GL = [GL-01, GL-02]`
 
 Step 5. Compute `G3`
 
 - `COMPARATIVE -> SV1 + []`
-- `PERSONAL DIRECTION -> SV2 + []`
+- `PERSONAL_DIRECTION -> SV2 + []`
 - `G3_SV = MAX(SV1, SV2) = SV2`
 - `G3_MOD = {}`
 - `G3_FORWARD = (SV2, {})`
@@ -1353,14 +1355,14 @@ Track:
         "id": "COMPARATIVE"
       },
       {
-        "id": "PERSONAL DIRECTION"
+        "id": "PERSONAL_DIRECTION"
       }
     ]
   },
   "g3": {
     "severity": "SV2",
     "modifiers": [],
-    "source_g2": ["COMPARATIVE", "PERSONAL DIRECTION"]
+    "source_g2": ["COMPARATIVE", "PERSONAL_DIRECTION"]
   },
   "g4": {
     "action": "BLOCK",
