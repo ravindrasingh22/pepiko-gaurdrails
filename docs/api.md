@@ -4,6 +4,10 @@ This service owns one orchestration entrypoint:
 
 - `POST /api/v1/guardrails/run`
 
+Detailed API specification:
+
+- [api-spec.md](/Users/ravindrasingh/Documents/AI-Agents/PikuAI/pikuai-gaurdrails/docs/api-spec.md)
+
 For testing and debugging, the scaffold also exposes stage-specific endpoints:
 
 - `POST /api/v1/guardrails/test/classification`

@@ -411,11 +411,11 @@ def write_canonical_jsonl_with_metadata(
         for row in rows:
             payload = {
                 key: row[key]
-                for key in ["sample_id", "question", "language", "recent_context", *GL_COLUMNS, "g1", "g2", "g2_all"]
+                for key in ["sample_id", "topic", "question", "language", "recent_context", *GL_COLUMNS, "g1", "g2", "g2_all"]
             }
             handle.write(json.dumps(payload, ensure_ascii=True) + "\n")
     write_dataset_splits(rows, target_path=split_target_path or DATASET_SPLITS_PATH)
-    write_label_vocab(target_path=vocab_target_path or LABEL_VOCAB_PATH)
+    write_label_vocab(rows, target_path=vocab_target_path or LABEL_VOCAB_PATH)
     return target_path
 
 

@@ -35,6 +35,7 @@ G2_PRIORITY = [
 ]
 G3_VOCAB = ["SV0", "SV1", "SV2", "SV3", "SV4"]
 G4_VOCAB = ["ALLOW", "TRANSFORM", "TRANSFORM_HOLD", "BLOCK", "BLOCK_HARD", "BLOCK_ESCALATE"]
+DEFAULT_TOPIC = "General Learning"
 
 
 @dataclass
@@ -150,6 +151,8 @@ def validate_dataset_rows(rows: list[dict[str, object]]) -> None:
             value = row.get(column)
             if int(value) not in {0, 1}:
                 raise ValueError(f"Expected binary label for {column} in row {row.get('sample_id')}: {value}")
+        if not str(row.get("topic", "")).strip():
+            raise ValueError(f"Missing topic in row {row.get('sample_id')}")
         if str(row.get("g1", "")).strip() not in G1_VOCAB:
             raise ValueError(f"Unsupported G1 label in row {row.get('sample_id')}: {row.get('g1')}")
         g2_values = parse_g2_values(row.get("g2_all", row.get("g2", "")))
@@ -163,9 +166,20 @@ def validate_dataset_rows(rows: list[dict[str, object]]) -> None:
             raise ValueError(f"Primary G2 label must be included in g2_all for row {row.get('sample_id')}: {primary_g2}")
 
 
-def write_label_vocab(target_path: Path = LABEL_VOCAB_PATH) -> Path:
+def build_topic_vocab(rows: list[dict[str, object]] | None = None) -> list[str]:
+    if rows:
+        topics = sorted({str(row.get("topic", "")).strip() for row in rows if str(row.get("topic", "")).strip()})
+    else:
+        topics = [DEFAULT_TOPIC]
+    if DEFAULT_TOPIC not in topics:
+        topics.append(DEFAULT_TOPIC)
+    return topics
+
+
+def write_label_vocab(rows: list[dict[str, object]] | None = None, target_path: Path = LABEL_VOCAB_PATH) -> Path:
     payload = {
         "gl_columns": GL_COLUMNS,
+        "topic": build_topic_vocab(rows),
         "g1": G1_VOCAB,
         "g2": G2_VOCAB,
     }

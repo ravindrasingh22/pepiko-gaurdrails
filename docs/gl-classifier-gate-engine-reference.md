@@ -1,152 +1,108 @@
 # GL Classifier, Gate Engine, and Prompt Manager Reference
 
-This document interprets the current guardrail logic from `docs/GL-codebook.csv` and `docs/Contracts.csv`, not from implementation details. It explains the runtime contract from question input through `G1`, `G2`, `G3`, `G4`, SafetyEnvelope construction, prompt selection, and prompt checklist validation.
+This document is aligned to the current [GL-codebook.csv](/Users/ravindrasingh/Documents/AI-Agents/PikuAI/pikuai-gaurdrails/docs/GL-codebook.csv) and [Contracts.csv](/Users/ravindrasingh/Documents/AI-Agents/PikuAI/pikuai-gaurdrails/docs/Contracts.csv). It describes the intended runtime contract from classifier output through Gate 3, Gate 4, SafetyEnvelope construction, and prompt rendering.
 
-## 1. Source of Truth and Alignment
+## 1. Source of Truth
 
-The main sources for this document are:
+The source of truth is the codebook, not legacy implementation names.
 
-- [GL-codebook.csv](/Users/ravindrasingh/Documents/AI-Agents/PikuAI/pikuai-gaurdrails/docs/GL-codebook.csv)
-- [Contracts.csv](/Users/ravindrasingh/Documents/AI-Agents/PikuAI/pikuai-gaurdrails/docs/Contracts.csv)
+- `Contracts.csv` says the classifier assigns `G1` and `G2`.
+- `GL-codebook.csv` defines the current `G1` LOVs, `G2` LOVs, `G3` computation, `G4` action table, GL notes, prompt rules, prompt templates, checklist items, and age policy rows.
 
-Backtrace from the source docs:
+Canonical runtime ownership:
 
-- `Contracts.csv` explicitly says `Use the classifier to assign G1 and G2 values`.
-- `Contracts.csv` then shows `Classifier Output (G1+G2)` as the handoff into the gate engine.
-- `GL-codebook.csv` defines the dictionaries and classifier notes for both `G1` and `G2`.
-- `GL-codebook.csv` defines `G3` as a computation over active `G2` LOVs and `G4` as a computation over `G3` plus modifiers.
-
-Canonical interpretation for this repo:
-
-1. classifier detects `GL` signals
-2. classifier also assigns `G1`
-3. classifier also assigns `G2`
+1. classifier detects active guideline families
+2. classifier assigns one `G1`
+3. classifier assigns one or more `G2`
 4. gate engine derives `G3`
 5. gate engine derives `G4`
+6. prompt manager renders the final prompt under prompt-rule and checklist constraints
 
-This document follows that interpretation.
+## 2. Gate Dictionary Overview
 
-## 2. Dictionary Overview
+The current codebook defines four gate layers:
 
-The codebook defines four decision layers:
-
-- `G1`: one broad nature LOV for the question
-- `G2`: one or more framing/risk LOVs
+- `G1`: broad nature / subject matter
+- `G2`: framing, intent, or risk pattern
 - `G3`: derived severity plus modifier packet
 - `G4`: derived final action, ending, and response style
 
 It also defines:
 
-- `GL-01` to `GL-13`: policy guidelines that explain why a pattern matters and when special handling applies
-- Age policy: response depth, max words, and style by age band
-- Prompt authoring rules and checklist requirements
+- `GL-01` to `GL-10`: guideline families with special handling notes
+- prompt authoring rules `PR-01` to `PR-05`
+- prompt checklist `CHK-01` to `CHK-08`
+- age runtime policy in Block I
 
-### 2.1 G1 Dictionary
+## 3. Current G1 LOVs
 
-`G1` is single-label. It answers: what is the broad subject nature of the child’s question?
+`G1` is single-label. It answers: what is the broad subject matter of the child’s question?
 
-Current LOVs in `GL-codebook.csv`:
+Current `G1` LOVs from the codebook:
 
 - `FACT`
 - `BELIEF`
 - `DEATH_GRIEF`
-- `VIOLENCE`
 - `SCIENCE`
 - `TECHNOLOGY`
-- `SAFETY_HAZARD`
 - `CIVIC_LAW`
 - `GENERIC`
 
-Classifier meaning:
+Important constraints:
 
-- `G1` is topical classification, not the safety decision.
-- It helps downstream prompt framing and guideline interpretation.
-- `G1` alone never decides block vs allow.
+- `G1` is topical classification, not the safety outcome.
+- `G1` alone does not determine allow vs transform vs block.
+- harmful framing is primarily carried by `G2`.
 
-### 2.2 G2 Dictionary
+## 4. Current G2 LOVs
 
-`G2` is multi-label. It answers: how is the question framed, and what risk pattern or intent does it contain?
+`G2` is multi-label. It answers: how is the question framed, and what safety-relevant pattern is present?
 
-Current LOVs:
+Current `G2` LOVs from the codebook:
 
 - `NEUTRAL_FACT`
 - `COMPARATIVE`
-- `PD`
-- `LP`
+- `PERSONAL DIRECTION`
+- `LOADED PREMISE`
 - `HATE_GROUP`
 - `DANGEROUS`
 - `EMOTIONAL`
 - `BULLYING`
 - `GROOMING`
-- `UNSAFE_CONTENT`
+- `UNSAFE_SEXUAL_CONTENT`
 - `COERCIVE_CONTROL`
 - `VULN_EXPLOIT`
 - `SELF_HARM`
 - `AMBIGUOUS_RISK`
+- `SAFETY_HAZARD`
+- `VIOLENCE`
 - `GENERIC_INTENT`
 
-Classifier meaning:
+Important constraints:
 
-- `G2` carries the main runtime safety semantics.
-- Each active `G2` LOV contributes a severity floor and zero or more modifiers.
-- Multiple `G2` LOVs may fire together.
+- multiple `G2` LOVs can fire for one query
+- each active `G2` contributes a severity floor and zero or more modifiers
+- Gate 3 uses the union of all matched `G2` rows
 
-## 3. How Questions Become GL Tags and Gate Values
+## 5. Gate Flow
 
-The intended runtime reading of the CSVs is:
+The intended reading of the codebook is:
 
-1. child question is normalized
-2. classifier detects guideline-relevant signals
-3. classifier resolves `G1` as the broad topic
-4. classifier resolves one or more `G2` LOVs as framing/risk labels
-5. gate engine computes `G3` from active `G2` values
-6. gate engine computes `G4` from `G3` plus additive guideline behavior
-7. age policy is applied after classification, without changing safety severity
+1. normalize the child question
+2. classify active guideline-relevant signals
+3. assign `G1`
+4. assign one or more `G2`
+5. derive `G3` from all active `G2`
+6. derive `G4` from `G3`
+7. apply additive GL notes and age policy without mutating core gate outputs unless the codebook explicitly says to do so
 
-The guideline layer and the gate layer are related but not identical:
+The distinction matters:
 
-- GLs describe policy families and special handling conditions.
-- `G1` and `G2` are classifier outputs using the controlled LOV dictionaries.
-- `G3` and `G4` are fully derived and deterministic.
+- `GL` rows describe policy families and special rules
+- `G1` and `G2` are controlled classifier outputs
+- `G3` and `G4` are deterministic gate outputs
 
-## 4. Understanding G1 and G2 as LOVs
-
-`G1` and `G2` are controlled lookup vocabularies, not free text.
-
-### 4.1 G1
-
-- exactly one value
-- chosen from the G1 dictionary
-- meant to be stable even when multiple safety patterns exist
-
-Example:
-
-- Question: `Why do stars shine?`
-- `G1 = SCIENCE`
-
-### 4.2 G2
-
-- one or more values
-- each value has a defined severity floor and modifier emission
-- all active values must be preserved into the gate engine
-
-Example:
-
-- Question: `Kids are mean to me at school and I feel sad`
-- `G1 = GENERIC` or `FACT` depending on policy preference
-- `G2 = [BULLYING, EMOTIONAL]`
-
-Why multi-label matters:
-
-- one question can be both emotional and safeguarding-relevant
-- one question can be factual in topic but dangerous in framing
-- gate severity is computed from the union of active `G2` LOVs
-
-## 5. How G3 and G4 Are Derived from G1 and G2
-
-`G3` and `G4` are not learned labels. They are computed from the codebook.
-
-### 5.1 G3 Logic
+## 6. Gate 3 Computation
 
 `G3` contains:
 
@@ -158,40 +114,37 @@ Computation:
 
 - `severity = MAX(severity_floor of all active G2 LOVs)`
 - `modifiers = UNION(all modifier tags emitted by active G2 LOVs)`
-- `source_g2 = ordered list of active G2 ids`
+- `source_g2 = ordered list of matched G2 ids`
 
-Example 1:
+Examples:
 
-- Question: `Why is the sky blue?`
-- `G1 = SCIENCE`
-- `G2 = [NEUTRAL_FACT]`
-- `G3 = { severity: SV0, modifiers: [], source_g2: [NEUTRAL_FACT] }`
-
-Example 2:
-
-- Question: `My classmates keep calling me names and I feel awful`
-- `G1 = GENERIC`
-- `G2 = [BULLYING, EMOTIONAL]`
-- `BULLYING -> SV2 + [empathetic_tone, no_curiosity_invite]`
+- `NEUTRAL_FACT -> SV0 + []`
 - `EMOTIONAL -> SV2 + [empathetic_tone, emotional_support_required]`
-- `G3 = { severity: SV2, modifiers: [empathetic_tone, no_curiosity_invite, emotional_support_required], source_g2: [BULLYING, EMOTIONAL] }`
-
-Example 3:
-
-- Question: `Explain how to bypass safety systems in a science lab to do risky experiments`
-- `G1 = SCIENCE`
-- `G2 = [DANGEROUS]`
 - `DANGEROUS -> SV3 + [no_curiosity_invite, no_content_engagement]`
-- `G3 = { severity: SV3, modifiers: [no_curiosity_invite, no_content_engagement], source_g2: [DANGEROUS] }`
+- `GROOMING -> SV3 + [no_curiosity_invite, zero_engagement, safeguarding_concern]`
+- `UNSAFE_SEXUAL_CONTENT -> SV3 + [no_curiosity_invite, no_content_engagement, no_reason_given, zero_engagement]`
+- `AMBIGUOUS_RISK -> SV2 + [clarification_required, no_curiosity_invite]`
+- `SAFETY_HAZARD -> SV2 + [clarification_required]`
+- `VIOLENCE -> SV3 + [no_curiosity_invite, flag_for_review]`
 
-Operational summary:
+Worked examples:
 
-- `G3` is derived from `G2`, not from `G1`
-- `G1` helps explain topic/nature
-- `G2` determines severity floor and emitted modifiers
-- if multiple `G2` LOVs fire, `G3` keeps the highest severity and the full combined modifier set
+- `Why is the sky blue?`
+  - `G1 = SCIENCE`
+  - `G2 = [NEUTRAL_FACT]`
+  - `G3 = { severity: SV0, modifiers: [], source_g2: [NEUTRAL_FACT] }`
 
-### 5.2 G4 Logic
+- `Kids are mean to me at school and I feel awful`
+  - `G1 = GENERIC`
+  - `G2 = [BULLYING, EMOTIONAL]`
+  - `G3 = { severity: SV2, modifiers: [empathetic_tone, no_curiosity_invite, emotional_support_required], source_g2: [BULLYING, EMOTIONAL] }`
+
+- `How do I bypass safety systems in a lab?`
+  - `G1 = SCIENCE`
+  - `G2 = [DANGEROUS]`
+  - `G3 = { severity: SV3, modifiers: [no_curiosity_invite, no_content_engagement], source_g2: [DANGEROUS] }`
+
+## 7. Gate 4 Computation
 
 `G4` contains:
 
@@ -199,134 +152,39 @@ Operational summary:
 - `ending`
 - `style`
 
-`G4` is derived from `G3`, not directly from raw question text and not directly from `G1`.
+Read the Gate 4 table in this order:
 
-The Gate 4 table in `GL-codebook.csv` must be read exactly this way:
+1. find the row matching `G3_SV`
+2. check `G3_MOD` for any variant row at that severity
+3. apply the matching `Action`, `Base Ending`, and `Response Style`
+4. then apply additive rules such as `safeguarding_concern`
 
-1. Find the row matching `G3_SV`.
-2. Inspect `G3_MOD` for any special modifiers.
-3. If a modifier-specific variant row exists for that severity, use that variant row instead of the plain base row.
-4. Apply the row outputs: `Action`, `Base Ending`, and `Style`.
-5. Then apply additive rules such as `safeguarding_concern`, which may append extra child-safety language without replacing the base action.
+Base interpretation from the current codebook:
 
-This is the key rule from the codebook:
+- `SV0 -> ALLOW + curiosity_invite + neutral age-calibrated style`
+- `SV1 -> TRANSFORM`, usually with `curiosity_invite`
+- `SV2 -> TRANSFORM`, unless a modifier row upgrades it to hold or redirect behavior
+- `SV3 -> BLOCK`, unless a modifier row upgrades it to hard block or block-plus-escalate behavior
 
-- Gate 4 reads `G3_SV` to determine the base action row.
-- Gate 4 then reads `G3_MOD` to select the matching modifier variant.
-- Both must be checked.
-- The outputs are `Action + Base Ending + Style`.
-- Ending overrides apply on top of the base ending.
-
-Base action lookup comes from the Gate 4 table in `GL-codebook.csv`:
-
-- `SV0 -> ALLOW`
-- `SV1 -> TRANSFORM`
-- `SV2 -> TRANSFORM`
-- `SV3 -> BLOCK` or stronger variant depending on modifiers
-
-Modifiers then refine the base row:
+Important modifier behavior:
 
 - `no_curiosity_invite` suppresses ending questions
-- `no_content_engagement` forces hard no-topic engagement behavior
-- `clarification_required` changes `TRANSFORM` into `TRANSFORM (hold)` with one safe disambiguation question only
+- `clarification_required` maps to `TRANSFORM_HOLD` with exactly one safe disambiguation question and no substantive answer in turn 1
 - `empathetic_tone` changes style to warm/supportive
-- `safeguarding_concern` appends a trusted-adult prompt additively
+- `no_content_engagement` forbids topic engagement
+- `zero_engagement` is stricter than ordinary blocking
+- `safeguarding_concern` is additive and appends trusted-adult language after inheriting the base row
 
-### 5.3 How to read the G4 table
+Worked examples:
 
-Use this reading order every time:
+- `SV0 + [] -> ALLOW + curiosity_invite + Neutral, age-calibrated`
+- `SV2 + [clarification_required, no_curiosity_invite] -> TRANSFORM_HOLD + safe_disambiguation_question + Neutral`
+- `SV3 + [no_curiosity_invite, no_content_engagement, zero_engagement] -> BLOCK_HARD + no ending + None / Minimal`
+- `SV3 + [empathetic_tone, no_curiosity_invite] -> empathetic block variant with no ending question`
 
-1. Start with `G3.severity`.
-2. Locate the base Gate 4 row for that severity.
-3. Check whether `G3.modifiers` match a more specific row for that same severity.
-4. If yes, take the more specific row.
-5. Output `action`, `ending`, and `style`.
-6. Apply any additive post-rules such as `safeguarding_concern`.
+## 8. How To Read GL Rows
 
-Example A: no modifiers
-
-- `G3 = { severity: SV0, modifiers: [] }`
-- Step 1: read `SV0`
-- Step 2: matching row is `SV0, (none), ALLOW, curiosity_invite, Neutral age-calibrated`
-- Step 3: there are no modifiers, so no variant row applies
-- Result:
-  - `action = ALLOW`
-  - `ending = curiosity_invite`
-  - `style = Neutral, age-calibrated`
-
-Example B: severity plus clarification modifier
-
-- `G3 = { severity: SV2, modifiers: [clarification_required, no_curiosity_invite] }`
-- Step 1: read `SV2`
-- Step 2: base row would normally be `TRANSFORM + curiosity_invite`
-- Step 3: modifier `clarification_required` matches the `SV2 + clarification_required` variant row
-- Step 4: that row overrides normal transform behavior
-- Result:
-  - `action = TRANSFORM (hold)`
-  - `ending = safe_disambiguation_question`
-  - `style = Neutral`
-- Runtime meaning:
-  - Turn 1 must ask exactly one safe clarification question
-  - no substantive answer is allowed yet
-
-Example C: severity plus no-content-engagement modifier
-
-- `G3 = { severity: SV3, modifiers: [no_curiosity_invite, no_content_engagement] }`
-- Step 1: read `SV3`
-- Step 2: base row would normally be `BLOCK + neutral_alternate_question`
-- Step 3: modifier combination matches the hard-block variant row for `SV3`
-- Step 4: variant row replaces the softer `SV3` block behavior
-- Result:
-  - `action = BLOCK (Hard)`
-  - `ending = (none)`
-  - `style = None / Minimal`
-- Runtime meaning:
-  - no topic engagement
-  - no alternate curiosity question
-  - no explanatory discussion of the blocked topic
-
-Example D: additive safeguarding rule
-
-- `G3 = { severity: SV3, modifiers: [empathetic_tone, safeguarding_concern, no_curiosity_invite] }`
-- Step 1: read `SV3`
-- Step 2: match the `SV3` empathetic block variant if present
-- Step 3: because `safeguarding_concern` is additive, inherit the chosen row first
-- Step 4: append trusted-adult prompt behavior after the chosen row’s base ending logic
-- Result:
-  - `action` stays inherited from the matched `SV3` row
-  - `style` becomes empathetic if the matched row says so
-  - trusted-adult guidance is appended additively, not used as a replacement for the base row
-
-### 5.4 Worked G4 examples from `G2 -> G3 -> G4`
-
-Example 1:
-
-- `G3 = SV0 + []`
-- `G4 = { action: ALLOW, ending: curiosity_invite, style: Neutral, age-calibrated }`
-
-Example 2:
-
-- `G3 = SV2 + [clarification_required, no_curiosity_invite]`
-- `G4 = { action: TRANSFORM (hold), ending: safe_disambiguation_question, style: Neutral }`
-
-Example 3:
-
-- `G3 = SV3 + [no_curiosity_invite, no_content_engagement]`
-- `G4 = { action: BLOCK (Hard), ending: (none), style: None / Minimal }`
-
-Example 4:
-
-- `G2 = [EMOTIONAL]`
-- `EMOTIONAL -> SV2 + [empathetic_tone, emotional_support_required]`
-- `G3 = { severity: SV2, modifiers: [empathetic_tone, emotional_support_required] }`
-- Gate 4 reads:
-  - base row `SV2`
-  - then the `SV2 + empathetic_tone + emotional_support_required` variant row
-- `G4 = { action: TRANSFORM, ending: curiosity_invite or omitted if distress is high, style: Empathetic, warm }`
-
-## 6. How GLs are read after G1 and G2 are present
-
-After the classifier has already assigned `GL`, `G1`, and `G2`, each active guideline should be interpreted using the columns in Block E of `GL-codebook.csv`.
+GL rows sit on top of the gates. They do not replace `G2 -> G3 -> G4`.
 
 Read each GL row in this order:
 
@@ -335,424 +193,379 @@ Read each GL row in this order:
 3. `Uses_G2_LOVs`
 4. `Special Rules on G3 or G4`
 
-### 6.0 Runtime procedure for a GL row
+Runtime interpretation:
 
-A single GL row should be interpreted as a policy rule with four parts:
+1. classifier reports active GL families
+2. classifier assigns `G1` and `G2`
+3. gate engine computes base `G3`
+4. gate engine computes base `G4`
+5. gate engine reads GL special rules and turns them into structured prompt-policy notes
+6. prompt manager enforces those notes during prompt rendering
 
-1. trigger
-2. expected classifier shape
-3. gate effect
-4. prompt effect
+What GL rows do not do:
 
-The classifier should also return a short natural-language `reason` explaining why the detected `GL`, `G1`, and `G2` labels were assigned.
+- they do not create free-form prompt text by themselves
+- they do not bypass gate derivation
+- they do not replace `G1` or `G2`
 
-At runtime, the system should evaluate a GL like this:
+## 9. Current GL Family Interpretation
 
-1. Check whether the GL is active from classifier output or rule activation logic.
-2. Read `Applies_When` to understand the trigger condition that made it active.
-3. Compare classifier output `G1` against `Uses_G1_LOVs`.
-4. Compare classifier output `G2` against `Uses_G2_LOVs`.
-5. If the expected `G1` and `G2` pattern matches, treat the GL as semantically consistent.
-6. Compute normal `G3` from active `G2`.
-7. Compute normal `G4` from `G3`.
-8. Read `Special Rules on G3 or G4`.
-9. Convert those special rules into downstream policy notes.
-10. Pass those notes into the SafetyEnvelope or prompt contract so the prompt manager can enforce them.
+The current codebook GL block contains `GL-01` to `GL-10` with these meanings:
 
-This means a GL row does not directly replace the gate system. It sits on top of it:
+- `GL-01`: Comparative Belief Detector
+- `GL-02`: Personal Direction Detector
+- `GL-03`: Loaded / Biased Premise Detector
+- `GL-04`: Violence Detector
+- `GL-05`: Grief / Death / Loss Detector
+- `GL-06`: Negative Language / Radicalisation Detector
+- `GL-07`: Grooming Detector
+- `GL-08`: Unsafe Sexual Content Detector
+- `GL-09`: Coercive Control Detector
+- `GL-10`: Vulnerability Exploitation Detector
 
-- classifier says what was detected
-- classifier also says why it was detected in short plain language
-- gate engine says what the base safety action is
-- GL special rules explain how that base action must be constrained or extended
+Notable changes from older references:
 
-### 6.0.1 What a GL row does not do
+- age calibration is no longer a `GL-01` guideline family; it is handled by Block I age policy plus prompt rules
+- `PD` and `LP` are not current LOV ids; the current names are `PERSONAL DIRECTION` and `LOADED PREMISE`
+- `UNSAFE_CONTENT` is not the current LOV id; the current name is `UNSAFE_SEXUAL_CONTENT`
+- the current codebook also has explicit `SAFETY_HAZARD` and `VIOLENCE` `G2` LOVs
 
-A GL row does not:
+## 10. GL Worked Examples
 
-- create free-form prompt text by itself
-- bypass `G2 -> G3 -> G4`
-- replace the classifier output contract
-- replace template matching in the prompt manager
+### 10.1 Comparative belief
 
-Instead, it provides structured policy meaning for the already-detected case.
+- question: `Which religion is better?`
+- likely classifier output:
+  - `GL = [GL-01]`
+  - `G1 = BELIEF`
+  - `G2 = [COMPARATIVE]`
+- gate result:
+  - `G3 = SV1 + []`
+  - `G4 = TRANSFORM + curiosity_invite`
+- GL note:
+  - keep response balanced
+  - suppress curiosity invite if a later modifier requires suppression
 
-### 6.1 What `Applies_When` means
-
-`Applies_When` tells you the trigger condition for that guideline family.
-
-Examples:
-
-- `GL-01` applies when age calibration is needed and `age_band` is set
-- `GL-02` applies when comparative belief ranking is detected
-- `GL-10` applies when grooming indicators are detected
-
-This answers:
-
-- why the GL is active
-- what policy family is in play
-- whether the system should expect special handling beyond base Gate 4 behavior
-
-Runtime use:
-
-- treat `Applies_When` as the activation reason
-- if the GL is active but the trigger reason is not satisfied, flag it as an inconsistency for review
-- if the trigger reason is satisfied, continue to validate the expected `G1` and `G2` shape
-
-### 6.2 What `Uses_G1_LOVs` means
-
-This column tells you which `G1` nature categories the guideline expects or is most relevant to.
-
-Example:
-
-- `GL-02` uses `BELIEF`
-- so if classifier output has `G1 = BELIEF`, that is consistent with a comparative belief guideline
-
-`Uses_G1_LOVs` is not itself the final action. It is a validation and interpretation aid.
-
-Runtime use:
-
-- if classifier output `G1` matches one of the LOVs in this column, the GL is topically aligned
-- if it does not match, that can mean:
-  - classifier drift
-  - an ambiguous case
-  - a codebook mismatch that needs review
-- this column helps confirm that the active GL and the assigned `G1` tell a coherent story
-
-### 6.3 What `Uses_G2_LOVs` means
-
-This column tells you which `G2` framing/risk LOVs the guideline expects.
-
-Example:
-
-- `GL-03` uses `PD`
-- `GL-04` uses `LP`
-- `GL-10` uses `GROOMING`
-- `GL-11` uses `UNSAFE_CONTENT`
-
-This is the most direct bridge between the classifier output and the gate engine because `G2` is what feeds `G3`.
-
-Runtime use:
-
-- this is the strongest semantic check for whether the active GL is supported by the classifier result
-- if the GL expects `PD` but `G2` does not contain `PD`, the system should treat that as a mismatch
-- if the GL expects `GROOMING` and `G2` contains `GROOMING`, the GL is strongly validated by classifier output
-
-### 6.4 What `Special Rules` means
-
-This column does not define classifier output. It defines downstream policy notes that must be applied after classifier output is already known.
-
-Correct ownership is:
-
-- classifier outputs `GL`, `G1`, and `G2`
-- gate engine derives `G3` and `G4`
-- gate engine also interprets active GL `Special Rules on G3 or G4`
-- prompt manager turns those special-rule notes into final prompt instructions
-
-That means:
-
-- first compute normal `G3` from `G2`
-- then compute normal `G4` from `G3`
-- then read the active GL’s special rules
-- if the GL says to override, extend, suppress, or append something, the gate engine records that as prompt-facing policy notes
-- the prompt manager must then include those notes in the final prompt contract and rendered prompt
-
-This is how the codebook expresses policy nuance without making those notes part of classifier prediction.
-
-Runtime use:
-
-- interpret `Special Rules` only after base `G4` is known
-- convert each rule into structured prompt-policy instructions, not raw prose
-- examples of derived note types:
-  - `suppress_curiosity_invite`
-  - `include_brief_reason`
-  - `include_neutral_alternate_question`
-  - `append_trusted_adult_prompt`
-  - `age_calibrate_depth_only`
-
-### 6.4.1 End-to-end GL reading example
-
-Example: personal direction in belief domain
+### 10.2 Personal direction
 
 - question: `Which religion should I believe?`
-- classifier output:
-  - active GLs: `[GL-03]`
+- likely classifier output:
+  - `GL = [GL-02]`
   - `G1 = BELIEF`
-  - `G2 = [PD]`
+  - `G2 = [PERSONAL DIRECTION]`
+- base gate result:
+  - `G3 = SV2 + []`
+  - base `G4 = TRANSFORM + curiosity_invite`
+- GL special rule:
+  - force block behavior for personal choice-making
+  - include a brief reason
+  - include a specific neutral alternate question
 
-Now read the `GL-03` row:
+### 10.3 Grooming
 
-1. `Applies_When`
-   - `personal_direction_request = true`
-   - this explains why `GL-03` is active
-2. `Uses_G1_LOVs`
-   - expects `DEATH_GRIEF (example) or FACT / BELIEF / GENERIC`
-   - current `G1 = BELIEF`, so this is aligned
-3. `Uses_G2_LOVs`
-   - expects `PD`
-   - current `G2 = [PD]`, so this is aligned
-4. Compute gate outputs
-   - `PD -> SV2`
-   - base `G3 = SV2`
-   - base `G4` from `SV2` would normally be `TRANSFORM`
-5. Read `Special Rules`
-   - `G4 action is BLOCK`
-   - include brief reason
-   - include specific neutral alternate question
-6. Gate-engine interpretation
-   - override base `SV2` transform outcome for this GL family
-   - create prompt notes:
-     - `force_block`
-     - `include_brief_reason`
-     - `include_neutral_alternate_question`
-7. Prompt-manager effect
-   - choose a block-style template, not a normal transform template
-   - inject those notes into the final prompt instructions
-
-This is the correct reading model:
-
-- `Applies_When` explains activation
-- `Uses_G1_LOVs` validates topic alignment
-- `Uses_G2_LOVs` validates risk/framing alignment
-- `Special Rules` shape prompt behavior after base gate outputs exist
-
-### 6.4.2 Another end-to-end example
-
-Example: age-calibrated neutral fact
-
-- question: `Why do stars shine?`
-- classifier output:
-  - active GLs: `[GL-01]`
-  - `G1 = SCIENCE`
-  - `G2 = [NEUTRAL_FACT]`
-
-Read the `GL-01` row:
-
-1. `Applies_When`
-   - `needs_age_calibration = true; age_band is set`
-2. `Uses_G1_LOVs`
-   - `FACT (or any)`
-   - current `G1 = SCIENCE`, allowed by `or any`
-3. `Uses_G2_LOVs`
-   - `NEUTRAL_FACT`
-   - current `G2` matches
-4. Compute gate outputs
-   - `NEUTRAL_FACT -> SV0`
-   - `G3 = SV0`
-   - `G4 = ALLOW + curiosity_invite`
-5. Read `Special Rules`
-   - do not change `G3`
-   - do not change `G4`
-   - only adjust depth, vocabulary, examples, abstraction, and tone
-6. Gate-engine interpretation
-   - create prompt notes:
-     - `age_calibrate_depth_only`
-     - `preserve_g4_allow`
-7. Prompt-manager effect
-   - still choose the allow template
-   - inject age-specific explanation constraints only
-
-Here the GL does not change the safety action. It only changes how the allowed answer is written.
-
-### 6.5 GL worked examples
-
-Example A: `GL-01` age-calibrated depth
-
-- classifier output:
-  - `G1 = SCIENCE`
-  - `G2 = [NEUTRAL_FACT]`
-  - active GLs include `GL-01`
-- gate result:
-  - `G3 = SV0`
-  - `G4 = ALLOW + curiosity_invite`
-- `GL-01` special rule:
-  - do not change `G3`
-  - do not change `G4`
-  - only change explanation depth, vocabulary, examples, and tone for the declared age band
-- prompt-generation meaning:
-  - gate engine adds a note like `age-calibrated depth only; do not alter G3/G4`
-  - prompt manager inserts instructions such as `Use {depth} detail and {style} tone for age band {age_band}`
-
-Example B: `GL-03` personal direction
-
-- classifier output:
-  - `G1 = BELIEF`
-  - `G2 = [PD]`
-  - active GLs include `GL-03`
-- base gate read:
-  - `PD -> SV2`
-  - base `G4` from `SV2` would usually be `TRANSFORM`
-- `GL-03` special rule:
-  - `G4 action is BLOCK`
-  - must include a brief reason plus a specific neutral alternate question
-- practical meaning:
-  - this GL tightens behavior beyond the generic `SV2` transform row
-- prompt-generation meaning:
-  - gate engine adds prompt notes like `include brief reason` and `include neutral alternate question`
-  - prompt manager must render those notes into the selected block template
-
-Example C: `GL-10` grooming
-
-- classifier output:
+- question: `An older person told me to keep our chats secret`
+- likely classifier output:
+  - `GL = [GL-07]`
   - `G1 = GENERIC`
   - `G2 = [GROOMING]`
-  - active GLs include `GL-10`
-- base gate read:
-  - `GROOMING -> SV3 + [no_curiosity_invite, zero_engagement, safeguarding_concern]`
-- Gate 4 result:
-  - high-severity block path
-- `GL-10` special rule:
-  - `BLOCK (Hard)`
-  - do not engage with premise
+- gate result:
+  - `G3 = SV3 + [no_curiosity_invite, zero_engagement, safeguarding_concern]`
+  - `G4` follows the high-severity hard-block path
+- GL special rule:
+  - do not engage with the premise
   - do not explain why
-  - append only the minimal trusted-adult prompt if deployment policy permits
-- prompt-generation meaning:
-  - gate engine records notes such as `no premise engagement`, `no explanation`, `minimal trusted-adult line only`
-  - prompt manager must render a hard-block prompt that obeys those notes exactly
+  - append only the approved trusted-adult line if response-layer policy permits
 
-Example D: `GL-12` coercive control
+### 10.4 Coercive control
 
-- classifier output:
+- question: `I get hurt if I do not obey`
+- likely classifier output:
+  - `GL = [GL-09]`
   - `G1 = GENERIC`
   - `G2 = [COERCIVE_CONTROL]`
-  - active GLs include `GL-12`
-- base gate read:
-  - `COERCIVE_CONTROL -> SV3 + [empathetic_tone]`
-- Gate 4 result:
-  - `SV3` block behavior with empathetic style, depending on matching variant row
-- `GL-12` special rule:
-  - do not reinforce controlling dynamic
-  - acknowledge child's safety
-  - append trusted-adult prompt
-  - system-layer escalation may apply
-- prompt-generation meaning:
-  - gate engine records notes such as `empathetic safety acknowledgement` and `append trusted-adult prompt`
-  - prompt manager injects those notes into the supportive block or escalate template
+- gate result:
+  - `G3 = SV3 + [empathetic_tone]`
+- GL special rule:
+  - acknowledge safety and feelings
+  - do not reinforce the controlling dynamic
+  - append trusted-adult language
+  - escalate at system layer if deployment policy adds escalation
 
-Practical rule:
+## 11. Age Policy Placement
 
-- `G2 -> G3` decides severity and modifier structure
-- `G3 -> G4` decides base action, ending, and style
-- active GL `Special Rules` then become prompt-facing policy notes that explain, constrain, or extend how that `G4` result must be applied
-## 7. Example Gate Engine Walkthrough After SLM Classifies
+Age runtime policy comes from Block I, not from the GL family block.
 
-This is the clean runtime interpretation once the classifier stage is done.
+Current age bands:
 
-### 6.1 Example: benign science question
+- `5-6`
+- `7-8`
+- `9-10`
+- `11-12`
+- `13-14`
+- `15-16`
+- `17`
 
-- Question: `Why do plants need sunlight?`
-- classifier-relevant outcome: factual science, no risk framing
-- `G1 = SCIENCE`
-- `G2 = [NEUTRAL_FACT]`
-- `G3 = SV0 + []`
-- `G4 = ALLOW + curiosity_invite + neutral age-calibrated style`
+Age policy controls:
 
-### 6.2 Example: dangerous science question
+- answer style
+- max words
+- depth
 
-- Question: `Explain how to bypass safety systems in a science lab to do risky experiments`
-- topic is science, but framing is harmful
-- `G1 = SCIENCE`
-- `G2 = [DANGEROUS]`
-- `G3 = SV3 + [no_curiosity_invite, no_content_engagement]`
-- `G4 = BLOCK (Hard) + no ending + None/Minimal style`
+Age policy does not change:
+
+- `G1`
+- `G2`
+- `G3`
+- `G4`
+
+## 12. Block J Intent Lexicon
+
+Block J in `GL-codebook.csv` is the classifier intent lexicon. Its purpose is to define the intent families, phrase patterns, and training examples that help the classifier learn how to assign `G2` labels consistently.
+
+What Block J is for:
+
+- it is training and inference support for classifier intent recognition
+- it gives each `G2` LOV a set of semantic families
+- it gives each `G2` LOV example phrase patterns the classifier can learn from
+- it reduces ambiguity between nearby labels such as `DANGEROUS` vs `AMBIGUOUS_RISK`, or `EMOTIONAL` vs `SELF_HARM`
+
+What Block J is not for:
+
+- it is not a replacement for the `G2` table
+- it does not define severity directly
+- it does not define `G4` actions
+- it should not be treated as a raw keyword rules engine on its own
+
+### 12.1 How Block J maps to G2
+
+In the current codebook, Block J effectively acts as the classifier-facing semantic index for `G2`.
+
+The relationship is:
+
+- Block B defines the official `G2` LOV, severity floor, modifier emissions, and classifier notes
+- Block J expands each `G2` LOV with intent families and example phrases
+
+Working interpretation:
+
+- Block B tells you what label means in the gate system
+- Block J tells you how the classifier can recognize that label in real language
+
+Example mappings:
+
+- `NEUTRAL_FACT`
+  - families: factual definition, mechanism explanation, descriptive what/why/how
+  - phrases: `what is`, `how does X work`, `why does X happen`
+- `PERSONAL DIRECTION`
+  - families: what_should_I_do, personal_choice, moral_guidance
+  - phrases: `should I`, `tell me what to choose`, `decide for me`
+- `DANGEROUS`
+  - families: weapon making, sabotage, bypass security or law, how to hurt
+  - phrases: `how do I make a bomb`, `how to hack`, `how to avoid getting caught`
+- `AMBIGUOUS_RISK`
+  - families: dual-use tools, access questions, vague preparation
+  - phrases: `where can I buy a knife`, `what chemicals are easy to get`
+- `SAFETY_HAZARD`
+  - families: dangerous experiment, accidental risk, hazardous exposure
+  - phrases: `make a plug point spark`, `mix random chemicals`, `is it safe to breathe fumes`
+
+### 12.2 How the lexicon should work at training time
+
+The lexicon should be used as supervised training support, not as the only labeling source.
+
+Recommended training flow:
+
+1. start from the official `G2` LOV definitions in Block B
+2. use Block J families to define positive-intent buckets for each `G2`
+3. use Block J phrases as seed examples, not final exhaustive examples
+4. generate or collect paraphrases around each family
+5. train the classifier to predict one or more `G2` labels from full-question meaning, not just token hits
+6. validate that the resulting `G2` outputs still agree with Block B severity and modifier behavior
+
+How to use the lexicon well in training:
+
+- seed dataset creation
+  - use each Block J phrase list as a bootstrap source for synthetic examples, adversarial paraphrases, spelling variants, and multilingual variants
+- contrastive labeling
+  - build hard negatives between nearby classes
+  - example: `how do batteries work` should stay `NEUTRAL_FACT`, while `how do I make a battery explode` should move toward `DANGEROUS` or `SAFETY_HAZARD`
+- multi-label composition
+  - create examples where multiple intents coexist
+  - example: `I feel awful because kids hit me at school` should support `BULLYING + EMOTIONAL`
+- boundary conditioning
+  - explicitly train around dangerous boundaries such as `AMBIGUOUS_RISK` vs `DANGEROUS`, `EMOTIONAL` vs `SELF_HARM`, and `LOADED PREMISE` vs `HATE_GROUP`
+
+### 12.3 How the lexicon should work at inference time
+
+At runtime, Block J should inform classifier behavior, but not override full semantic classification.
+
+Recommended inference role:
+
+- use Block J as a feature prior or explanation scaffold
+- allow phrase-family matches to increase confidence for candidate `G2` labels
+- still require full-question semantic interpretation before final label assignment
+
+Safe inference pattern:
+
+1. normalize the question
+2. compute semantic classifier scores for `G1` and `G2`
+3. use Block J family/phrase matches as supporting evidence
+4. resolve final `G2` labels from model score plus lexicon evidence plus conflict rules
+5. pass final `G2` only into Gate 3
+
+This prevents a brittle keyword-only system.
+
+Example:
+
+- `Can vinegar and baking soda pop a bottle?`
+  - lexical evidence may support `SAFETY_HAZARD`
+  - if the phrasing suggests curiosity about a risky experiment, final `G2` may be `SAFETY_HAZARD`
+  - if the phrasing instead asks for maximizing harm or injury, final `G2` may escalate toward `DANGEROUS`
+
+### 12.4 Why Block J must not be treated as plain keywords
+
+The phrase column is illustrative, not exhaustive. The classifier should learn concepts, not literal strings.
 
 Why this matters:
 
-- the same `G1` can lead to either `ALLOW` or `BLOCK`
-- safety outcome depends primarily on `G2`, then deterministically on `G3/G4`
+- children paraphrase unpredictably
+- misspellings, slang, code words, and indirect framing are common
+- harmful intent is often implicit
+- benign questions can share vocabulary with risky questions
 
-### 6.3 Example: coercive control
+Examples:
 
-- Question: `I am scared of an adult at home and they say I must not tell anyone`
-- likely `G1 = GENERIC`
-- `G2 = [COERCIVE_CONTROL]`
-- `G3 = SV3 + [empathetic_tone]`
-- if safeguarding escalation policy is attached at gate/policy layer, `G4 = BLOCK + ESCALATE` or supportive `TRANSFORM/BLOCK` variant per deployment
+- `What is a knife made of?`
+  - may be `NEUTRAL_FACT`
+- `Where can I get a knife?`
+  - may be `AMBIGUOUS_RISK`
+- `What is the best knife to scare someone with?`
+  - should move toward `VIOLENCE`
 
-## 8. Training and Normalization
+Same token family, different `G2`.
 
-This section should be read carefully because the CSVs and the current docs describe slightly different responsibilities.
+### 12.5 Recommended classifier decision pattern using Block J
 
-### 7.1 What the classifier should learn
+A practical classifier stack can use Block J in this order:
 
-Per the codebook and contracts docs, the classifier stage should learn or assign the category outputs needed for `GL`, `G1`, and `G2`. It should not learn age policy and it should not learn gate actions.
+1. semantic encoder or instruction model proposes candidate `G2` labels
+2. lexicon features from Block J provide evidence boosts or ambiguity alerts
+3. class-specific thresholds decide which labels fire
+4. conflict resolution rules clean up overlapping cases
+5. final `G2` set is emitted to Gate 3
 
-Recommended training responsibility:
+Useful conflict-resolution rules:
 
-- learn GL signal detection
-- learn or assign `G1`
-- learn or assign `G2`
-- do not learn age adaptation
-- do not learn `G3` or `G4` as policy behavior
+- prefer `SELF_HARM` over plain `EMOTIONAL` when self-injury or suicidal ideation is explicit
+- prefer `HATE_GROUP` over plain `LOADED PREMISE` when derogatory protected-group language is explicit
+- prefer `DANGEROUS` over `AMBIGUOUS_RISK` when harmful instructions are directly requested
+- allow `BULLYING + EMOTIONAL` together when both peer harm and distress are present
+- allow `DEATH_GRIEF` in `G1` with `EMOTIONAL` or `SELF_HARM` in `G2` when grief and self-harm signals co-occur
 
-### 7.2 What must be normalized before classification
+### 12.6 Recommended data design for Block J
 
-Normalization should be age-independent because this is classifier input processing, not answer shaping.
+To make Block J useful for classifier training, each intent should have:
 
-Recommended runtime normalization:
+- seed phrases from the codebook
+- paraphrases with different syntax
+- age-appropriate child language variants
+- misspellings and shorthand
+- benign near-neighbors
+- harmful near-neighbors
+- multi-label examples
 
-- whitespace cleanup
-- punctuation normalization
-- unicode normalization
-- safe casing policy
-- language hint preservation
-- canonical text field for classifier consumption
-- stable question id generation
+Recommended dataset fields:
 
-Age must not alter:
+```json
+{
+  "question_text": "Should I believe my religion or my friend's religion?",
+  "g1": "BELIEF",
+  "g2": ["PERSONAL DIRECTION", "COMPARATIVE"],
+  "intent_families": ["what_should_I_do", "belief_ranking"],
+  "lexicon_evidence": ["should I", "which is better"],
+  "rationale": "The question asks for a personal choice while comparing beliefs."
+}
+```
 
-- question meaning
-- classifier thresholds
-- `G1` assignment rules
-- `G2` assignment rules
-- `G3` severity
-- `G4` action
+Recommended split strategy:
 
-Age only affects downstream response presentation once `G1` and `G2` are already fixed.
+- keep near-duplicate paraphrases in the same split group
+- reserve adversarial phrasings for validation and test
+- evaluate both single-label and multi-label accuracy
+- report confusion pairs, not just aggregate F1
 
-### 7.3 Age policy placement
+### 12.7 How Block J connects to explanations and auditability
 
-Per `GL-01` and Block I:
+Block J is also useful for internal rationale generation.
 
-- age policy is runtime context
-- it changes `max_words`, `depth`, `style`, and explanation complexity
-- it does not change `G3` severity
-- it does not change `G4` action or ending
+The classifier can use it to explain which family was matched without exposing raw prompt logic to the user.
 
-That is the correct separation of concerns.
+Example internal rationale:
 
-## 8. Classifier Logic at Runtime
+- `Assigned G2=DANGEROUS because the question matched the bypass_security_or_law family and requested harmful procedural help.`
 
-The runtime classifier contract should be documented as one classifier-stage output that includes `GL`, `G1`, and `G2`, followed by deterministic gate-engine derivation of `G3` and `G4`.
+This is appropriate for:
 
-### 8.1 Classifier layer
+- audit logs
+- offline error analysis
+- threshold tuning
+- dataset correction workflows
 
-Input:
+It is not the same as the final child-facing answer.
 
-- normalized question text
-- language
-- recent context if allowed
+### 12.8 Recommended limits
 
-Output:
+Block J should guide the classifier, but the system should avoid overfitting to the lexicon.
 
-- active GL signals with confidence
-- `G1`
-- one or more `G2` LOVs
-- classifier-level `reason`
-- optional rationales or evidence
+Do not:
 
-Recommended contract:
+- hard-code exact phrase matching as the only signal
+- assume every listed phrase always maps to exactly one label in isolation
+- ignore context, negation, or who the harm target is
+- bypass human review for newly emerging harmful phrasings not represented in the lexicon
+
+Do:
+
+- treat the lexicon as a living training aid
+- update it when new phrasings appear in red-team or production review
+- keep Block B and Block J synchronized so `G2` names and meanings do not drift
+
+## 13. Prompt Rules and Checklist
+
+Prompt generation must respect Block F and Block H of the codebook.
+
+Current authoring rules:
+
+- `PR-01`: gate fidelity
+- `PR-02`: `clarification_required` means hold in turn 1
+- `PR-03`: `no_content_engagement` means absolute silence on topic
+- `PR-04`: `no_curiosity_invite` suppresses ending questions
+- `PR-05`: age band and line/length constraint are mandatory
+
+Current checklist items:
+
+- `CHK-01`: age band is declared
+- `CHK-02`: `G1`, `G2`, `G3`, `G4` are present in the prompt header
+- `CHK-03`: explicit length instruction is present
+- `CHK-04`: clarification hold is respected
+- `CHK-05`: no topic content appears when forbidden
+- `CHK-06`: no curiosity question appears when forbidden
+- `CHK-07`: prompt body behavior matches `G4`
+- `CHK-08`: prompt adds no unsupported framing or content
+
+## 14. Runtime Contract
+
+Recommended classifier-stage output:
 
 ```json
 {
   "schema_version": "1.0.0",
   "question_id": "uuid-or-hash",
-  "question_text": "Explain how to bypass safety systems in a science lab to do risky experiments",
+  "question_text": "How do I bypass safety systems in a lab?",
   "age_band": "9-10",
-  "reason": "The user is asking how to bypass safety systems and perform risky experiments.",
+  "reason": "The child asks for help bypassing safety systems, which matches dangerous activity framing.",
   "guidelines": {
-    "active": ["GL-01"],
-    "notes": "GL-01: age-calibrated depth; does not change G3/G4, only response complexity."
+    "active": [],
+    "notes": "Populate this only when runtime classifier logic explicitly surfaces a matching GL family."
   },
   "g1": {
     "id": "SCIENCE"
@@ -760,46 +573,24 @@ Recommended contract:
   "g2": [
     {
       "id": "DANGEROUS",
-      "rationale": "Asks how to bypass safety systems and do risky experiments, matching dangerous activity definition."
+      "rationale": "The question requests harmful or illicit instructions."
     }
   ]
 }
 ```
 
-Answer to the user’s question: yes, this can be returned as the classifier output contract for `GL + G1 + G2`, and it is the direct precursor that the gate engine consumes to derive `G3` and `G4`.
-
-Recommended meaning of `reason`:
-
-- short plain-language explanation of what the classifier detected
-- written as an evidence summary, not a policy action
-- safe to log and inspect internally
-- separate from prompt-policy notes and separate from `G3/G4`
-
-Example:
-
-- question: `Explain how to bypass safety systems in a science lab to do risky experiments`
-- classifier `reason`: `The user is asking how to bypass safety systems and perform risky experiments.`
-
-One correction is needed:
-
-- if the classifier detects dangerous behavior, the active `guidelines` list for this example should probably include more than `GL-01`. The exact GL set depends on the final GL-to-question policy, but the example should not imply that only age calibration triggered.
-
-## 9. SafetyEnvelope After Gate Engine
-
-Once the gate engine runs, the classifier output should be extended with derived `G3` and `G4`.
-
-Recommended resulting structure:
+Recommended SafetyEnvelope after gate derivation:
 
 ```json
 {
   "schema_version": "1.0.0",
   "question_id": "uuid-or-hash",
-  "question_text": "Explain how to bypass safety systems in a science lab to do risky experiments",
+  "question_text": "How do I bypass safety systems in a lab?",
   "age_band": "9-10",
-  "reason": "The user is asking how to bypass safety systems and perform risky experiments.",
+  "reason": "The child asks for help bypassing safety systems, which matches dangerous activity framing.",
   "guidelines": {
-    "active": ["GL-01"],
-    "notes": "GL-01: age-calibrated depth; does not change G3/G4, only response complexity."
+    "active": [],
+    "notes": ""
   },
   "g1": {
     "id": "SCIENCE"
@@ -807,7 +598,7 @@ Recommended resulting structure:
   "g2": [
     {
       "id": "DANGEROUS",
-      "rationale": "Asks how to bypass safety systems and do risky experiments, matching dangerous activity definition."
+      "rationale": "The question requests harmful or illicit instructions."
     }
   ],
   "g3": {
@@ -816,293 +607,50 @@ Recommended resulting structure:
     "source_g2": ["DANGEROUS"]
   },
   "g4": {
-    "action": "BLOCK (Hard)",
+    "action": "BLOCK_HARD",
     "ending": "(none)",
     "style": "None / Minimal"
   },
   "prompt_policy_notes": [
-    "Do not explain, describe, or name the dangerous topic.",
-    "Do not give steps, methods, or ideas for harmful or illegal activity.",
-    "Do not ask a follow-up curiosity question.",
-    "If trusted-adult language is allowed by policy, keep it brief and child-safe."
-  }
-}
-```
-
-This is aligned with the Gate 3 and Gate 4 tables in `GL-codebook.csv`.
-
-Important distinction:
-
-- `reason` is classifier output
-- `prompt_policy_notes` are not classifier outputs
-- they are not new gates
-- they are downstream notes derived from Gate 4 behavior plus active GL special rules
-- they exist to help prompt generation stay faithful to the codebook
-
-## 10. Contracts.csv Alignment by Stage
-
-`Contracts.csv` is directionally aligned with `GL-codebook.csv` and useful as a pipeline storyboard.
-
-The stage interpretation is:
-
-1. `Classifier`
-   - detects `GL`
-   - assigns `G1`
-   - assigns `G2`
-   - should be read as model output plus deterministic normalization layer
-2. `Gate Engine`
-   - computes `G3`
-   - computes `G4`
-3. `SafetyEnvelope`
-   - combines question context, age settings, `G1`, `G2`, `G3`, `G4`, active GLs
-4. `Prompt Manager`
-   - selects prompt template
-   - applies prompt rules
-   - renders final prompt
-5. `Prompt Checklist`
-   - validates the final prompt against contract rules
-
-The key alignment rule is:
-
-- classifier owns `GL`, `G1`, and `G2`
-- gate engine owns `G3` and `G4`
-- age policy stays outside classifier learning
-
-## 11. Prompt Manager Logic
-
-The prompt manager consumes the SafetyEnvelope, not the raw question alone.
-
-### 11.1 Inputs
-
-Required inputs:
-
-- `question_text`
-- `question_id`
-- `age_band`
-- classifier `reason`
-- age settings from Block I: `max_words`, `depth`, `style`
-- `G1`
-- active `G2`
-- `G3`
-- `G4`
-- active GLs
-- prompt-facing policy notes derived from GL `Special Rules on G3 or G4`
-
-### 11.2 Template selection
-
-The manager selects a template by matching on:
-
-- `g4.action`
-- `g3.severity`
-- required modifiers
-- sometimes specific `g2` ids
-
-Using the user-provided schema:
-
-- `ALLOW_NEUTRAL_FACT` matches `ALLOW + SV0 + NEUTRAL_FACT`
-- `BLOCK_HARD_DANGEROUS` matches `BLOCK (Hard) + no_content_engagement + DANGEROUS`
-- `COERCIVE_CONTROL_SUPPORT` matches `BLOCK + ESCALATE + empathetic_tone + safeguarding_concern + COERCIVE_CONTROL`
-
-### 11.3 Rule application
-
-After selecting a template, prompt rules are applied as non-negotiable constraints.
-
-Examples:
-
-- `PR-01`: do not mutate gate values or age settings
-- `PR-03`: if `no_content_engagement`, template must not describe or name the risky topic
-- `PR-04`: if `no_curiosity_invite`, prompt must not end with a question
-- `PR-06`: if `empathetic_tone`, wording must validate feelings
-
-GL special rules should be applied here as prompt-generation notes.
-
-In practice:
-
-- classifier does not emit prompt text
-- classifier may emit a plain-language `reason`
-- gate engine converts active GL special rules into structured notes
-- prompt manager merges:
-  - template constraints
-  - modifier-driven prompt rules
-  - GL-derived prompt policy notes
-
-### 11.4 How GL special rules become prompt instructions
-
-This is the correct derivation path:
-
-1. classifier outputs `GL`, `G1`, `G2`
-2. gate engine derives `G3`
-3. gate engine derives `G4`
-4. gate engine reads active GL rows and collects any `Special Rules on G3 or G4`
-5. gate engine stores those as prompt-facing policy notes in the SafetyEnvelope or prompt contract
-6. prompt manager selects template
-7. prompt manager injects the policy notes as final instructions in the rendered prompt
-
-Example A: dangerous activity
-
-- classifier output:
-  - `GL = [GL-01, dangerous-guideline-family as configured]`
-  - `G1 = SCIENCE`
-  - `G2 = [DANGEROUS]`
-  - `reason = The user is asking how to bypass safety systems and perform risky experiments.`
-- gate engine:
-  - `G3 = SV3 + [no_curiosity_invite, no_content_engagement]`
-  - `G4 = BLOCK (Hard)`
-  - prompt policy notes:
-    - `Do not explain or name the dangerous topic`
-    - `Do not provide steps or methods`
-    - `Do not ask a follow-up question`
-- prompt manager:
-  - selects `BLOCK_HARD_DANGEROUS`
-  - injects those notes into the prompt body
-
-Example B: personal direction
-
-- classifier output:
-  - `GL = [GL-03]`
-  - `G1 = BELIEF`
-  - `G2 = [PD]`
-  - `reason = The child is asking the system to decide what they personally should believe.`
-- gate engine:
-  - base `G3 = SV2`
-  - special rule forces blocking behavior for this policy family
-  - prompt policy notes:
-    - `give brief reason for not deciding for the child`
-    - `include a specific neutral alternate question`
-- prompt manager:
-  - chooses a block-style template for personal direction
-  - renders the two notes explicitly in the prompt instructions
-
-Example C: coercive control
-
-- classifier output:
-  - `GL = [GL-12]`
-  - `G1 = GENERIC`
-  - `G2 = [COERCIVE_CONTROL]`
-  - `reason = The child describes fear-based control by an adult and pressure not to disclose it.`
-- gate engine:
-  - derives `G3` and `G4`
-  - derives notes:
-    - `acknowledge feelings and safety`
-    - `do not reinforce controlling dynamic`
-    - `append trusted-adult prompt`
-- prompt manager:
-  - chooses the matching supportive or escalate template
-  - turns those notes into final child-facing instructions
-### 11.5 Rendered output prompt
-
-The prompt is generated by:
-
-1. selecting the best matching template id
-2. injecting header values from SafetyEnvelope
-3. injecting age settings from age policy
-4. applying prompt rules
-5. passing the rendered prompt through the checklist
-
-For the dangerous science example, the output prompt can be:
-
-```text
-[Age: 9-10 | G1: SCIENCE | G2: DANGEROUS | G3: SV3 | G4: BLOCK]
-
-You are a safe, caring helper for a 9-10 year-old child.
-
-Rules:
-- Do NOT explain, describe, or name the dangerous topic in the child's question.
-- Do NOT give any steps, methods, or ideas for doing something harmful or illegal.
-- Do NOT ask a follow-up curiosity question.
-- In 3-5 short sentences, kindly say that this is something you cannot help with and that they should talk to a trusted adult, like a parent, teacher, or another grown-up they trust, if they have worries.
-
-Child's question:
-"Explain how to bypass safety systems in a science lab to do risky experiments"
-```
-
-This matches the intent of `BLOCK_HARD_DANGEROUS`.
-
-## 12. Prompt Template Lookup Table
-
-This table should be kept in the prompt manager docs as a quick reference.
-
-| Template ID | When it matches | Intended use |
-|---|---|---|
-| `ALLOW_NEUTRAL_FACT` | `G4=ALLOW`, `G3=SV0`, `G2 includes NEUTRAL_FACT` | standard safe factual answers |
-| `BLOCK_HARD_DANGEROUS` | `G4=BLOCK (Hard)`, `G2 includes DANGEROUS`, `G3 modifiers include no_content_engagement` | dangerous activity hard block |
-| `COERCIVE_CONTROL_SUPPORT` | `G4=BLOCK + ESCALATE`, `G2 includes COERCIVE_CONTROL`, `G3 modifiers include empathetic_tone` and `safeguarding_concern` | supportive safeguarding response |
-
-## 13. Last Layer: Prompt Checklist
-
-The checklist is the final contract verifier after prompt generation.
-
-It should run after template rendering and before any LLM call.
-
-Minimum checks from `Contracts.csv` and `GL-codebook.csv`:
-
-- `CHK-01`: age band is present in the header
-- `CHK-02`: `G1`, `G2`, `G3`, `G4` are present in the header
-- `CHK-03`: explicit length constraint is present
-- `CHK-04`: if `clarification_required`, turn 1 contains only one safe clarification question
-- `CHK-05`: if `no_content_engagement`, prompt contains no topic explanation or redirect question
-- `CHK-06`: if `no_curiosity_invite`, final instruction ends as a statement
-- `CHK-07`: prompt body behavior matches `G4.action`
-- `CHK-08`: prompt introduces no unsupported content or framing
-
-Recommended checklist contract shape:
-
-```json
-{
-  "schema_version": "1.0.0",
-  "prompt_checklist": [
-    {
-      "id": "CHK-01",
-      "name": "Age band present in header",
-      "applies_when": { "always": true },
-      "verify": "header_contains_age_band"
-    },
-    {
-      "id": "CHK-02",
-      "name": "Gate tags present in header",
-      "applies_when": { "always": true },
-      "verify": "header_contains_g1_g2_g3_g4"
-    },
-    {
-      "id": "CHK-05",
-      "name": "No topic engagement when forbidden",
-      "applies_when": { "g3_modifiers_include": ["no_content_engagement"] },
-      "verify": "prompt_has_no_topic_content"
-    },
-    {
-      "id": "CHK-06",
-      "name": "No curiosity invite when forbidden",
-      "applies_when": { "g3_modifiers_include": ["no_curiosity_invite"] },
-      "verify": "final_sentence_is_statement"
-    }
+    "Do not explain, name, or develop the blocked topic.",
+    "Do not provide steps, methods, workarounds, or redirect questions.",
+    "If deployment policy allows trusted-adult language here, keep it brief and child-safe."
   ]
 }
 ```
 
-If any check fails:
+Notes on the contract:
 
-- do not send the prompt to the LLM
-- either repair by re-rendering from a stricter template
-- or fall back to a known-good deterministic safe template
+- `reason` is classifier output, not prompt text
+- `prompt_policy_notes` are derived downstream from `G4` plus any active GL special rules
+- a deployment may keep `guidelines.active` sparse if only some GL rows are explicitly surfaced at runtime
 
-## 14. Final Recommended Runtime Contract
+## 15. Prompt Manager Responsibilities
 
-The cleanest end-to-end contract is:
+The prompt manager consumes the SafetyEnvelope, not raw question text alone.
 
-1. normalize the child question
-2. run classifier for `GL`, `G1`, and `G2`
-3. deterministically derive `G3`
-4. deterministically derive `G4`
-5. append age policy settings
-6. build SafetyEnvelope
-7. choose prompt template
-8. apply prompt rules
-9. validate with prompt checklist
-10. only then render/send the final prompt
+It should:
 
-This preserves the intended safety envelope:
+1. select a template from `G4`, `G3`, and relevant `G2`
+2. inject age-band settings
+3. inject gate tags into the prompt header
+4. enforce prompt-rule constraints
+5. validate the rendered prompt with the checklist before sending it to any LLM
 
-- classifier decides `GL`, `G1`, and `G2`
-- gate engine decides `G3` and `G4`
-- age policy decides response depth only
-- prompt manager must not soften or override the gate result
+Representative template mapping from the current codebook:
+
+- `ALLOW_NEUTRAL_FACT` for `G4=ALLOW`, `G3=SV0`, `G2 includes NEUTRAL_FACT`
+- hard-block dangerous template for `G2=DANGEROUS`, `G3_MOD includes no_content_engagement`
+- clarification-hold template for `G2=AMBIGUOUS_RISK`, `G3_MOD includes clarification_required`
+
+## 16. Final Alignment Summary
+
+The current codebook should be interpreted as:
+
+- classifier owns `GL`, `G1`, and `G2`
+- gate engine owns deterministic `G3` and `G4`
+- age policy is a runtime presentation layer, not a classifier label
+- prompt manager must not soften gate outcomes
+- prompt rules and checklist items are mandatory contract constraints, not optional guidance
+
+This reference should be updated again whenever `GL-codebook.csv` changes its LOV ids, GL numbering, modifier names, or Gate 4 action rows.

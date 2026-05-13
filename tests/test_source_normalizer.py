@@ -185,3 +185,25 @@ def test_canonical_jsonl_writes_split_and_vocab_metadata(tmp_path: Path) -> None
     vocab = json.loads(vocab_path.read_text(encoding="utf-8"))
     assert "train_ids" in splits
     assert "gl_columns" in vocab
+    assert "topic" in vocab
+    assert "School" in vocab["topic"]
+
+
+def test_canonical_jsonl_preserves_topic_column(tmp_path: Path) -> None:
+    source_path = tmp_path / "school-learning.csv"
+    target_jsonl = tmp_path / "canonical.jsonl"
+    _write_current_authoring_sheet(source_path)
+
+    write_canonical_jsonl_with_metadata(
+        source_path=source_path,
+        target_path=target_jsonl,
+    )
+
+    rows = [
+        json.loads(line)
+        for line in target_jsonl.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+
+    assert rows
+    assert rows[0]["topic"] == "School"

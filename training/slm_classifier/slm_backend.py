@@ -285,12 +285,14 @@ def _compute_multilabel_pos_weight(rows: list[dict[str, Any]], vocab: list[str],
 
 
 def _compute_sample_weights(rows: list[dict[str, Any]], label_vocab: dict[str, list[str]]) -> list[float]:
+    topic_counts = {value: 0 for value in label_vocab["topic"]}
     g1_counts = {value: 0 for value in label_vocab["g1"]}
     g2_counts = {value: 0 for value in label_vocab["g2"]}
     gl_positive_counts = {column: 0 for column in GL_COLUMNS}
     total = max(len(rows), 1)
 
     for row in rows:
+        topic_counts[str(row["topic"])] += 1
         g1_counts[str(row["g1"])] += 1
         for value in parse_g2_values(row.get("g2_all", row.get("g2", []))):
             if value in g2_counts:
@@ -301,6 +303,7 @@ def _compute_sample_weights(rows: list[dict[str, Any]], label_vocab: dict[str, l
 
     weights: list[float] = []
     for row in rows:
+        topic_weight = total / max(topic_counts[str(row["topic"])], 1)
         g1_weight = total / max(g1_counts[str(row["g1"])], 1)
         active_g2_weights = [
             total / max(g2_counts[value], 1)
@@ -314,7 +317,7 @@ def _compute_sample_weights(rows: list[dict[str, Any]], label_vocab: dict[str, l
             if int(row[column]) == 1
         ]
         gl_weight = max(active_gl_weights) if active_gl_weights else 1.0
-        weights.append(float(max(g1_weight, g2_weight, gl_weight)))
+        weights.append(float(max(topic_weight, g1_weight, g2_weight, gl_weight)))
     return weights
 
 
@@ -324,6 +327,7 @@ class CanonicalSLMDataset(Dataset):  # pragma: no cover - exercised through trai
         self.tokenizer = tokenizer
         self.label_vocab = label_vocab
         self.max_length = max_length
+        self.topic_index = _index_map(label_vocab["topic"])
         self.g1_index = _index_map(label_vocab["g1"])
         self.g2_index = _index_map(label_vocab["g2"])
 
@@ -343,6 +347,7 @@ class CanonicalSLMDataset(Dataset):  # pragma: no cover - exercised through trai
             "input_ids": encoded["input_ids"].squeeze(0),
             "attention_mask": encoded["attention_mask"].squeeze(0),
             "gl_labels": torch.tensor([float(row[column]) for column in GL_COLUMNS], dtype=torch.float32),
+            "topic_label": torch.tensor(self.topic_index[str(row["topic"])], dtype=torch.long),
             "g1_label": torch.tensor(self.g1_index[str(row["g1"])], dtype=torch.long),
             "g2_label": torch.tensor(self.g2_index[str(row["g2"])], dtype=torch.long),
             "g2_all_labels": torch.tensor(
@@ -362,6 +367,7 @@ class MultiTaskSLMClassifier(nn.Module):  # pragma: no cover - exercised through
         hidden_size = int(self.backbone.config.hidden_size)
         self.dropout = nn.Dropout(0.1)
         self.gl_head = nn.Linear(hidden_size, len(label_vocab["gl_columns"]))
+        self.topic_head = nn.Linear(hidden_size, len(label_vocab["topic"]))
         self.g1_head = nn.Linear(hidden_size, len(label_vocab["g1"]))
         self.g2_head = nn.Linear(hidden_size, len(label_vocab["g2"]))
         self.g2_all_head = nn.Linear(hidden_size, len(label_vocab["g2"]))
@@ -387,6 +393,7 @@ class MultiTaskSLMClassifier(nn.Module):  # pragma: no cover - exercised through
         pooled = self.dropout(pooled)
         return {
             "gl_logits": self.gl_head(pooled),
+            "topic_logits": self.topic_head(pooled),
             "g1_logits": self.g1_head(pooled),
             "g2_logits": self.g2_head(pooled),
             "g2_all_logits": self.g2_all_head(pooled),
@@ -430,18 +437,20 @@ def _compute_loss(
     outputs: dict[str, Any],
     batch: dict[str, Any],
     gl_loss_fn: Any,
+    topic_loss_fn: Any,
     g1_loss_fn: Any,
     g2_loss_fn: Any,
     g2_all_loss_fn: Any,
 ) -> Any:
     gl_loss = gl_loss_fn(outputs["gl_logits"], batch["gl_labels"])
+    topic_loss = topic_loss_fn(outputs["topic_logits"], batch["topic_label"])
     g1_loss = g1_loss_fn(outputs["g1_logits"], batch["g1_label"])
     g2_loss = g2_loss_fn(outputs["g2_logits"], batch["g2_label"])
     g2_all_loss = g2_all_loss_fn(outputs["g2_all_logits"], batch["g2_all_labels"])
-    return (1.0 * gl_loss) + (1.0 * g1_loss) + (2.0 * g2_loss) + (0.75 * g2_all_loss)
+    return (1.0 * gl_loss) + (1.0 * topic_loss) + (1.0 * g1_loss) + (2.0 * g2_loss) + (0.75 * g2_all_loss)
 
 
-def _evaluate_loss(model: Any, loader: Any, gl_loss_fn: Any, g1_loss_fn: Any, g2_loss_fn: Any, g2_all_loss_fn: Any) -> float:
+def _evaluate_loss(model: Any, loader: Any, gl_loss_fn: Any, topic_loss_fn: Any, g1_loss_fn: Any, g2_loss_fn: Any, g2_all_loss_fn: Any) -> float:
     model.eval()
     total_loss = 0.0
     total_batches = 0
@@ -449,7 +458,7 @@ def _evaluate_loss(model: Any, loader: Any, gl_loss_fn: Any, g1_loss_fn: Any, g2
         for batch in loader:
             batch = {key: value.to(_device(getattr(model.backbone, "name_or_path", None))) for key, value in batch.items()}
             outputs = model(input_ids=batch["input_ids"], attention_mask=batch["attention_mask"])
-            loss = _compute_loss(outputs, batch, gl_loss_fn, g1_loss_fn, g2_loss_fn, g2_all_loss_fn)
+            loss = _compute_loss(outputs, batch, gl_loss_fn, topic_loss_fn, g1_loss_fn, g2_loss_fn, g2_all_loss_fn)
             total_loss += float(loss.item())
             total_batches += 1
     return total_loss / total_batches if total_batches else 0.0
@@ -587,6 +596,7 @@ def train_slm_classifier(
             model.unfreeze_backbone()
             print(f"{log_prefix} init: backbone_frozen=false")
         gl_pos_weight = torch.tensor(_compute_pos_weight(train_rows), dtype=torch.float32, device=device)
+        topic_weights = torch.tensor(_compute_class_weights(train_rows, "topic", label_vocab["topic"]), dtype=torch.float32, device=device)
         g1_weights = torch.tensor(_compute_class_weights(train_rows, "g1", label_vocab["g1"]), dtype=torch.float32, device=device)
         g2_weights = torch.tensor(_compute_class_weights(train_rows, "g2", label_vocab["g2"]), dtype=torch.float32, device=device)
         g2_pos_weight = torch.tensor(
@@ -595,6 +605,7 @@ def train_slm_classifier(
             device=device,
         )
         gl_loss_fn = nn.BCEWithLogitsLoss(pos_weight=gl_pos_weight)
+        topic_loss_fn = nn.CrossEntropyLoss(weight=topic_weights)
         g1_loss_fn = nn.CrossEntropyLoss(weight=g1_weights)
         g2_loss_fn = nn.CrossEntropyLoss(weight=g2_weights)
         g2_all_loss_fn = nn.BCEWithLogitsLoss(pos_weight=g2_pos_weight)
@@ -626,7 +637,7 @@ def train_slm_classifier(
                 batch = {key: value.to(device) for key, value in batch.items()}
                 optimizer.zero_grad()
                 outputs = model(input_ids=batch["input_ids"], attention_mask=batch["attention_mask"])
-                loss = _compute_loss(outputs, batch, gl_loss_fn, g1_loss_fn, g2_loss_fn, g2_all_loss_fn)
+                loss = _compute_loss(outputs, batch, gl_loss_fn, topic_loss_fn, g1_loss_fn, g2_loss_fn, g2_all_loss_fn)
                 loss.backward()
                 optimizer.step()
                 running_loss += float(loss.item())
@@ -637,7 +648,7 @@ def train_slm_classifier(
                         f"loss={loss.item():.4f} avg_loss={avg_loss:.4f} "
                         f"batch_time={time.perf_counter() - batch_start:.2f}s"
                     )
-            dev_loss = _evaluate_loss(model, dev_loader, gl_loss_fn, g1_loss_fn, g2_loss_fn, g2_all_loss_fn) if len(dev_rows) else 0.0
+            dev_loss = _evaluate_loss(model, dev_loader, gl_loss_fn, topic_loss_fn, g1_loss_fn, g2_loss_fn, g2_all_loss_fn) if len(dev_rows) else 0.0
             print(
                 f"{log_prefix} epoch {epoch_index + 1} summary "
                 f"train_avg_loss={running_loss / max(len(train_loader), 1):.4f} "
@@ -709,8 +720,11 @@ def _load_trained_model(model_dir: Path, package: LoadedSLMPackage) -> tuple[Any
             os.environ["HF_HUB_OFFLINE"] = previous_hf_offline
     state_dict = torch.load(model_dir / "pytorch_model.bin", map_location=device)
     has_new_g2_all_head = "g2_all_head.weight" in state_dict and "g2_all_head.bias" in state_dict
+    has_topic_head = "topic_head.weight" in state_dict and "topic_head.bias" in state_dict
     if not has_new_g2_all_head:
         raise RuntimeError("Incompatible checkpoint format: missing g2_all_head. Retrain the SLM classifier with the updated dual-head G2 architecture.")
+    if not has_topic_head:
+        raise RuntimeError("Incompatible checkpoint format: missing topic_head. Retrain the SLM classifier with topic labels enabled.")
     model.load_state_dict(state_dict)
     model = model.float().to(device)
     model.eval()
@@ -752,8 +766,11 @@ def _load_trained_model_on_device(model_dir: Path, package: LoadedSLMPackage, de
             os.environ["HF_HUB_OFFLINE"] = previous_hf_offline
     state_dict = torch.load(model_dir / "pytorch_model.bin", map_location=device)
     has_new_g2_all_head = "g2_all_head.weight" in state_dict and "g2_all_head.bias" in state_dict
+    has_topic_head = "topic_head.weight" in state_dict and "topic_head.bias" in state_dict
     if not has_new_g2_all_head:
         raise RuntimeError("Incompatible checkpoint format: missing g2_all_head. Retrain the SLM classifier with the updated dual-head G2 architecture.")
+    if not has_topic_head:
+        raise RuntimeError("Incompatible checkpoint format: missing topic_head. Retrain the SLM classifier with topic labels enabled.")
     model.load_state_dict(state_dict)
     model = model.float().to(device)
     model.eval()
@@ -764,6 +781,7 @@ def _decision_from_predictions(
     normalized: dict[str, object],
     package: LoadedSLMPackage,
     model_dir: Path,
+    topic: str,
     g1: str,
     primary_g2: str,
     g2_values: list[str],
@@ -779,7 +797,6 @@ def _decision_from_predictions(
     modifiers = gate_mapper.g3_modifiers(g3_inputs)
     g3 = gate_mapper.map_g3(g3_inputs)
     g4 = gate_mapper.map_g4(g3, g2_list, modifiers)
-    topic = heuristic_classifier.classify_topic(heuristic_classifier.normalize(question))
     active_gls = sorted(gl_id for gl_id, score in gl_scores.items() if score >= package.thresholds.get(gl_id, package.thresholds.get("default", 0.5)))
     if "GL-01" not in active_gls:
         active_gls.insert(0, "GL-01")
@@ -915,9 +932,13 @@ def build_decision_from_slm(normalized: dict[str, object], model_dir: Path | Non
     encoded = {key: value.to(inference_device) for key, value in encoded.items()}
     outputs, inference_device = _run_model_with_device_fallback(model, encoded, resolved_dir, package)
     gl_probs = torch.sigmoid(outputs["gl_logits"]).squeeze(0).cpu().tolist()
+    topic_probs = torch.softmax(outputs["topic_logits"], dim=-1).squeeze(0).cpu().tolist()
+    topic_idx = int(torch.argmax(outputs["topic_logits"], dim=-1).item())
     g1_idx = int(torch.argmax(outputs["g1_logits"], dim=-1).item())
     g2_primary_probs = torch.softmax(outputs["g2_logits"], dim=-1).squeeze(0).cpu().tolist()
     g2_all_probs = torch.sigmoid(outputs["g2_all_logits"]).squeeze(0).cpu().tolist()
+    topic_vocab = list(package.label_vocab.get("topic", []))
+    topic = topic_vocab[topic_idx] if topic_vocab and topic_idx < len(topic_vocab) else heuristic_classifier.classify_topic(heuristic_classifier.normalize(str(normalized.get("text", ""))))
     gl_scores = {
         gl_id.upper().replace("_", "-"): float(score)
         for gl_id, score in zip(package.label_vocab["gl_columns"], gl_probs)
@@ -932,6 +953,7 @@ def build_decision_from_slm(normalized: dict[str, object], model_dir: Path | Non
         normalized=normalized,
         package=package,
         model_dir=resolved_dir,
+        topic=topic,
         g1=package.label_vocab["g1"][g1_idx],
         primary_g2=primary_g2,
         g2_values=g2_values,
@@ -944,6 +966,7 @@ def build_decision_from_slm(normalized: dict[str, object], model_dir: Path | Non
                 "inference_device": inference_device,
                 "head_confidences": {
                     **decision.classifier_metadata.get("head_confidences", {}),
+                    "topic": {label: float(score) for label, score in zip(topic_vocab, topic_probs)},
                     "G2_primary": {label: float(score) for label, score in zip(package.label_vocab["g2"], g2_primary_probs)},
                     "G2_all": {label: float(score) for label, score in zip(package.label_vocab["g2"], g2_all_probs)},
                 },

@@ -32,6 +32,7 @@ These three docs should be treated as the primary design references for training
 The intended split is:
 
 - The classifier stage detects `GL-01` to `GL-13`.
+- The classifier stage also assigns `topic`.
 - The classifier stage also assigns `G1` and `G2`.
 - `G3` and `G4` are deterministic gate-engine outputs derived from `G2` definitions in `GL-codebook.csv`.
 - Age policy is runtime context only. It must not change classifier labels, `G3` severity, or `G4` action.
@@ -43,6 +44,7 @@ This means training should not treat age as a reason to alter safety category as
 ```json
 {
   "sample_id": "religion_001",
+  "topic": "Belief & Religion",
   "question": "Who is God?",
   "language": "en",
   "recent_context": "none",
@@ -73,7 +75,7 @@ This means training should not treat age as a reason to alter safety category as
 - The training pipeline writes a manifest so unfinished sources are easy to detect before training.
 - Do not use generated prompts or model answers as classifier inputs.
 - Authoring sheets may stay wide and human-friendly, but training ingestion must flatten them to:
-  `sample_id, question, language, recent_context, gl_01..gl_13, g1, g2, g3, g4`
+  `sample_id, topic, question, language, recent_context, gl_01..gl_13, g1, g2, g3, g4`
 - For `docs/Religion-politics-idealogy.csv`, create one training row per question.
 - Keep age-specific reference answers only as optional audit columns; they are not classifier inputs.
 - `GL-codebook.csv` is the canonical dictionary for allowed LOV ids, severity floors, modifier semantics, and age runtime settings.
@@ -82,6 +84,7 @@ This means training should not treat age as a reason to alter safety category as
 ### Training split of responsibility
 
 - Model training learns or predicts `GL`, `G1`, and `G2`.
+- Model training learns or predicts `topic`, `GL`, `G1`, and `G2`.
 - `G1` and `G2` must remain consistent with the LOV dictionary and classifier notes in `GL-codebook.csv`.
 - `G3`, `G4`, response decisions, and prompt contracts are derived deterministically from configs and codebook-driven policy.
 - Prompt templates and checklist logic must not be folded into model training. They belong to prompt-management policy, not classifier learning.
