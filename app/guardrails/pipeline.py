@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from uuid import uuid4
+
 from app.guardrails import (
     age_policy_engine,
     audit_logger,
@@ -12,38 +16,28 @@ from app.guardrails import (
     safe_rewriter,
     slm_classifier,
 )
+from app.guardrails.runtime_contracts import classifier_output_from_decision, gate_output_from_classifier
 from app.llm.model_router import select
 from app.llm.ollama_client import generate
 from app.models.child_profile import ChildProfile
 from app.models.guardrail_decision import GuardrailDecision
 from app.models.schemas import GuardrailRunResponse
-from training.slm_classifier.codebook import parse_codebook
 from training.slm_classifier.runtime_config import load_classifier_runtime_config
 
-
-CODEBOOK = parse_codebook()
 CLASSIFIER_RUNTIME = load_classifier_runtime_config()
-GL_NAME_MAP = {item.gl_id: item.name for item in CODEBOOK.labels}
-GL_PURPOSE_MAP = {item.gl_id: item.purpose for item in CODEBOOK.labels}
-G1_DESCRIPTION_MAP = {
-    "FACT": "Pure descriptive or factual question about how the world works.",
-    "BELIEF": "Question about religion, ideology, worldview, or belief systems.",
-    "DEATH_GRIEF": "Question about death, loss, dying, or grief.",
-    "VIOLENCE": "Question involving violence, conflict, harm, extremism, or dangerous acts.",
-    "SCIENCE": "Question about biology, chemistry, physics, nature, or general science.",
-    "TECHNOLOGY": "Question about computing, internet, AI, devices, or digital systems.",
-    "SAFETY_HAZARD": "Question about dangerous real-world outcomes, accidents, or unsafe interactions.",
-    "CIVIC_LAW": "Question about laws, rules, civic processes, or integrity.",
-    "GENERIC": "Catch-all category for questions that do not clearly fit other G1 values.",
-}
-G4_DESCRIPTION_MAP = {
-    "ALLOW": "Answer directly in an age-appropriate, calm, simple, and factual way.",
-    "TRANSFORM": "Reframe the question safely and answer in an age-appropriate way without over-directing the child.",
-    "TRANSFORM_HOLD": "Ask exactly one safe clarification question before answering.",
-    "BLOCK": "Do not provide instructions or details. Give a safe minimal refusal.",
-    "BLOCK_HARD": "Hard block: no content engagement, no instructions, no alternate topic discussion.",
-    "BLOCK_ESCALATE": "Do not engage the content. Give a safe refusal and escalate toward trusted-adult support.",
-}
+
+
+def _terminal_answer(decision: GuardrailDecision) -> str:
+    gates = decision.gates or decision.gate_values
+    g4 = str(gates.get("G4", "BLOCK"))
+    modifiers = set(decision.prompt_contract.get("modifiers", []))
+    if g4 == "BLOCK_HARD" or "no_content_engagement" in modifiers:
+        return "I can't help with that."
+    if "safeguarding_concern" in modifiers or g4 == "BLOCK_ESCALATE":
+        return "I can't help with that. Please talk to a trusted adult you can reach right now."
+    if "empathetic_tone" in modifiers:
+        return "I'm sorry you're dealing with this. I can't help with that, but you can talk to a trusted adult."
+    return "I can't help with that, but we can talk about something safer."
 
 
 def _g2_score_payload(decision: GuardrailDecision) -> dict[str, object]:
@@ -79,6 +73,8 @@ def _compact_decision(decision: GuardrailDecision) -> dict[str, object]:
     return {
         "input": decision.input,
         "reason": decision.reason,
+        "g1_reason": decision.g1_reason,
+        "g2_reasons": decision.g2_reasons,
         "active_gls": active_gls,
         "gl_signals": active_signals,
         "gates": decision.gates or decision.gate_values,
@@ -164,67 +160,18 @@ def _expanded_prompt(decision: GuardrailDecision, message: str, age_band: str, t
     )
 
 
-def _run_response_from_decision(decision: GuardrailDecision, message: str, stage_outputs: dict[str, object] | None = None) -> GuardrailRunResponse:
-    gates = decision.gates or decision.gate_values
-    topic = str(gates.get("topic", "General Learning"))
-    age_band = str(decision.input.get("age_band", "11-12"))
-    guidelines = list(decision.active_gls or decision.guideline_tags)
-    g1 = str(gates.get("G1", "GENERIC"))
-    g2 = list(gates.get("G2_all", [gates.get("G2", "NEUTRAL_FACT")]))
-    g3 = str(gates.get("G3", "SV0"))
-    g4 = str(gates.get("G4", "ALLOW"))
-    modifiers = list(decision.prompt_contract.get("modifiers", []))
-    raw_prompt = str(decision.prompt_contract.get("generated_prompt", _final_prompt_for_decision(ChildProfile(age=12, age_group=age_band, language="en"), message, decision)))
-    safety_envelope = dict(decision.prompt_contract.get("safety_envelope", {}))
-    template_id = str(decision.prompt_contract.get("template_id", ""))
-    checklist = dict(decision.prompt_contract.get("checklist", {}))
-    g2_scores = _g2_score_payload(decision)
+def _run_response_from_decision(
+    decision: GuardrailDecision,
+    child_profile: ChildProfile,
+    message: str,
+    recent_context: list[str],
+) -> GuardrailRunResponse:
+    prompt = str(decision.prompt_contract.get("generated_prompt") or _final_prompt_for_decision(child_profile, message, decision))
     return GuardrailRunResponse(
-        topic=topic,
         question=message,
-        age_band=age_band,
-        guidelines=guidelines,
-        g1=g1,
-        g2=g2,
-        g3={"severity": g3, "modifiers": modifiers},
-        g4=g4,
-        raw_generated_prompt=raw_prompt,
-        generated_prompt=_expanded_prompt(decision, message, age_band, topic, g1, g2, g3, modifiers, g4, guidelines),
-        metadata={
-            "age_band": age_band,
-            "g1": g1,
-            "g2": g2,
-            "g3": g3,
-            "modifiers": modifiers,
-            "g4": g4,
-            "question": message,
-            "topic": topic,
-            "guidelines": guidelines,
-            "g1_description": G1_DESCRIPTION_MAP.get(g1, g1),
-            "g2_descriptions": [CODEBOOK.g2_specs[item].description for item in g2 if item in CODEBOOK.g2_specs],
-            "g2_scores": g2_scores,
-            "g4_description": G4_DESCRIPTION_MAP.get(g4, g4),
-            "guideline_descriptions": {gl: {"name": GL_NAME_MAP.get(gl, gl), "purpose": GL_PURPOSE_MAP.get(gl, "")} for gl in guidelines},
-            "prompt_template": _templated_prompt(raw_prompt, age_band, g1, g2, g3, modifiers, g4, message),
-            "template_id": template_id,
-            "safety_envelope": safety_envelope,
-            "prompt_checklist": checklist,
-        },
-        classifier={
-            "active_gls": guidelines,
-            "gl_signals": {
-                gl_id: signal.model_dump()
-                for gl_id, signal in decision.gl_signals.items()
-                if gl_id in set(guidelines)
-            },
-            "gates": gates,
-            "g2_scores": g2_scores,
-            "decision": decision.decision,
-            "confidence": decision.confidence,
-            "classifier_metadata": decision.classifier_metadata,
-        },
-        final_policy_bucket=decision.policy_bucket,
-        stage_outputs=dict(stage_outputs or {}),
+        context=list(recent_context),
+        age_band=child_profile.age_group,
+        prompt=prompt,
     )
 
 
@@ -242,26 +189,32 @@ async def run_classification_sequence(
     session_id: str,
     recent_context: list[str],
 ) -> tuple[GuardrailDecision, dict[str, object], list[object]]:
+    trace_id = uuid4().hex
     audit_log = []
-    stage_outputs: dict[str, object] = {}
+    stage_outputs: dict[str, object] = {"trace_id": trace_id}
 
     context = await context_builder.build(child_profile, message, session_id, recent_context)
     stage_outputs["context_builder"] = context
-    audit_logger.log(audit_log, "context_builder", {"session_id": session_id})
+    audit_logger.log(audit_log, trace_id, "context_builder", {"session_id": session_id, "question": message}, "input")
 
     normalized = normalizer.normalize(context)
     stage_outputs["normalizer"] = normalized
-    audit_logger.log(audit_log, "normalizer", {"text": normalized["text"]})
+    audit_logger.log(audit_log, trace_id, "normalizer", {"text": normalized["text"], "resolved_age_band": normalized["resolved_age_band"]}, "output")
 
     rule_decision = rule_filter.check(normalized)
     stage_outputs["rule_filter"] = rule_decision.model_dump() if rule_decision else None
-    audit_logger.log(audit_log, "rule_filter", {"triggered": rule_decision is not None})
+    audit_logger.log(audit_log, trace_id, "rule_filter", {"triggered": rule_decision is not None}, "output")
     if rule_decision and rule_decision.is_terminal:
         return rule_decision, stage_outputs, audit_log
 
     primary_decision = slm_classifier.classify(normalized)
     stage_outputs["slm_classifier"] = _compact_decision(primary_decision)
-    audit_logger.log(audit_log, "slm_classifier", {"confidence": primary_decision.confidence})
+    classifier_output = classifier_output_from_decision(message, ChildProfile(**normalized["child_profile"]), primary_decision)
+    gate_output = gate_output_from_classifier(classifier_output)
+    stage_outputs["classifier_output"] = classifier_output
+    stage_outputs["gate_engine"] = gate_output
+    audit_logger.log(audit_log, trace_id, "classifier", classifier_output, "output")
+    audit_logger.log(audit_log, trace_id, "gate_engine", gate_output, "output")
 
     if CLASSIFIER_RUNTIME.rollout_mode == "shadow":
         shadow_backend = "slm" if CLASSIFIER_RUNTIME.selected_backend != "slm" else "heuristic"
@@ -283,15 +236,15 @@ async def run_classification_sequence(
     if _should_call_llm_safety_classifier(primary_decision, str(normalized["text"]), list(context.get("recent_context", []))):
         safety_decision = llm_safety_classifier.classify(normalized)
     stage_outputs["llm_safety_classifier"] = _compact_decision(safety_decision)
-    audit_logger.log(audit_log, "llm_safety_classifier", {"used_fallback": safety_decision != primary_decision})
+    audit_logger.log(audit_log, trace_id, "llm_safety_classifier", {"used_fallback": safety_decision != primary_decision}, "output")
 
     age_decision = age_policy_engine.apply(child_profile, safety_decision)
     stage_outputs["age_policy_engine"] = _compact_decision(age_decision)
-    audit_logger.log(audit_log, "age_policy_engine", {"parent_visible": age_decision.parent_visible})
+    audit_logger.log(audit_log, trace_id, "age_policy_engine", {"parent_visible": age_decision.parent_visible}, "output")
 
     conversation_decision = conversation_guard.check(session_id, age_decision, context)
     stage_outputs["conversation_guard"] = _compact_decision(conversation_decision)
-    audit_logger.log(audit_log, "conversation_guard", {"safety_category": conversation_decision.safety_category})
+    audit_logger.log(audit_log, trace_id, "conversation_guard", {"safety_category": conversation_decision.safety_category}, "output")
     return conversation_decision, stage_outputs, audit_log
 
 
@@ -313,19 +266,19 @@ async def run_llm_sequence(
 
     rag_context = rag_guard.retrieve_if_allowed(message, child_profile, decision)
     stage_outputs["rag_guard"] = rag_context
-    audit_logger.log(audit_log, "rag_guard", {"chunk_count": len(rag_context)})
+    audit_logger.log(audit_log, stage_outputs["trace_id"], "rag_guard", {"chunk_count": len(rag_context)}, "output")
 
     prompt = prompt_contract.build(child_profile, message, decision, rag_context)
-    stage_outputs["prompt_contract"] = {"prompt_preview": prompt[:220], "prompt": prompt}
-    audit_logger.log(audit_log, "prompt_contract", {"built": True})
+    stage_outputs["prompt_contract"] = dict(decision.prompt_contract.get("prompt_contract_payload", {}))
+    audit_logger.log(audit_log, stage_outputs["trace_id"], "prompt_contract", {"template_id": decision.prompt_contract.get("template_id", ""), "prompt_preview": prompt[:220]}, "output")
 
     model_name = select(decision)
     stage_outputs["model_router"] = {"model_name": model_name}
-    audit_logger.log(audit_log, "model_router", {"model_name": model_name})
+    audit_logger.log(audit_log, stage_outputs["trace_id"], "model_router", {"model_name": model_name}, "output")
 
     raw_answer = await generate(model_name, prompt)
     stage_outputs["answer_model"] = {"raw_answer": raw_answer}
-    audit_logger.log(audit_log, "answer_model", {"llm_called": True})
+    audit_logger.log(audit_log, stage_outputs["trace_id"], "answer_model", {"llm_called": True}, "output")
     return decision, stage_outputs, audit_log, rag_context, prompt, raw_answer
 
 
@@ -341,6 +294,7 @@ async def run_piku_guardrail_pipeline(
         session_id=session_id,
         recent_context=recent_context,
     )
-    stage_outputs.setdefault("output_validator", {"safe_to_show": True, "source": "pipeline_summary"})
-
-    return _run_response_from_decision(decision, message, stage_outputs)
+    prompt = prompt_contract.build(child_profile, message, decision, [])
+    decision.prompt_contract["generated_prompt"] = prompt
+    stage_outputs["audit_log"] = [event.model_dump() for event in audit_log]
+    return _run_response_from_decision(decision, child_profile, message, recent_context)

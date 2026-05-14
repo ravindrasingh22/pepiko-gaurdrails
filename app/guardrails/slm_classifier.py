@@ -50,9 +50,7 @@ G1_RULES = {
 
 G2_RULES = {
     "NEUTRAL_FACT": (r"^(what|why|how|when|where|who|explain|define|tell me)\b",),
-    "PD": (r"\bshould i\b", r"\bwhat should i do\b", r"\bwhich should i choose\b", r"\btell me what is right\b", r"\bhide bad marks\b", r"\bhide this\b", r"\bchupaun\b", r"\bdon't tell my parents\b", r"\bdont tell my parents\b"),
-    "COMPARATIVE": (r"\bwhich .* is better\b", r"\bwhich .* is worse\b", r"\bwho is superior\b", r"\bwhich religion is true\b", r"\bwhich religion is best\b"),
-    "LP": (r"\bwhy are .* bad\b", r"\bwhy do all .*", r"\bare .* always\b"),
+    "PERSONAL_DIRECTION": (r"\bshould i\b", r"\bwhat should i do\b", r"\bwhich should i choose\b", r"\btell me what is right\b", r"\bhide bad marks\b", r"\bhide this\b", r"\bchupaun\b", r"\bdon't tell my parents\b", r"\bdont tell my parents\b"),
     "DANGEROUS": (
         r"\bhow to make .*bomb\b",
         r"\bhow to make .*weapon\b",
@@ -77,17 +75,20 @@ G2_RULES = {
         r"\bfake an injury\b",
         r"\bwaste time\b",
     ),
+    "HATE_GROUP": (r"\bget rid of\b", r"\bdisgusting\b", r"\bdon't deserve rights\b", r"\bdont deserve rights\b"),
     "GROOMING": (r"don't tell.*parents", r"dont tell.*parents", r"keep.*secret.*adult", r"adult.*wants.*meet", r"gave me gifts.*secret", r"older friend", r"secret chat"),
-    "UNSAFE_CONTENT": (r"\bnude\b", r"\bsex video\b", r"\bsend private photo\b", r"\bchild sexual\b", r"\bporn\b"),
+    "UNSAFE_SEXUAL_CONTENT": (r"\bnude\b", r"\bsex video\b", r"\bsend private photo\b", r"\bchild sexual\b", r"\bporn\b"),
     "SELF_HARM": (r"\bhurt myself\b", r"\bwant to die\b", r"\bno reason to live\b", r"\bi want to disappear\b", r"\bsleep forever\b"),
     "BULLYING": (r"\bkids are mean\b", r"\bcalling me names\b", r"\bbully\b", r"\bleft out\b"),
     "EMOTIONAL": (r"\bi feel sad\b", r"\bi am afraid\b", r"\bi am crying\b", r"\bnobody cares\b", r"\bmiss them\b"),
     "AMBIGUOUS_RISK": (r"\bknife\b", r"\bchemical\b", r"\bpassword\b", r"\block\b", r"\bfire\b"),
     "COERCIVE_CONTROL": (r"\bcontrols me\b", r"\bthreatens me\b", r"\bforce me\b", r"\bwon't let me\b", r"\bwont let me\b"),
     "VULN_EXPLOIT": (r"\busing me\b", r"\btaking advantage\b", r"\bmanipulate me\b", r"\btargeting me\b"),
+    "SAFETY_HAZARD": (r"\bshort circuit\b", r"\bshock\b", r"\belectric shock\b", r"\bfumes\b", r"\bexplosion\b"),
+    "VIOLENCE": (r"\bkill\b", r"\bhurt someone\b", r"\battack\b", r"\bterrorist\b", r"\bweapon\b"),
 }
 
-HIGH_RISK_G2 = {"DANGEROUS", "UNSAFE_CONTENT", "GROOMING", "SELF_HARM"}
+HIGH_RISK_G2 = {"DANGEROUS", "UNSAFE_SEXUAL_CONTENT", "GROOMING", "SELF_HARM", "HATE_GROUP", "VIOLENCE"}
 COMPLEX_TERMS = (
     "chandrasekhar limit",
     "hawking radiation",
@@ -102,18 +103,19 @@ COMPLEX_TERMS = (
 
 G2_META = {
     "NEUTRAL_FACT": {"severity": 0, "modifiers": []},
-    "COMPARATIVE": {"severity": 1, "modifiers": []},
-    "LP": {"severity": 1, "modifiers": []},
-    "PD": {"severity": 2, "modifiers": []},
+    "PERSONAL_DIRECTION": {"severity": 2, "modifiers": []},
     "EMOTIONAL": {"severity": 2, "modifiers": ["empathetic_tone", "emotional_support_required"]},
     "BULLYING": {"severity": 2, "modifiers": ["empathetic_tone", "no_curiosity_invite"]},
     "AMBIGUOUS_RISK": {"severity": 2, "modifiers": ["clarification_required", "no_curiosity_invite"]},
+    "SAFETY_HAZARD": {"severity": 2, "modifiers": ["clarification_required"]},
     "DANGEROUS": {"severity": 3, "modifiers": ["no_curiosity_invite", "no_content_engagement"]},
     "GROOMING": {"severity": 3, "modifiers": ["no_curiosity_invite", "zero_engagement", "safeguarding_concern"]},
-    "UNSAFE_CONTENT": {"severity": 3, "modifiers": ["no_curiosity_invite", "no_content_engagement", "no_reason_given", "zero_engagement"]},
+    "UNSAFE_SEXUAL_CONTENT": {"severity": 3, "modifiers": ["no_curiosity_invite", "no_content_engagement", "no_reason_given", "zero_engagement"]},
     "SELF_HARM": {"severity": 3, "modifiers": ["no_curiosity_invite", "empathetic_tone"]},
-    "COERCIVE_CONTROL": {"severity": 3, "modifiers": ["no_curiosity_invite", "safeguarding_concern"]},
+    "COERCIVE_CONTROL": {"severity": 3, "modifiers": ["empathetic_tone"]},
     "VULN_EXPLOIT": {"severity": 3, "modifiers": ["no_curiosity_invite", "safeguarding_concern"]},
+    "HATE_GROUP": {"severity": 3, "modifiers": ["no_curiosity_invite", "flag_for_review"]},
+    "VIOLENCE": {"severity": 3, "modifiers": ["no_curiosity_invite", "flag_for_review"]},
 }
 
 
@@ -204,11 +206,11 @@ def compute_g4(g1: str, g2_labels: list[str], severity: str, modifiers: list[str
     mods = set(modifiers)
     if "clarification_required" in mods:
         return "TRANSFORM_HOLD"
-    if "UNSAFE_CONTENT" in g2_labels or "GROOMING" in g2_labels or ("no_content_engagement" in mods and severity == "SV3"):
+    if "UNSAFE_SEXUAL_CONTENT" in g2_labels or "GROOMING" in g2_labels or ("no_content_engagement" in mods and severity == "SV3"):
         return "BLOCK_HARD"
     if "SELF_HARM" in g2_labels:
         return "BLOCK_ESCALATE"
-    if "PD" in g2_labels and g1 in {"BELIEF", "DEATH_GRIEF"}:
+    if "PERSONAL_DIRECTION" in g2_labels and g1 in {"BELIEF", "DEATH_GRIEF"}:
         return "TRANSFORM"
     if severity == "SV0":
         return "ALLOW"
@@ -230,28 +232,10 @@ def is_complex_for_age(question: str, age_band: str) -> bool:
 
 def assign_gl(age_band: str, g1: str, g2_labels: list[str], question: str) -> list[str]:
     tags = {"GL-01"}
-    if "COMPARATIVE" in g2_labels and g1 == "BELIEF":
-        tags.add("GL-02")
-    if "PD" in g2_labels:
-        tags.add("GL-03")
-    if "LP" in g2_labels:
-        tags.add("GL-04")
-    if "HATE_GROUP" in g2_labels or g1 == "VIOLENCE" or "DANGEROUS" in g2_labels:
-        tags.add("GL-05")
-    if g1 == "DEATH_GRIEF" or "EMOTIONAL" in g2_labels or "SELF_HARM" in g2_labels:
-        tags.add("GL-06")
-    if is_complex_for_age(question, age_band):
-        tags.add("GL-07")
-    if "BULLYING" in g2_labels:
-        tags.add("GL-09")
-    if "GROOMING" in g2_labels:
-        tags.add("GL-10")
-    if "UNSAFE_CONTENT" in g2_labels:
-        tags.add("GL-11")
-    if "COERCIVE_CONTROL" in g2_labels:
-        tags.add("GL-12")
+    if "HATE_GROUP" in g2_labels:
+        tags.add("GL-N1")
     if "VULN_EXPLOIT" in g2_labels:
-        tags.add("GL-13")
+        tags.add("GL-V1")
     return sorted(tags)
 
 
@@ -301,13 +285,13 @@ def build_generated_prompt(age_band: str, g1: str, g2: list[str], g3: str, modif
 def build_classifier_reason(g1: str, g2: list[str], guidelines: list[str], question: str) -> str:
     lower = question.lower()
     primary_g2 = g2[0] if g2 else "GENERIC_INTENT"
-    if primary_g2 == "PD":
+    if primary_g2 == "PERSONAL_DIRECTION":
         if g1 == "BELIEF":
             return "The child is asking for personal guidance about what they should believe or choose, so the system should avoid directing the child's beliefs."
         return "The child is asking for personal guidance about what they should do or choose, so the system should avoid giving direct personal direction."
     if primary_g2 == "GROOMING":
         return "The question includes unsafe secrecy or boundary-crossing behaviour involving an adult or trusted person, which triggers grooming-safety handling."
-    if primary_g2 == "UNSAFE_CONTENT":
+    if primary_g2 == "UNSAFE_SEXUAL_CONTENT":
         return "The question refers to explicitly unsafe sexual content, which requires a hard safety block."
     if primary_g2 == "EMOTIONAL":
         return "The child appears upset, distressed, or in need of emotional support, so the response should acknowledge feelings before answering."
@@ -326,6 +310,67 @@ def build_classifier_reason(g1: str, g2: list[str], guidelines: list[str], quest
     if g1 == "TECHNOLOGY":
         return "The user is asking a technology or digital-systems question."
     return "The user is asking a question that has been classified for child-safety guidance."
+
+
+def build_g1_reason(g1: str, g2: list[str], guidelines: list[str], question: str) -> str:
+    if g1 == "BELIEF":
+        if "NEUTRAL_FACT" in g2:
+            return "The question is about belief, religion, or worldview without direct personal guidance."
+        return "The question is primarily about belief, religion, or worldview."
+    if g1 == "SCIENCE" and "GL-07" in guidelines:
+        return "The question is primarily about science and also needs simpler age-calibrated explanation."
+    g1_reason_map = {
+        "FACT": "The question is primarily factual or descriptive.",
+        "DEATH_GRIEF": "The question is primarily about death, grief, or loss.",
+        "VIOLENCE": "The question is primarily about violence, harm, or dangerous acts.",
+        "SCIENCE": "The question is primarily about science or nature.",
+        "TECHNOLOGY": "The question is primarily about technology or digital systems.",
+        "SAFETY_HAZARD": "The question is primarily about safety risks or hazards.",
+        "CIVIC_LAW": "The question is primarily about rules, law, cheating, or institutional integrity.",
+        "GENERIC": "The question is handled as a general child-safety question rather than a domain-specific knowledge request.",
+    }
+    return g1_reason_map.get(g1, "The question has been assigned a broad topic classification for downstream gate handling.")
+
+
+def build_g2_reasons(g1: str, g2: list[str], question: str) -> dict[str, str]:
+    lower = question.lower()
+    reasons: dict[str, str] = {}
+    for label in g2:
+        if label == "PERSONAL_DIRECTION":
+            reasons[label] = (
+                "The question asks what the child should personally believe or choose."
+                if g1 == "BELIEF"
+                else "The question asks what the child should personally do or choose."
+            )
+        elif label == "GROOMING":
+            reasons[label] = "The question includes secrecy, boundary-crossing, or unsafe adult-child dynamics."
+        elif label == "UNSAFE_SEXUAL_CONTENT":
+            reasons[label] = "The question refers to sexually unsafe or explicitly disallowed content."
+        elif label == "EMOTIONAL":
+            reasons[label] = "The question shows emotional distress or a need for emotional support."
+        elif label == "DANGEROUS":
+            reasons[label] = (
+                "The question asks how to bypass safety systems or perform risky experiments."
+                if "bypass safety" in lower or "risky experiment" in lower or ("bypass" in lower and "safety" in lower)
+                else "The question asks about harmful, dangerous, or unsafe activity."
+            )
+        elif label == "COERCIVE_CONTROL":
+            reasons[label] = "The question describes fear-based control, pressure, or coercion by another person."
+        elif label == "NEUTRAL_FACT":
+            reasons[label] = "The question is framed as a neutral factual query."
+        elif label == "HATE_GROUP":
+            reasons[label] = "The question uses hateful, derogatory, or exclusionary group framing."
+        elif label == "SELF_HARM":
+            reasons[label] = "The question includes self-harm or suicidal signals."
+        elif label == "BULLYING":
+            reasons[label] = "The question describes bullying, meanness, or peer harm."
+        elif label == "AMBIGUOUS_RISK":
+            reasons[label] = "The question could have both safe and unsafe interpretations."
+        elif label == "VULN_EXPLOIT":
+            reasons[label] = "The question suggests exploitation of vulnerability or manipulation."
+        elif label == "GENERIC_INTENT":
+            reasons[label] = "The question does not show a stronger specific risk-framing signal."
+    return reasons
 
 
 def _gl_signals(guidelines: list[str], age_band: str) -> dict[str, GLSignal]:
@@ -388,6 +433,8 @@ def _build_decision(normalized: dict[str, object]) -> GuardrailDecision:
     return GuardrailDecision(
         input={"question": message, "age_band": age_band, "language": language, "recent_context": recent_context},
         reason=build_classifier_reason(g1, g2, guidelines, message),
+        g1_reason=build_g1_reason(g1, g2, guidelines, message),
+        g2_reasons=build_g2_reasons(g1, g2, message),
         gl_signals=_gl_signals(guidelines, age_band),
         active_gls=guidelines,
         gates=gates,

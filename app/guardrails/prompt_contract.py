@@ -27,4 +27,5 @@ def build(
     decision.prompt_contract["safety_envelope"] = rendered["safety_envelope"]
     decision.prompt_contract["template_id"] = rendered["template_id"]
     decision.prompt_contract["checklist"] = rendered["checklist"]
+    decision.prompt_contract["prompt_contract_payload"] = rendered["prompt_contract_payload"]
     return str(rendered["prompt"])

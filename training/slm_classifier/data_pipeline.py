@@ -17,22 +17,9 @@ LABEL_VOCAB_PATH = PROCESSED_DIR / "piku_gl_classifier_label_vocab.json"
 SUPPORTED_EXTENSIONS = {".jsonl", ".json", ".csv", ".xlsx"}
 GL_COLUMNS = label_columns()
 CODEBOOK = parse_codebook()
-G1_VOCAB = ["FACT", "BELIEF", "DEATH_GRIEF", "VIOLENCE", "SCIENCE", "TECHNOLOGY", "SAFETY_HAZARD", "CIVIC_LAW", "GENERIC"]
+G1_VOCAB = list(CODEBOOK.g1_specs.keys())
 G2_VOCAB = list(CODEBOOK.g2_specs.keys())
-G2_PRIORITY = [
-    "UNSAFE_CONTENT",
-    "GROOMING",
-    "COERCIVE_CONTROL",
-    "VULN_EXPLOIT",
-    "DANGEROUS",
-    "HATE_GROUP",
-    "PD",
-    "LP",
-    "COMPARATIVE",
-    "EMOTIONAL",
-    "NEUTRAL_FACT",
-    "GENERIC_INTENT",
-]
+G2_PRIORITY = list(G2_VOCAB)
 G3_VOCAB = ["SV0", "SV1", "SV2", "SV3", "SV4"]
 G4_VOCAB = ["ALLOW", "TRANSFORM", "TRANSFORM_HOLD", "BLOCK", "BLOCK_HARD", "BLOCK_ESCALATE"]
 DEFAULT_TOPIC = "General Learning"
@@ -109,10 +96,9 @@ def dataset_fingerprint(rows: list[dict[str, object]]) -> str:
         {
             "sample_id": row.get("sample_id"),
             "question": row.get("question"),
-            "gl": [row.get(column) for column in GL_COLUMNS],
             "g1": row.get("g1"),
             "g2": row.get("g2"),
-            "g2_all": row.get("g2_all"),
+            "applies_when_flags": row.get("applies_when_flags"),
         }
         for row in rows
     ]
@@ -142,28 +128,20 @@ def primary_g2_label(values: object) -> str:
 
 
 def validate_dataset_rows(rows: list[dict[str, object]]) -> None:
-    supported_gls = set(GL_COLUMNS)
     for row in rows:
-        missing = supported_gls - set(row.keys())
-        if missing:
-            raise ValueError(f"Missing GL columns for row {row.get('sample_id')}: {sorted(missing)}")
-        for column in GL_COLUMNS:
-            value = row.get(column)
-            if int(value) not in {0, 1}:
-                raise ValueError(f"Expected binary label for {column} in row {row.get('sample_id')}: {value}")
-        if not str(row.get("topic", "")).strip():
-            raise ValueError(f"Missing topic in row {row.get('sample_id')}")
+        if not str(row.get("question", "")).strip():
+            raise ValueError(f"Missing question in row {row.get('sample_id')}")
         if str(row.get("g1", "")).strip() not in G1_VOCAB:
             raise ValueError(f"Unsupported G1 label in row {row.get('sample_id')}: {row.get('g1')}")
-        g2_values = parse_g2_values(row.get("g2_all", row.get("g2", "")))
+        g2_values = parse_g2_values(row.get("g2", ""))
         if not g2_values:
             raise ValueError(f"Missing G2 labels in row {row.get('sample_id')}")
         unsupported = [value for value in g2_values if value not in G2_VOCAB]
         if unsupported:
             raise ValueError(f"Unsupported G2 labels in row {row.get('sample_id')}: {unsupported}")
-        primary_g2 = str(row.get("g2", "")).strip()
-        if primary_g2 and primary_g2 not in g2_values:
-            raise ValueError(f"Primary G2 label must be included in g2_all for row {row.get('sample_id')}: {primary_g2}")
+        flags = row.get("applies_when_flags")
+        if not isinstance(flags, dict):
+            raise ValueError(f"Missing applies_when_flags object in row {row.get('sample_id')}")
 
 
 def build_topic_vocab(rows: list[dict[str, object]] | None = None) -> list[str]:
@@ -182,6 +160,7 @@ def write_label_vocab(rows: list[dict[str, object]] | None = None, target_path: 
         "topic": build_topic_vocab(rows),
         "g1": G1_VOCAB,
         "g2": G2_VOCAB,
+        "age_bands": list(CODEBOOK.age_bands.keys()),
     }
     target_path.parent.mkdir(parents=True, exist_ok=True)
     target_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")

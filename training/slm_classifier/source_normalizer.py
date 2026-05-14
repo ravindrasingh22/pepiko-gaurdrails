@@ -6,14 +6,13 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
+from app.guardrails.runtime_contracts import G2_ALIAS_MAP, build_applies_when_flags
 from training.slm_classifier.data_pipeline import (
     CANONICAL_DATASET,
     DATASET_SPLITS_PATH,
     GL_COLUMNS,
-    G2_PRIORITY,
     G2_VOCAB,
     LABEL_VOCAB_PATH,
-    primary_g2_label,
     validate_dataset_rows,
     write_dataset_splits,
     write_label_vocab,
@@ -22,25 +21,29 @@ from training.slm_classifier.data_pipeline import (
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_SOURCE = ROOT / "docs" / "Religion-politics-idealogy.csv"
-NORMALIZED_CSV = ROOT / "data" / "processed" / "religion_politics_ideology_normalized.csv"
 RAW_DIR = ROOT / "data" / "raw"
-MERGED_NORMALIZED_CSV = ROOT / "data" / "processed" / "slm_training_normalized.csv"
-REJECTED_ROWS_CSV = ROOT / "data" / "processed" / "slm_training_rejected_rows.csv"
+NORMALIZED_RAW_DIR = RAW_DIR / "normalized"
+NORMALIZED_CSV = NORMALIZED_RAW_DIR / "slm_training_normalized.csv"
+MERGED_NORMALIZED_CSV = NORMALIZED_RAW_DIR / "slm_training_merged.csv"
+REJECTED_ROWS_CSV = NORMALIZED_RAW_DIR / "slm_training_rejected_rows.csv"
 TAG_RE = re.compile(r"GL\s*[-\u2010\u2011\u2012\u2013\u2014\u2212]?\s*\d{2}", re.IGNORECASE)
 CANONICAL_COLUMNS = [
     "sample_id",
+    "question",
+    "question_normalized",
+    "normalization_notes",
+    "language",
+    "age_band",
+    "source",
+    "difficulty",
+    "g1",
+    "g1_reason",
+    "g2",
+    "g2_reasons",
+    "applies_when_flags",
+    "review_status",
     "source_file",
     "source_row",
-    "topic",
-    "question",
-    "language",
-    "recent_context",
-    "reference_answer",
-    "guideline_tags",
-    *GL_COLUMNS,
-    "g1",
-    "g2",
-    "g2_all",
 ]
 
 @dataclass
@@ -121,57 +124,31 @@ def _clean_gate_value(raw: str) -> str:
 def _clean_g2_values(raw: str) -> list[str]:
     value = _clean_gate_value(raw)
     if "," not in value:
+        value = G2_ALIAS_MAP.get(value, value)
         if value and value not in G2_VOCAB:
             raise ValueError(f"Unsupported G2 LOV in source data: {value}")
         return [value] if value else []
-    parts = [item.strip() for item in value.split(",") if item.strip()]
+    parts = [G2_ALIAS_MAP.get(item.strip(), item.strip()) for item in value.split(",") if item.strip()]
     unsupported = [item for item in parts if item not in G2_VOCAB]
     if unsupported:
         raise ValueError(f"Unsupported G2 LOVs in source data: {', '.join(sorted(dict.fromkeys(unsupported)))}")
-    ordered: list[str] = []
-    for item in G2_PRIORITY:
-        if item in parts and item not in ordered:
-            ordered.append(item)
-    for item in parts:
-        if item not in ordered:
-            ordered.append(item)
-    return ordered
+    return list(dict.fromkeys(parts))
 
 
-def _gl_vector(tags: list[str]) -> dict[str, int]:
-    active = {tag.lower().replace("-", "_") for tag in tags}
-    return {column: int(column in active) for column in GL_COLUMNS}
+def _normalize_training_question(question: str) -> tuple[str, list[str]]:
+    collapsed = " ".join(question.strip().split())
+    notes: list[str] = []
+    if collapsed != question:
+        notes.append("collapsed repeated whitespace")
+    return collapsed, notes
 
 
-def _infer_guideline_tags(g1: str, g2_values: list[str], g3: str, g4: str) -> list[str]:
-    tags = {"GL-01"}
-    if "COMPARATIVE" in g2_values:
-        tags.add("GL-02")
-    if "PD" in g2_values:
-        tags.add("GL-03")
-    if "LP" in g2_values:
-        tags.add("GL-04")
-    if "DANGEROUS" in g2_values:
-        tags.add("GL-05")
-    if "EMOTIONAL" in g2_values or g1 == "DEATH_GRIEF":
-        tags.add("GL-06")
-    if "HATE_GROUP" in g2_values:
-        tags.add("GL-08")
-    if "BULLYING" in g2_values:
-        tags.add("GL-09")
-    if "GROOMING" in g2_values:
-        tags.add("GL-10")
-    if "UNSAFE_CONTENT" in g2_values:
-        tags.add("GL-11")
-    if "COERCIVE_CONTROL" in g2_values:
-        tags.add("GL-12")
-    if "VULN_EXPLOIT" in g2_values:
-        tags.add("GL-13")
-    if "SELF_HARM" in g2_values:
-        tags.add("GL-06")
-    if "AMBIGUOUS_RISK" in g2_values:
-        tags.add("GL-07")
-    return sorted(tags)
+def _default_g1_reason(g1: str) -> str:
+    return f"The question is classified under broad topic {g1}."
+
+
+def _default_g2_reasons(question: str, g2_values: list[str]) -> dict[str, str]:
+    return {g2: f"The question matches the {g2} framing or safety pattern." for g2 in g2_values}
 
 
 def _find_header_index(row: list[str], candidates: tuple[str, ...]) -> int | None:
@@ -285,23 +262,26 @@ def expand_authoring_rows(path: Path = DEFAULT_SOURCE) -> list[dict[str, object]
     source_name = path.name
     normalized: list[dict[str, object]] = []
     for item_index, row in enumerate(load_authoring_rows(path), start=1):
-        tag_vector = _gl_vector(row.guideline_tags)
         base_id = f"{_slugify(row.topic)}_{item_index:03d}_{_slugify(row.question)[:32]}"
+        question_normalized, normalization_notes = _normalize_training_question(row.question)
         normalized.append(
             {
                 "sample_id": base_id,
+                "question": row.question,
+                "question_normalized": question_normalized,
+                "normalization_notes": normalization_notes,
+                "language": "en",
+                "age_band": "11-12",
+                "source": source_name,
+                "difficulty": "medium",
+                "g1": row.g1,
+                "g1_reason": _default_g1_reason(row.g1),
+                "g2": row.g2,
+                "g2_reasons": _default_g2_reasons(row.question, row.g2),
+                "applies_when_flags": build_applies_when_flags(row.question, row.g1, row.g2),
+                "review_status": "approved",
                 "source_file": source_name,
                 "source_row": row.source_row,
-                "topic": row.topic,
-                "question": row.question,
-                "language": "en",
-                "recent_context": "none",
-                "reference_answer": "",
-                "guideline_tags": ",".join(row.guideline_tags),
-                **tag_vector,
-                "g1": row.g1,
-                "g2": primary_g2_label(row.g2),
-                "g2_all": row.g2,
             }
         )
     return normalized
@@ -409,10 +389,7 @@ def write_canonical_jsonl_with_metadata(
     target_path.parent.mkdir(parents=True, exist_ok=True)
     with target_path.open("w", encoding="utf-8") as handle:
         for row in rows:
-            payload = {
-                key: row[key]
-                for key in ["sample_id", "topic", "question", "language", "recent_context", *GL_COLUMNS, "g1", "g2", "g2_all"]
-            }
+            payload = {key: row[key] for key in CANONICAL_COLUMNS if key in row}
             handle.write(json.dumps(payload, ensure_ascii=True) + "\n")
     write_dataset_splits(rows, target_path=split_target_path or DATASET_SPLITS_PATH)
     write_label_vocab(rows, target_path=vocab_target_path or LABEL_VOCAB_PATH)

@@ -15,20 +15,10 @@ class GuardrailRunRequest(BaseModel):
 
 
 class GuardrailRunResponse(BaseModel):
-    topic: str
     question: str
+    context: list[str] = Field(default_factory=list)
     age_band: str
-    guidelines: list[str] = Field(default_factory=list)
-    g1: str
-    g2: list[str] = Field(default_factory=list)
-    g3: dict[str, Any] = Field(default_factory=dict)
-    g4: str
-    raw_generated_prompt: str = ""
-    generated_prompt: str = ""
-    metadata: dict[str, Any] = Field(default_factory=dict)
-    classifier: dict[str, Any] = Field(default_factory=dict)
-    final_policy_bucket: str = ""
-    stage_outputs: dict[str, Any] = Field(default_factory=dict)
+    prompt: str
 
 
 class ClassificationTestRequest(BaseModel):

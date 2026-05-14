@@ -162,6 +162,9 @@ def build_decision_from_artifact(
     confidence = min([signal.confidence for signal in gl_signals.values() if signal.triggered], default=0.0)
     return GuardrailDecision(
         input=payload["input"],
+        reason=str(payload.get("reason", "")),
+        g1_reason=str(payload.get("g1_reason", "")),
+        g2_reasons=dict(payload.get("g2_reasons", {})),
         gl_signals=gl_signals,
         active_gls=payload["active_gls"],
         gates=payload["gates"],

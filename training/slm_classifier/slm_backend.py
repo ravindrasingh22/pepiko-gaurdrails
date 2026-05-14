@@ -817,6 +817,8 @@ def _decision_from_predictions(
     return GuardrailDecision(
         input={"question": question, "age_band": age_band, "language": language, "recent_context": recent_context},
         reason=heuristic_classifier.build_classifier_reason(g1, g2_list, active_gls, question),
+        g1_reason=heuristic_classifier.build_g1_reason(g1, g2_list, active_gls, question),
+        g2_reasons=heuristic_classifier.build_g2_reasons(g1, g2_list, question),
         gl_signals=gl_signals,
         active_gls=active_gls,
         gates={"topic": topic, "G1": g1, "G2": primary_g2, "G2_all": g2_list, "G3": g3, "G4": g4},

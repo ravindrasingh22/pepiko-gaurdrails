@@ -28,7 +28,10 @@ def test_build_safety_envelope_uses_primary_g2_only_for_g3() -> None:
 
     envelope = build_safety_envelope(child_profile, "Which religion should I follow?", decision)
 
-    assert envelope["g2"]["active_lovs"] == [{"id": "PD"}, {"id": "GROOMING"}]
+    assert envelope["g2"]["active_lovs"] == [
+        {"id": "PD", "reason": "test reason"},
+        {"id": "GROOMING", "reason": "test reason"},
+    ]
     assert envelope["g3"]["severity"] == "SV2"
     assert envelope["g3"]["modifiers"] == []
     assert envelope["g3"]["source_g2"] == ["PD"]

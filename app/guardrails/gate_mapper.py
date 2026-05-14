@@ -274,6 +274,68 @@ def build_classifier_reason(g1: str, g2_list: list[str], gls: set[str], question
     return " ".join(part.strip() for part in parts if part.strip())
 
 
+def build_g1_reason(g1: str, g2_list: list[str], question: str = "") -> str:
+    if g1 == "BELIEF" and "NEUTRAL_FACT" in g2_list:
+        return "The question is primarily about belief, religion, or worldview without direct personal guidance."
+    g1_reason_map = {
+        "FACT": "The question is primarily factual or descriptive.",
+        "BELIEF": "The question is primarily about belief, religion, or worldview.",
+        "DEATH_GRIEF": "The question is primarily about death, grief, or loss.",
+        "VIOLENCE": "The question is primarily about violence, harm, or dangerous acts.",
+        "SCIENCE": "The question is primarily about science or nature.",
+        "TECHNOLOGY": "The question is primarily about technology or digital systems.",
+        "SAFETY_HAZARD": "The question is primarily about safety risks or hazards.",
+        "CIVIC_LAW": "The question is primarily about rules, law, cheating, or institutional integrity.",
+        "GENERIC": "The question is handled as a general child-safety question rather than a domain-specific knowledge request.",
+    }
+    return g1_reason_map.get(g1, "The question has been assigned a broad topic classification for downstream gate handling.")
+
+
+def build_g2_reasons(g1: str, g2_list: list[str], question: str = "", primary_g2: str | None = None) -> dict[str, str]:
+    lowered = question.lower().strip()
+    reasons: dict[str, str] = {}
+    for g2 in g2_list:
+        if g2 == "PD":
+            reasons[g2] = (
+                "The question asks what the child should personally believe or choose."
+                if g1 == "BELIEF"
+                else "The question asks what the child should personally do or choose."
+            )
+        elif g2 == "GROOMING":
+            reasons[g2] = "The question includes unsafe secrecy or boundary-crossing behaviour involving an adult or trusted person."
+        elif g2 == "UNSAFE_CONTENT":
+            reasons[g2] = "The question refers to explicitly unsafe sexual content."
+        elif g2 == "EMOTIONAL":
+            reasons[g2] = "The question shows emotional distress or a need for emotional support."
+        elif g2 == "DANGEROUS":
+            reasons[g2] = (
+                "The question asks how to bypass safety measures or perform risky activity."
+                if "bypass" in lowered and "safety" in lowered
+                else "The question seeks harmful, dangerous, or unsafe guidance."
+            )
+        elif g2 == "NEUTRAL_FACT":
+            reasons[g2] = "The question is framed as a neutral factual query."
+        elif g2 == "COMPARATIVE":
+            reasons[g2] = "The question asks to compare or rank options, groups, or beliefs."
+        elif g2 == "LP":
+            reasons[g2] = "The question includes a loaded or biased premise."
+        elif g2 == "HATE_GROUP":
+            reasons[g2] = "The question uses negative or derogatory group framing."
+        elif g2 == "BULLYING":
+            reasons[g2] = "The question describes bullying or peer harm."
+        elif g2 == "COERCIVE_CONTROL":
+            reasons[g2] = "The question describes fear-based or controlling behaviour by another person."
+        elif g2 == "VULN_EXPLOIT":
+            reasons[g2] = "The question suggests exploitation of vulnerability or manipulation."
+        elif g2 == "SELF_HARM":
+            reasons[g2] = "The question includes self-harm or suicidal signals."
+        elif g2 == "AMBIGUOUS_RISK":
+            reasons[g2] = "The question could have both safe and unsafe interpretations."
+        elif g2 == "GENERIC_INTENT":
+            reasons[g2] = "The question has general intent without a stronger specific framing signal."
+    return reasons
+
+
 def build_decision_from_g4(g4: str, g3: str, g2_list: list[str]) -> dict[str, Any]:
     risk_by_severity = {"SV0": "low", "SV1": "low", "SV2": "medium", "SV3": "high", "SV4": "critical"}
     if g4 in {"BLOCK", "BLOCK_HARD", "BLOCK_ESCALATE"}:
@@ -412,6 +474,8 @@ def build_guardrail_decision(
     return {
         "input": {"question": question, "age_band": age_band, "language": language, "recent_context": recent_context},
         "reason": build_classifier_reason(g1, g2_list, gls, question, g2_primary),
+        "g1_reason": build_g1_reason(g1, g2_list, question),
+        "g2_reasons": build_g2_reasons(g1, g2_list, question, g2_primary),
         "gl_signals": gl_signals,
         "active_gls": sorted(gls),
         "gates": {"G1": g1, "G2": g2_primary, "G2_all": g2_list, "G3": g3, "G4": g4},
