@@ -13,11 +13,11 @@ The codebook defines the safety semantics. The contracts document defines the in
 Canonical stage ownership:
 
 1. input normalization prepares the question for classification
-2. classifier assigns `G1` and one or more `G2` labels
+2. classifier assigns `G1`, one or more `G2` labels, and the `Applies_When` flag object needed by Block E
 3. age policy is appended as runtime context, not learned output
 4. gate engine derives `G3` from `G2`
 5. gate engine derives `G4` from `G3`
-6. gate engine computes active `GL` families by reading Block E using `Applies_When`, `Uses_G1_LOVs`, and `Uses_G2_LOVs`
+6. gate engine computes active `GL` families by reading Block E using classifier-provided `Applies_When` flags plus `Uses_G1_LOVs` and `Uses_G2_LOVs`
 7. gate engine converts the matching GL special rules into structured prompt-policy notes
 8. SafetyEnvelope packages question context, gate outputs, age settings, active GLs, and prompt-policy notes
 9. prompt manager selects a template and renders the final LLM prompt
@@ -52,7 +52,7 @@ How the blocks connect:
 - Block E defines GL rule families computed by the gate engine
 - Blocks F, G, and H govern prompt generation fidelity
 - Block I provides age-calibration context
-- Block J supports classifier training and inference for `G1` and `G2`
+- Block J supports classifier training and inference for `G1`, `G2`, and the `Applies_When` flag set that Block E later consumes
 
 ## 3. Canonical Runtime Vocabulary
 
@@ -92,12 +92,12 @@ The complete flow should be read in this order:
 
 1. receive child question and age band
 2. normalize question text and preserve raw text for audit
-3. classifier assigns one `G1` and one or more `G2`
+3. classifier assigns one `G1`, one or more `G2`, and the `Applies_When` flag object
 4. classifier may also emit a short internal `reason`
 5. age policy settings are looked up from Block I
 6. gate engine computes `G3`
 7. gate engine computes `G4`
-8. gate engine computes active `GL` families from Block E using the question flags plus emitted `G1` and `G2`
+8. gate engine computes active `GL` families from Block E using classifier-provided `Applies_When` flags plus emitted `G1` and `G2`
 9. gate engine applies GL special rules as prompt-policy notes
 10. SafetyEnvelope is constructed
 11. prompt manager selects a template using `G4`, `G3`, and sometimes `G2`
@@ -418,7 +418,7 @@ Read GL rows in this order:
 
 Interpretation:
 
-- `Applies_When` is the trigger logic
+- `Applies_When` is the trigger logic evaluated from classifier-returned flags
 - `Uses_G1_LOVs` is the expected topic shape
 - `Uses_G2_LOVs` is the expected framing shape
 - `Special Rules` tell the gate engine what to override, append, or enforce
@@ -427,13 +427,15 @@ Interpretation:
 
 Recommended runtime procedure:
 
-1. classifier emits `G1` and `G2`
+1. classifier emits `G1`, `G2`, and an `Applies_When` flag object
 2. gate engine computes base `G3`
 3. gate engine computes base `G4`
-4. gate engine evaluates each GL row’s `Applies_When` flags
-5. gate engine checks whether current `G1` and `G2` match `Uses_G1_LOVs` and `Uses_G2_LOVs`
-6. if the row is active and coherent, the gate engine marks that `GL` as active
-7. gate engine applies that GL row’s `Special Rules` as prompt-policy notes or explicit gate constraints
+4. for each Block E row, gate engine reads the row’s `Applies_When` condition and evaluates it against the classifier-provided flag object
+5. if the trigger condition is true, gate engine checks whether current `G1` matches `Uses_G1_LOVs`
+6. gate engine checks whether current `G2` matches `Uses_G2_LOVs`
+7. only when trigger and LOV-shape checks are coherent does the gate engine activate that `GL`
+8. gate engine applies that row’s `Special Rules on G3 or G4`
+9. gate engine records the resulting `GL` ids and prompt-policy notes in the SafetyEnvelope
 
 GL rows do not directly render prompt text. They produce structured policy behavior that the prompt manager later enforces.
 
@@ -446,7 +448,7 @@ Question:
 Assumed upstream inputs into the gate engine:
 
 - question text
-- flag object derived from `Applies_When` feature extraction
+- classifier-provided `Applies_When` flag object
 - `G1`
 - `G2`
 
@@ -455,7 +457,7 @@ Example classifier output:
 - `G1 = GENERIC`
 - `G2 = [DANGEROUS, VIOLENCE]`
 
-Example `Applies_When` flags passed to the gate engine:
+Example `Applies_When` flags returned by the classifier and passed to the gate engine:
 
 ```json
 {
@@ -500,7 +502,65 @@ Result:
 - `G4` remains on the strict safe path
 - additional prompt-policy notes are attached so the prompt cannot compare the harmful options
 
-### 10.5 Why gate-engine GL computation helps
+### 10.5 Second gate-engine example for GL computation
+
+Question:
+
+- `Everyone says this group is lazy and bad`
+
+Example classifier output:
+
+- `G1 = GENERIC`
+- `G2 = [HATE_GROUP]`
+
+Example classifier-provided `Applies_When` flags:
+
+```json
+{
+  "has_harmful_comparison": false,
+  "has_loaded_premise": true,
+  "has_negative_language": true,
+  "is_protected_group_target": true,
+  "includes_slurs": false,
+  "has_vuln_exploitation": false,
+  "has_blackmail_pattern": false,
+  "has_dependency_pattern": false
+}
+```
+
+Gate-engine reading flow:
+
+1. Gate 3 computes `G3`
+   - `HATE_GROUP -> SV3 + [no_curiosity_invite, flag_for_review]`
+   - `G3_SV = SV3`
+   - `G3_MOD = {no_curiosity_invite, flag_for_review}`
+
+2. Gate 4 computes base `G4`
+   - base `SV3` row gives block behavior
+
+3. Gate engine evaluates `GL-L1`
+   - `has_loaded_premise = true`
+   - `Uses_G1_LOVs` allows `GENERIC`
+   - `Uses_G2_LOVs` allows rows often co-fired with `HATE_GROUP`
+   - `GL-L1` becomes active
+
+4. Gate engine evaluates `GL-N1`
+   - `has_negative_language = true`
+   - `is_protected_group_target = true`
+   - `G2` includes `HATE_GROUP`
+   - `GL-N1` becomes active
+
+5. Gate engine applies special rules
+   - `GL-L1` adds debiasing requirements wherever any content is allowed
+   - `GL-N1` requires the response not to repeat hateful language in the model's own voice
+   - neither rule lowers `SV3`; both only constrain style and response behavior
+
+Result:
+
+- active GLs: `[GL-L1, GL-N1]`
+- base severity and block path remain intact
+- extra prompt notes ensure the output neither treats the premise as true nor repeats abusive language
+### 10.6 Why gate-engine GL computation helps
 
 This model is useful because:
 
@@ -515,15 +575,17 @@ This section explains how the system should compute classifier outputs and then 
 
 ### 11.1 Inference objective
 
-At inference time, the system is trying to answer two classifier questions and then hand off to the gate engine:
+At inference time, the classifier is trying to answer three upstream questions and then hand off to the gate engine:
 
 1. what is the question broadly about
 2. how is the question framed and what risk pattern is present
+3. which `Applies_When` flags from Block E are true or false for this question / context
 
 These map to:
 
 - `G1`: broad topic
 - `G2`: framing / risk
+- `Applies_When` flags: trigger signals later consumed by Block E
 
 What the gate engine then computes:
 
@@ -538,12 +600,13 @@ The most stable runtime order is:
 1. normalize raw question text
 2. run semantic classification for `G1`
 3. run semantic multi-label classification for `G2`
-4. pass question text, flag object, `G1`, and `G2` into the gate engine
-5. gate engine aggregates `G2` into `G3`
-6. gate engine derives `G4` from `G3`
-7. gate engine computes active `GL` rows using `Applies_When`, `Uses_G1_LOVs`, and `Uses_G2_LOVs`
-8. gate engine applies GL special rules as structured notes or overrides where the codebook requires them
-9. package the result into the SafetyEnvelope
+4. compute the `Applies_When` flag object for Block E and return it with classifier output
+5. pass question text, flag object, `G1`, and `G2` into the gate engine
+6. gate engine aggregates `G2` into `G3`
+7. gate engine derives `G4` from `G3`
+8. gate engine computes active `GL` rows using `Applies_When`, `Uses_G1_LOVs`, and `Uses_G2_LOVs`
+9. gate engine applies GL special rules as structured notes or overrides where the codebook requires them
+10. package the result into the SafetyEnvelope
 
 Why this order matters:
 
@@ -551,6 +614,23 @@ Why this order matters:
 - `G3` must be computed from `G2`, not from raw text
 - `G4` must be computed from `G3`, not directly from raw text
 - `GL` is computed inside the gate engine, not inside classifier inference
+
+### 11.2.1 `Applies_When` flag contract
+
+The classifier should return a structured flag object that covers the Block E trigger conditions. These are not final GL ids. They are inputs to later gate-engine logic.
+
+The current Block E trigger family includes at least these flags:
+
+- `has_harmful_comparison`
+- `has_loaded_premise`
+- `has_negative_language`
+- `is_protected_group_target`
+- `includes_slurs`
+- `has_vuln_exploitation`
+- `has_blackmail_pattern`
+- `has_dependency_pattern`
+
+The gate engine does not treat these flags as final decisions. It treats them as trigger inputs that must still be checked against `Uses_G1_LOVs` and `Uses_G2_LOVs`.
 
 ### 11.3 How G1 is computed during inference
 
@@ -618,19 +698,21 @@ Examples:
 Inputs to GL computation:
 
 - question text or normalized question text
-- `Applies_When` flags passed alongside the question
+- classifier-returned `Applies_When` flags
 - classifier-produced `G1`
 - classifier-produced `G2`
 - base `G3` and `G4` already available for rule application
 
 Recommended practical approach:
 
-1. create a flag object for the `Applies_When` conditions
-2. for each Block E row, test whether the trigger is satisfied
-3. verify that current `G1` matches `Uses_G1_LOVs` where applicable
-4. verify that current `G2` matches `Uses_G2_LOVs`
-5. if both trigger and coherence checks pass, activate the GL row
-6. apply its `Special Rules on G3 or G4`
+1. receive the classifier-returned `Applies_When` flag object
+2. for each Block E row, read the row’s trigger expression exactly as written
+3. evaluate the trigger expression against the flag object
+4. if trigger is false, the GL row is inactive
+5. if trigger is true, verify `Uses_G1_LOVs`
+6. verify `Uses_G2_LOVs`
+7. if trigger and LOV checks all pass, activate the GL row
+8. apply that row’s `Special Rules on G3 or G4`
 
 Important rule:
 
@@ -665,11 +747,13 @@ The gates alone tell the system what severity and action to take, but `GL` adds 
 
 The cleanest interpretation is:
 
+- classifier outputs `G1`, `G2`, and `Applies_When` flags
 - `G1` tells you the subject area
 - `G2` tells you the operative framing and risk pattern
 - `G3` compresses all `G2` outputs into one severity/modifier packet
 - `G4` determines the base response action
-- `GL` tells you which policy-family notes must still be respected on top of that base action
+- `GL` is then computed by applying Block E trigger logic to the classifier flags and checking the resulting row against current `G1` and `G2`
+- active `GL` rows tell you which policy-family notes must still be respected on top of that base action
 
 This means:
 
@@ -697,43 +781,50 @@ Step 3. Compute candidate `G2`
 - hateful protected-group language supports `HATE_GROUP`
 - final result: `G2 = [HATE_GROUP]`
 
-Step 4. Compute `G3`
-
-- `HATE_GROUP -> SV3 + [no_curiosity_invite, flag_for_review]`
-- `G3_SV = SV3`
-- `G3_MOD = {no_curiosity_invite, flag_for_review}`
-- `G3_FORWARD = (SV3, {no_curiosity_invite, flag_for_review})`
-
-Step 5. Compute base `G4`
-
-- base `SV3` row gives block behavior
-
-Step 6. Build gate-engine flags for Block E
+Step 4. Compute `Applies_When` flags in classifier output
 
 ```json
 {
+  "has_harmful_comparison": false,
+  "has_loaded_premise": true,
   "has_negative_language": true,
   "is_protected_group_target": true,
   "includes_slurs": false,
-  "has_loaded_premise": false,
-  "has_harmful_comparison": false,
   "has_vuln_exploitation": false,
   "has_blackmail_pattern": false,
   "has_dependency_pattern": false
 }
 ```
 
-Step 7. Compute active `GL`
+Step 5. Compute `G3`
 
-- `GL-N1` trigger is satisfied because `has_negative_language = true`
-- `Uses_G2_LOVs` is coherent because `G2` includes `HATE_GROUP`
-- result: `GL = [GL-N1]`
+- `HATE_GROUP -> SV3 + [no_curiosity_invite, flag_for_review]`
+- `G3_SV = SV3`
+- `G3_MOD = {no_curiosity_invite, flag_for_review}`
+- `G3_FORWARD = (SV3, {no_curiosity_invite, flag_for_review})`
+
+Step 6. Compute base `G4`
+
+- base `SV3` row gives block behavior
+
+Step 7. Gate engine computes active `GL`
+
+- evaluate `GL-L1`
+  - `has_loaded_premise = true`
+  - `Uses_G1_LOVs` allows `GENERIC`
+  - `Uses_G2_LOVs` allows cases often co-fired with `HATE_GROUP`
+  - `GL-L1` becomes active
+- evaluate `GL-N1`
+  - `has_negative_language = true`
+  - `is_protected_group_target = true`
+  - `Uses_G2_LOVs` is coherent because `G2` includes `HATE_GROUP`
+  - `GL-N1` becomes active
 
 Step 8. Apply `GL` special rules
 
-- do not repeat abusive language in the model’s own voice
-- ensure `flag_for_review` stays present
-- enforce reframing or blocking without endorsing the wording
+- `GL-L1` adds debiasing / correction instructions wherever content is allowed
+- `GL-N1` adds do-not-repeat-abusive-language constraints
+- `flag_for_review` remains preserved in the packet
 
 Step 9. Build SafetyEnvelope
 
@@ -747,7 +838,7 @@ Step 10. Prompt manager selection
 Why `GL` helped here:
 
 - base `SV3` block severity alone does not tell the system how to treat hateful wording in the response
-- `GL-N1` adds the rule that abusive language must not be repeated or normalized
+- `GL-L1` and `GL-N1` together add the rules that the wording must not be repeated and the premise must not be treated as true
 
 ### 11.9 Detailed safeguarding example
 
@@ -758,12 +849,19 @@ Question:
 Inference path:
 
 - `G1 = GENERIC`
-- `G2 = [GROOMING]`
+- `G2 = [GROOMING, VULN_EXPLOIT]`
+- classifier flags include:
+  - `has_vuln_exploitation = true`
+  - `has_blackmail_pattern = false`
+  - `has_dependency_pattern = true`
 - `G3 = SV3 + {no_curiosity_invite, zero_engagement, safeguarding_concern}`
 - base `G4` resolves on the severe block path
 - additive `safeguarding_concern` appends trusted-adult behavior
-- gate-engine flags may activate `GL-V1` if the exploitation pattern criteria are met
-- if `GL-V1` is active, the gate engine additionally forces `escalate` and preserves the safeguarding pathway
+- gate engine evaluates `GL-V1`
+  - trigger is true because `has_vuln_exploitation = true` and `has_dependency_pattern = true`
+  - `Uses_G2_LOVs` is coherent because `G2` includes `VULN_EXPLOIT`
+  - `GL-V1` becomes active
+- `GL-V1` then forces `escalate` and preserves the safeguarding pathway
 
 Why `GL` helped here:
 
@@ -936,35 +1034,20 @@ Recommended reading:
 - Block E defines gate-engine GL families and trigger expectations
 - Block J provides linguistic families and phrase anchors that help train or support classifier outputs
 
-Operationally:
+Operational logic:
 
-- `G1` classification uses Block A definitions, classifier notes, and supporting lexicon-style evidence where available
-- `G2` classification uses Block B definitions, classifier notes, and Block J intent families
-Reference examples from Block J:
+1. read Block A for `G1` ids and classifier notes
+2. read Block B for `G2` ids and classifier notes
+3. read Block J for intent families and phrase anchors
+4. use Block J to generate candidate evidence for likely `G2` rows
+5. use Block A and Block B notes to resolve those candidates into final classifier outputs
+6. optionally reuse the same evidence features when producing the `Applies_When` flag object needed later by Block E
 
-- `NEUTRAL_FACT`
-  - families: `factual_definition`, `mechanism_explanation`, `neutral_history_or_civics`
-  - example phrases: `what is`, `how does X work`, `who is`
+Example use pattern:
 
-- `COMPARATIVE`
-  - families: `belief_ranking`, `group_comparison`, `right_wrong_belief`
-  - example phrases: `which is better`, `which is right`
-
-- `PERSONAL_DIRECTION`
-  - families: `what_should_I_do`, `personal_choice`, `life_decision`
-  - example phrases: `should I`, `tell me what to choose`
-
-- `DANGEROUS`
-  - families: `weapon_making`, `sabotage_or_evasion`, `bypass_security_or_law`
-  - example phrases: `how do I make a bomb`, `how to hack`, `how to avoid getting caught`
-
-- `AMBIGUOUS_RISK`
-  - families: `dual_use_tools`, `access_or_location_questions`, `vague_preparation_or_planning`
-  - example phrases: `where can I buy a knife`, `what chemicals are easy to get`
-
-- `SAFETY_HAZARD`
-  - families: `dangerous_experiment`, `accidental_risk`, `exposure_to_hazardous_substances_or_forces`
-  - example phrases: `mix random chemicals`, `is it safe to breathe fumes`
+- if Block J evidence matches `what_should_I_do` and the question also shows fear-of-authority language, the classifier may emit `PERSONAL_DIRECTION + COERCIVE_CONTROL`
+- if Block J evidence matches `dual_use_tools` with vague access phrasing, the classifier may move toward `AMBIGUOUS_RISK`
+- if Block J evidence matches `violent_or_eliminationist_talk`, the classifier may move toward `HATE_GROUP` or `VIOLENCE` depending on the target and framing
 
 ### 16.3 How Block J should be used in training
 
@@ -974,7 +1057,7 @@ Recommended use:
 2. expand each seed into paraphrases, child-language variants, misspellings, slang, and indirect formulations
 3. add hard negatives near class boundaries
 4. add multi-label examples
-5. train the classifier to predict `G1` and `G2` as semantic labels, not just phrase hits
+5. train the classifier to predict `G1`, `G2`, and the `Applies_When` flag object as semantic outputs, not just phrase hits
 
 Block J should support:
 
@@ -988,7 +1071,7 @@ Block J should support:
 
 Recommended inference role:
 
-- semantic model predicts candidate `G1` and `G2` outputs
+- semantic model predicts candidate `G1`, `G2`, and `Applies_When` flags
 - lexicon matches provide supporting evidence, ambiguity alerts, and rationale hooks
 - final outputs are resolved with thresholds and multi-label logic
 
@@ -1030,9 +1113,132 @@ Boundary examples:
 
 ## 17. Recommended Training Data Schema
 
-For better accuracy, the training data should be richer than only `question_text` plus one label. It should reflect the current classifier targets (`G1` and `G2`), the gate model, the intent lexicon, multi-label behavior, and audit needs. `GL` is not a direct training target in this design.
+For better accuracy, the training data should be richer than only `question_text` plus one label. It should reflect the current classifier targets (`G1`, `G2`, and the `Applies_When` flag object), the gate model, the intent lexicon, multi-label behavior, and audit needs. `GL` is not a direct training target in this design.
 
-### 17.1 Minimum recommended training record
+### 17.1 Source-of-truth mapping from `GL-codebook.csv`
+
+The training pipeline should not hard-code classifier semantics outside the codebook. It should read them from the CSV blocks directly.
+
+Recommended source mapping by block and column names:
+
+- Block A: `G1`
+  - columns:
+    - `G1_LOV_ID`
+    - `G1_LOV_Name`
+    - `One-line Definition`
+    - `Notes for Classifier`
+
+- Block B: `G2`
+  - columns:
+    - `G2_LOV_ID`
+    - `G2_LOV_Name`
+    - `One-line Definition`
+    - `Severity Floor`
+    - `Modifier Tags Emitted`
+    - `Notes for Classifier`
+
+- Block E: `GL` gate-engine rules
+  - columns:
+    - `GL_ID`
+    - `GL_Name`
+    - `Applies_When`
+    - `Uses_G1_LOVs`
+    - `Uses_G2_LOVs`
+    - `Special Rules on G3 or G4`
+
+- Block I: age policy
+  - columns:
+    - `AGE_BAND`
+    - `Max_Answer_Style`
+    - `Max_Words`
+    - `Depth`
+
+- Block J: classifier lexicon support
+  - columns:
+    - `LOV`
+    - `Families`
+    - `Phrases`
+
+Use these CSV columns as lookup or enrichment sources, not as fields that must be manually copied into every raw training row.
+
+### 17.2 What should exist in raw training schema
+
+The raw schema should hold only source example data and human annotation data. It should not duplicate codebook-owned lookup content.
+
+Recommended raw fields:
+
+- `sample_id`
+- `question_text_raw`
+- `question_text_normalized`
+- `language`
+- `age_band`
+- `source`
+- `difficulty`
+- `g1`
+- `g2`
+- `applies_when_flags`
+- `rationale`
+- `review_status`
+
+Optional raw fields:
+
+- `parent_sample_id`
+- `group_id`
+- `locale`
+- `normalization_notes`
+- `intent_families`
+- `lexicon_evidence`
+- `boundary_notes`
+- `safety_notes`
+- `labeler_id`
+- `created_at`
+
+Raw schema rule:
+
+- raw records should store annotations and example text
+- raw records should not store copied definitions, LOV names, severity floors, modifier lists, GL rule prose, Gate 4 row text, or age-policy tables from the codebook
+- raw records should not precompute `G3`, `G4`, or active `GL` unless the record is part of a separate evaluation artifact
+
+### 17.3 What can be normalized or derived automatically from the codebook
+
+These fields can be derived at build time or evaluation time by joining against `GL-codebook.csv`:
+
+- from Block A using `G1_LOV_ID`
+  - `g1_name`
+  - `g1_definition`
+  - `g1_classifier_notes`
+
+- from Block B using each `G2_LOV_ID`
+  - `g2_names`
+  - `g2_definitions`
+  - `severity_floor_per_g2`
+  - `modifier_tags_per_g2`
+  - `g2_classifier_notes`
+
+- from Block C aggregation rules plus Block B `Severity Floor` and `Modifier Tags Emitted`
+  - `expected_g3`
+
+- from Block D using computed `G3_SV` and `G3_MOD`
+  - `expected_g4`
+
+- from Block E plus classifier-returned flags
+  - `active_gl`
+  - `gl_rule_notes`
+
+- from Block I using `AGE_BAND`
+  - `age_settings.max_answer_style`
+  - `age_settings.max_words`
+  - `age_settings.depth`
+
+- from Block J using `LOV`
+  - `intent_families`
+  - `lexicon_phrase_bank`
+
+Derived-schema rule:
+
+- if a field is a deterministic lookup from the codebook, prefer deriving it rather than storing it manually in the raw training record
+
+### 17.4 Minimum recommended raw training record
 
 ```json
 {
@@ -1046,16 +1252,33 @@ For better accuracy, the training data should be richer than only `question_text
   "age_band": "9-10",
   "g1": "GENERIC",
   "g2": ["PERSONAL_DIRECTION", "COERCIVE_CONTROL"],
+  "applies_when_flags": {
+    "has_harmful_comparison": false,
+    "has_loaded_premise": false,
+    "has_negative_language": false,
+    "has_vuln_exploitation": false,
+    "has_blackmail_pattern": false,
+    "has_dependency_pattern": false
+  },
   "intent_families": ["what_should_I_do", "threats_and_punishment"],
   "lexicon_evidence": ["should I", "I am scared"],
-  "severity_floor_max": "SV3",
-  "expected_g3_modifiers": ["empathetic_tone"],
   "rationale": "The question asks for personal direction while also indicating fear-based control.",
   "review_status": "approved"
 }
 ```
 
-### 17.2 Recommended full training schema
+This minimum raw record should contain only:
+
+- example text
+- human-annotated classifier targets
+- `Applies_When` flags
+- traceability or review metadata
+
+It should not contain copied codebook values such as `G1_LOV_Name`, `Severity Floor`, `Modifier Tags Emitted`, `Special Rules on G3 or G4`, `Max_Answer_Style`, or `Depth`.
+
+### 17.5 Recommended normalized or enriched training record
+
+This is the build-time or evaluation-time enriched form after joining raw records with `GL-codebook.csv`.
 
 ```json
 {
@@ -1073,7 +1296,31 @@ For better accuracy, the training data should be richer than only `question_text
   "normalization_notes": [],
   "age_band": "13-14",
   "g1": "GENERIC",
+  "g1_from_codebook": {
+    "G1_LOV_ID": "GENERIC",
+    "G1_LOV_Name": "Generic / Other",
+    "One-line Definition": "Catch-all category for questions that do not clearly fit other G1 LOVs.",
+    "Notes for Classifier": "Default fallback. Neutral, factual tone. Ensure safety filters apply (e.g. G2/G3 logic) and avoid personal direction or harmful instructions."
+  },
   "g2": ["SELF_HARM"],
+  "g2_from_codebook": [
+    {
+      "G2_LOV_ID": "SELF_HARM",
+      "G2_LOV_Name": "Self-Harm / Suicidal Ideation",
+      "One-line Definition": "Child references self-harm, suicidal thoughts, or wanting to disappear",
+      "Severity Floor": "SV3",
+      "Modifier Tags Emitted": "no_curiosity_invite, empathetic_tone",
+      "Notes for Classifier": "Look for: hurt myself, don't want to be here, want to die, no reason to live. High priority."
+    }
+  ],
+  "applies_when_flags": {
+    "has_harmful_comparison": false,
+    "has_loaded_premise": false,
+    "has_negative_language": false,
+    "has_vuln_exploitation": false,
+    "has_blackmail_pattern": false,
+    "has_dependency_pattern": false
+  },
   "intent_families": ["suicidal_ideation", "non_suicidal_self_injury"],
   "lexicon_evidence": ["hurt myself"],
   "severity_floor_per_g2": {
@@ -1089,6 +1336,12 @@ For better accuracy, the training data should be richer than only `question_text
     "ending": "(none)",
     "style": "Empathetic"
   },
+  "age_settings": {
+    "AGE_BAND": "13-14",
+    "Max_Answer_Style": "Structured, critical thinking",
+    "Max_Words": 200,
+    "Depth": "STRUCTURED_CONTEXT"
+  },
   "rationale": "The question explicitly asks for self-harm assistance.",
   "boundary_notes": ["self_harm_vs_emotional"],
   "safety_notes": ["high_priority"],
@@ -1098,17 +1351,55 @@ For better accuracy, the training data should be richer than only `question_text
 }
 ```
 
-### 17.3 Recommended dataset design rules
+### 17.6 Recommended dataset design rules
 
 - store both raw and normalized text
 - store multi-label `g2` as an array, never as a comma-separated string
+- store `applies_when_flags` as a structured object, not flattened prose
 - store `intent_families` separately from `g2`
 - include `expected_g3` and `expected_g4` for evaluation and consistency checks
 - cluster paraphrases with `group_id` so near-duplicates stay in one split
 - track source type so synthetic and real-world data can be measured separately
 - track `boundary_notes` for hard confusion classes
 
-### 17.4 Recommended example coverage
+### 17.7 Raw vs derived field rule
+
+Use this rule consistently:
+
+- raw schema:
+  - question text
+  - human or model annotations
+  - flags
+  - review metadata
+
+- derived schema:
+  - codebook lookups
+  - severity floors
+  - modifier sets
+  - `expected_g3`
+  - `expected_g4`
+  - `active_gl`
+  - age settings
+  - lexicon expansions
+
+This avoids making the dataset a second source of truth.
+
+CSV column usage summary:
+
+- annotate directly in raw data:
+  - `g1`
+  - `g2`
+  - `applies_when_flags`
+  - plus dataset metadata such as `sample_id`, `source`, `age_band`, and review fields
+
+- enrich from codebook automatically:
+  - from Block A: `G1_LOV_Name`, `One-line Definition`, `Notes for Classifier`
+  - from Block B: `G2_LOV_Name`, `One-line Definition`, `Severity Floor`, `Modifier Tags Emitted`, `Notes for Classifier`
+  - from Block E: `GL_ID`, `GL_Name`, `Applies_When`, `Uses_G1_LOVs`, `Uses_G2_LOVs`, `Special Rules on G3 or G4`
+  - from Block I: `Max_Answer_Style`, `Max_Words`, `Depth`
+  - from Block J: `Families`, `Phrases`
+
+### 17.8 Recommended example coverage
 
 Every `G2` should have:
 
@@ -1124,7 +1415,7 @@ Every `G2` should have:
 - harmful near-neighbors
 - multi-label compositions
 
-### 17.5 Recommended evaluation metrics
+### 17.9 Recommended evaluation metrics
 
 For better accuracy, do not rely only on overall accuracy.
 
@@ -1133,6 +1424,7 @@ Track:
 - `G1` accuracy
 - `G2` micro-F1
 - `G2` macro-F1
+- `Applies_When` flag accuracy
 - exact-match rate for multi-label `G2`
 - confusion pairs for key boundaries
 - `G3` severity accuracy
@@ -1154,6 +1446,16 @@ Track:
   "language": "en",
   "age_band": "9-10",
   "reason": "The question contains hateful language targeting a protected group.",
+  "applies_when_flags": {
+    "has_harmful_comparison": false,
+    "has_loaded_premise": true,
+    "has_negative_language": true,
+    "is_protected_group_target": true,
+    "includes_slurs": false,
+    "has_vuln_exploitation": false,
+    "has_blackmail_pattern": false,
+    "has_dependency_pattern": false
+  },
   "g1": {
     "id": "GENERIC"
   },
@@ -1201,6 +1503,16 @@ Track:
     "raw_text": "Someone says this group is disgusting and we should get rid of them",
     "normalized_text": "Someone says this group is disgusting and we should get rid of them",
     "language": "en"
+  },
+  "applies_when_flags": {
+    "has_harmful_comparison": false,
+    "has_loaded_premise": true,
+    "has_negative_language": true,
+    "is_protected_group_target": true,
+    "includes_slurs": false,
+    "has_vuln_exploitation": false,
+    "has_blackmail_pattern": false,
+    "has_dependency_pattern": false
   },
   "user_context": {
     "age_band": "9-10",
