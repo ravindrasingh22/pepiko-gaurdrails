@@ -1,6 +1,6 @@
 # GL Classifier, Gate Engine, SafetyEnvelope, and Prompt Manager Reference
 
-This document is a detailed runtime interpretation of [GL-codebook.csv](/Users/ravindrasingh/Documents/AI-Agents/PikuAI/pikuai-gaurdrails/docs/GL-codebook.csv) and [Contracts.csv](/Users/ravindrasingh/Documents/AI-Agents/PikuAI/pikuai-gaurdrails/docs/Contracts.csv). Its goal is to explain the full system flow from normalized child question through classifier output, Gate 3 aggregation, Gate 4 decisioning, SafetyEnvelope construction, prompt template selection, prompt-rule enforcement, checklist validation, and training-data design.
+This document is a detailed runtime interpretation of [GL-codebook.csv](/Users/ravindrasingh/Documents/AI-Agents/PikuAI/pikuai-gaurdrails/docs/GL-codebook.csv) and [Contracts.csv](/Users/ravindrasingh/Documents/AI-Agents/PikuAI/pikuai-gaurdrails/docs/Contracts.csv). Its goal is to explain the full system flow from normalized child question through classifier output, gate-engine computation, SafetyEnvelope construction, prompt template selection, prompt-rule enforcement, checklist validation, and training-data design.
 
 This reference follows the codebook as the source of truth and uses the current canonical runtime ids throughout.
 
@@ -13,14 +13,15 @@ The codebook defines the safety semantics. The contracts document defines the in
 Canonical stage ownership:
 
 1. input normalization prepares the question for classification
-2. classifier assigns `G1` and one or more `G2` labels, and may also surface active GL families
+2. classifier assigns `G1` and one or more `G2` labels
 3. age policy is appended as runtime context, not learned output
 4. gate engine derives `G3` from `G2`
 5. gate engine derives `G4` from `G3`
-6. gate engine reads classifier-generated active `GL` ids and converts the matching GL special rules into structured prompt-policy notes
-7. SafetyEnvelope packages question context, gate outputs, age settings, active GLs, and prompt-policy notes
-8. prompt manager selects a template and renders the final LLM prompt
-9. prompt checklist validates the rendered prompt before any model call
+6. gate engine computes active `GL` families by reading Block E using `Applies_When`, `Uses_G1_LOVs`, and `Uses_G2_LOVs`
+7. gate engine converts the matching GL special rules into structured prompt-policy notes
+8. SafetyEnvelope packages question context, gate outputs, age settings, active GLs, and prompt-policy notes
+9. prompt manager selects a template and renders the final LLM prompt
+10. prompt checklist validates the rendered prompt before any model call
 
 Critical ownership rules:
 
@@ -48,10 +49,10 @@ How the blocks connect:
 
 - Blocks A and B define what the classifier predicts
 - Blocks C and D define what the gate engine computes
-- Block E constrains how some gate outputs must be applied in specific policy families
+- Block E defines GL rule families computed by the gate engine
 - Blocks F, G, and H govern prompt generation fidelity
 - Block I provides age-calibration context
-- Block J supports classifier training and inference for `GL`, `G1`, and `G2`
+- Block J supports classifier training and inference for `G1` and `G2`
 
 ## 3. Canonical Runtime Vocabulary
 
@@ -70,9 +71,7 @@ The current system should treat these as canonical ids.
 ### 3.2 Canonical G2 LOV ids
 
 - `NEUTRAL_FACT`
-- `COMPARATIVE`
 - `PERSONAL_DIRECTION`
-- `LOADED_PREMISE`
 - `HATE_GROUP`
 - `DANGEROUS`
 - `EMOTIONAL`
@@ -94,16 +93,17 @@ The complete flow should be read in this order:
 1. receive child question and age band
 2. normalize question text and preserve raw text for audit
 3. classifier assigns one `G1` and one or more `G2`
-4. classifier may also emit active GL families and a short internal `reason`
+4. classifier may also emit a short internal `reason`
 5. age policy settings are looked up from Block I
 6. gate engine computes `G3`
 7. gate engine computes `G4`
-8. gate engine applies GL special rules as prompt-policy notes
-9. SafetyEnvelope is constructed
-10. prompt manager selects a template using `G4`, `G3`, and sometimes `G2`
-11. prompt rules are applied as hard constraints
-12. checklist validation runs
-13. only validated prompt is sent to the LLM
+8. gate engine computes active `GL` families from Block E using the question flags plus emitted `G1` and `G2`
+9. gate engine applies GL special rules as prompt-policy notes
+10. SafetyEnvelope is constructed
+11. prompt manager selects a template using `G4`, `G3`, and sometimes `G2`
+12. prompt rules are applied as hard constraints
+13. checklist validation runs
+14. only validated prompt is sent to the LLM
 
 Important non-goals:
 
@@ -148,9 +148,9 @@ The canonical `G2` ids, their definitions, severity floors, and modifier tags sh
 Examples of valid multi-label outcomes:
 
 - `BULLYING + EMOTIONAL`
-- `COMPARATIVE + PERSONAL_DIRECTION`
 - `DEATH_GRIEF` in `G1` with `EMOTIONAL` or `SELF_HARM` in `G2`
-- `BELIEF` in `G1` with `LOADED_PREMISE` or `HATE_GROUP` in `G2`
+- `BELIEF` in `G1` with `PERSONAL_DIRECTION`
+- safeguarding-related combinations such as `GROOMING + VULN_EXPLOIT` where supported by classifier behavior
 
 Important rule:
 
@@ -192,12 +192,12 @@ Gate 3 is where the codebook becomes mechanically strict. Gate 3 does not invent
 
 Example A:
 
-- `G2 = [COMPARATIVE, GROOMING]`
-- `COMPARATIVE -> SV1 + []`
+- `G2 = [DANGEROUS, GROOMING]`
+- `DANGEROUS -> SV3 + [no_curiosity_invite, no_content_engagement]`
 - `GROOMING -> SV3 + [no_curiosity_invite, zero_engagement, safeguarding_concern]`
-- `G3_SV = MAX(SV1, SV3) = SV3`
-- `G3_MOD = {no_curiosity_invite, zero_engagement, safeguarding_concern}`
-- `G3_FORWARD = (SV3, {no_curiosity_invite, zero_engagement, safeguarding_concern})`
+- `G3_SV = SV3`
+- `G3_MOD = {no_curiosity_invite, no_content_engagement, zero_engagement, safeguarding_concern}`
+- `G3_FORWARD = (SV3, {no_curiosity_invite, no_content_engagement, zero_engagement, safeguarding_concern})`
 
 Example B:
 
@@ -390,28 +390,22 @@ So the classifier should learn toward the correct `G2` rows, while the gate engi
 
 ## 10. GL Guideline Family Contract
 
-GL rows explain policy families that may constrain or refine how the gate result is applied.
+Block E is now gate-engine logic, not classifier output. GLs are computed after `G1`, `G2`, `G3`, and base `G4` are available.
 
 Important interpretation rule:
 
 - GLs do not replace `G2 -> G3 -> G4`
-- GLs sit on top of the gate result
-- GLs are read after base Gate 4 resolution
+- GLs are computed by the gate engine
+- GLs refine or constrain how base `G4` is applied
 
-### 10.1 Current GL family meanings
+### 10.1 Current GL rows
 
-Current GL rows in the codebook:
+Current Block E rows in the codebook:
 
-- `GL-01`: Comparative Belief Detector
-- `GL-02`: Personal Direction Detector
-- `GL-03`: Loaded / Biased Premise Detector
-- `GL-04`: Violence Detector
-- `GL-05`: Grief / Death / Loss Detector
-- `GL-06`: Negative Language / Radicalisation Detector
-- `GL-07`: Grooming Detector
-- `GL-08`: Unsafe Sexual Content Detector
-- `GL-09`: Coercive Control Detector
-- `GL-10`: Vulnerability Exploitation Detector
+- `GL-C1`: Comparative Harmful Choice Detector
+- `GL-L1`: Loaded / Biased Premise Enforcer
+- `GL-N1`: Negative / Abusive Language Enforcer
+- `GL-V1`: Vulnerability Exploitation Escalation
 
 ### 10.2 How to read one GL row
 
@@ -424,131 +418,139 @@ Read GL rows in this order:
 
 Interpretation:
 
-- `Applies_When` explains why the GL is active
-- `Uses_G1_LOVs` describes expected topical alignment
-- `Uses_G2_LOVs` describes expected framing alignment
-- `Special Rules` tell the system what extra constraints or overrides must be applied after gate computation
+- `Applies_When` is the trigger logic
+- `Uses_G1_LOVs` is the expected topic shape
+- `Uses_G2_LOVs` is the expected framing shape
+- `Special Rules` tell the gate engine what to override, append, or enforce
 
 ### 10.3 GL runtime procedure
 
 Recommended runtime procedure:
 
-1. classifier emits active GL family ids, `G1`, and `G2`
-2. validate whether the GL is coherent with `G1` and `G2`
-3. compute base `G3`
-4. compute base `G4`
-5. read the classifier-generated active `GL` ids and apply the matching GL special rules as prompt-policy notes or explicit gate constraints
+1. classifier emits `G1` and `G2`
+2. gate engine computes base `G3`
+3. gate engine computes base `G4`
+4. gate engine evaluates each GL row’s `Applies_When` flags
+5. gate engine checks whether current `G1` and `G2` match `Uses_G1_LOVs` and `Uses_G2_LOVs`
+6. if the row is active and coherent, the gate engine marks that `GL` as active
+7. gate engine applies that GL row’s `Special Rules` as prompt-policy notes or explicit gate constraints
 
-GL rows do not directly render prompt text. They produce structured policy meaning.
+GL rows do not directly render prompt text. They produce structured policy behavior that the prompt manager later enforces.
 
-### 10.4 GL-specific rules from the codebook
+### 10.4 Gate-engine example for GL computation
 
-`GL-01` comparative belief:
+Question:
 
-- default ending is `curiosity_invite`
-- if `no_curiosity_invite` appears in `G3_MOD`, suppress curiosity invite
-- if `clarification_required` appears, replace ending with one safe disambiguation question
-- if `safeguarding_concern` appears, append trusted-adult prompt after existing ending
+- `Which is better for hurting someone, a brick or a stick?`
 
-`GL-02` personal direction:
+Assumed upstream inputs into the gate engine:
 
-- force `G4 action = BLOCK`
-- include brief reason
-- include specific neutral alternate question
-- do not give personal advice or endorse a choice
+- question text
+- flag object derived from `Applies_When` feature extraction
+- `G1`
+- `G2`
 
-`GL-03` loaded premise:
+Example classifier output:
 
-- action remains transform-oriented
-- neutralize or reframe biased premise
-- do not reproduce or amplify loaded framing
-- escalation only applies if `safeguarding_concern` is also present
+- `G1 = GENERIC`
+- `G2 = [DANGEROUS, VIOLENCE]`
 
-`GL-04` violence:
+Example `Applies_When` flags passed to the gate engine:
 
-- treat as `SV3`
-- include `no_curiosity_invite` and `flag_for_review`
-- append trusted-adult prompt for weapons or threats
+```json
+{
+  "has_harmful_comparison": true,
+  "has_loaded_premise": false,
+  "has_negative_language": false,
+  "has_vuln_exploitation": false,
+  "has_blackmail_pattern": false,
+  "has_dependency_pattern": false
+}
+```
 
-`GL-05` grief / death / loss:
+Gate-engine reading flow:
 
-- transform with empathetic and supportive behavior
-- if self-harm co-signals are present, severity escalates to `SV3`
-- append trusted-adult prompt if `safeguarding_concern` is present
+1. Gate 3 computes `G3`
+   - `DANGEROUS -> SV3 + [no_curiosity_invite, no_content_engagement]`
+   - `VIOLENCE -> SV3 + [no_curiosity_invite, flag_for_review]`
+   - `G3_SV = SV3`
+   - `G3_MOD = {no_curiosity_invite, no_content_engagement, flag_for_review}`
 
-`GL-06` negative language / radicalization:
+2. Gate 4 computes base `G4`
+   - base result follows the `SV3` path
+   - because `no_content_engagement` is present, the strict block profile is selected
 
-- transform or block depending on severity
-- do not reproduce hate or extremist framing
-- use review flagging for extremism
+3. Gate engine evaluates Block E
+   - `GL-C1` checks `Applies_When`
+   - `has_harmful_comparison = true`, so trigger condition is satisfied
+   - `Uses_G2_LOVs` expects one of `DANGEROUS, VIOLENCE, SELF_HARM, HATE_GROUP, UNSAFE_SEXUAL_CONTENT, GROOMING`
+   - current `G2` includes `DANGEROUS` and `VIOLENCE`, so the row is coherent
+   - `GL-C1` becomes active
 
-`GL-07` grooming:
+4. Gate engine applies `GL-C1` special rules
+   - do not choose or rank harmful options
+   - force `no_curiosity_invite` if not already present
+   - force `BLOCK` or safety-only transform depending on the harmful class
+   - require prompt instructions that forbid comparative ranking language
 
-- hard-block behavior
-- no premise engagement
-- no explanation
-- only minimal policy-approved trusted-adult prompt if permitted
+Result:
 
-`GL-08` unsafe sexual content:
+- active GLs: `[GL-C1]`
+- `G3` remains the same severity packet
+- `G4` remains on the strict safe path
+- additional prompt-policy notes are attached so the prompt cannot compare the harmful options
 
-- hardest block
-- no content engagement
-- no reason
-- no alternate question
-- no trusted-adult prompt in response layer
+### 10.5 Why gate-engine GL computation helps
 
-`GL-09` coercive control:
+This model is useful because:
 
-- transform or block-plus-escalate depending on deployment and modifier path
-- acknowledge fear and safety
-- do not reinforce controlling authority
-- append trusted-adult prompt
+- classifier training stays focused on `G1` and `G2`
+- GL logic stays transparent and configurable in the codebook
+- the system can evolve GL behavior without retraining the classifier every time
+- `Applies_When` flags make policy triggers inspectable and testable
 
-`GL-10` vulnerability exploitation:
+## 11. How Classifier Output And Gate-Engine Computation Work During Inference
 
-- block plus escalate
-- do not engage with exploitative dynamic
-- append trusted-adult prompt
-
-## 11. How GLs And Gate LOVs Are Computed During Inference
-
-This section explains how the system should compute `GL`, `G1`, `G2`, `G3`, and `G4` during inference, and why `GL` is useful in addition to the gate outputs.
+This section explains how the system should compute classifier outputs and then let the gate engine compute `G3`, `G4`, and `GL`.
 
 ### 11.1 Inference objective
 
-At inference time, the system is trying to answer three different questions in sequence:
+At inference time, the system is trying to answer two classifier questions and then hand off to the gate engine:
 
 1. what is the question broadly about
 2. how is the question framed and what risk pattern is present
-3. given that framing, what action and response style should the system take
 
 These map to:
 
 - `G1`: broad topic
 - `G2`: framing / risk
+
+What the gate engine then computes:
+
 - `G3`: aggregated severity + modifiers
 - `G4`: final action, ending, style
-- `GL`: policy-family explanation and special handling
+- `GL`: active guideline families and special handling
 
 ### 11.2 Recommended inference order
 
-The most stable inference order is:
+The most stable runtime order is:
 
 1. normalize raw question text
 2. run semantic classification for `G1`
 3. run semantic multi-label classification for `G2`
-4. optionally infer active `GL` families from the same classifier pass or from rule-matching over `G1` and `G2`
-5. aggregate `G2` into `G3`
-6. derive `G4` from `G3`
-7. apply `GL` special rules as structured notes or overrides where the codebook requires them
-8. package the result into the SafetyEnvelope
+4. pass question text, flag object, `G1`, and `G2` into the gate engine
+5. gate engine aggregates `G2` into `G3`
+6. gate engine derives `G4` from `G3`
+7. gate engine computes active `GL` rows using `Applies_When`, `Uses_G1_LOVs`, and `Uses_G2_LOVs`
+8. gate engine applies GL special rules as structured notes or overrides where the codebook requires them
+9. package the result into the SafetyEnvelope
 
 Why this order matters:
 
 - `G1` and `G2` are the core classifier outputs
 - `G3` must be computed from `G2`, not from raw text
 - `G4` must be computed from `G3`, not directly from raw text
-- `GL` helps explain and refine the gate result, but should not replace the gate flow
+- `GL` is computed inside the gate engine, not inside classifier inference
 
 ### 11.3 How G1 is computed during inference
 
@@ -600,11 +602,8 @@ Examples:
 - `Kids keep calling me names and I feel terrible`
   - likely `G2 = [BULLYING, EMOTIONAL]`
 
-- `Which religion is better?`
-  - likely `G2 = [COMPARATIVE]`
-
-- `Which religion should I believe?`
-  - likely `G2 = [COMPARATIVE, PERSONAL_DIRECTION]`
+- `Should I do what this adult says even though I am scared?`
+  - likely `G2 = [PERSONAL_DIRECTION, COERCIVE_CONTROL]`
 
 - `How do I get into the locked building?`
   - likely `G2 = [AMBIGUOUS_RISK]`
@@ -612,35 +611,31 @@ Examples:
 - `How do I break in without getting caught?`
   - likely `G2 = [DANGEROUS]`
 
-### 11.5 How GL is computed during inference
+### 11.5 How GL is computed in the gate engine
 
-`GL` should be treated as policy-family detection over the already-understood semantics of the question.
+`GL` is no longer a classifier target in this design. It is computed in the gate engine.
 
-There are two acceptable ways to compute it:
+Inputs to GL computation:
 
-- direct classifier output
-  - the classifier predicts active `GL` families alongside `G1` and `G2`
-
-- derived policy-family activation
-  - the system derives `GL` from trigger logic that is consistent with the codebook, using question semantics plus `G1` and `G2`
+- question text or normalized question text
+- `Applies_When` flags passed alongside the question
+- classifier-produced `G1`
+- classifier-produced `G2`
+- base `G3` and `G4` already available for rule application
 
 Recommended practical approach:
 
-- classifier predicts `GL`, `G1`, and `G2` for the same question or question-plus-context input
-- runtime checks whether predicted `GL` is coherent with `Uses_G1_LOVs` and `Uses_G2_LOVs`
-- if desired, a lightweight policy-validation layer can flag mismatches, but it should not become the primary source of `GL`
-
-Examples:
-
-- if `G1 = BELIEF` and `G2 = [COMPARATIVE]`, `GL-01` is likely active
-- if `G1 = BELIEF` and `G2 = [COMPARATIVE, PERSONAL_DIRECTION]`, `GL-01` and `GL-02` may both be active
-- if `G2 = [GROOMING]`, `GL-07` is likely active
-- if `G2 = [UNSAFE_SEXUAL_CONTENT]`, `GL-08` is likely active
+1. create a flag object for the `Applies_When` conditions
+2. for each Block E row, test whether the trigger is satisfied
+3. verify that current `G1` matches `Uses_G1_LOVs` where applicable
+4. verify that current `G2` matches `Uses_G2_LOVs`
+5. if both trigger and coherence checks pass, activate the GL row
+6. apply its `Special Rules on G3 or G4`
 
 Important rule:
 
-- `GL` should be consistent with `G1` and `G2`
-- if `GL` claims grooming but `G2` does not support grooming semantics, that should be treated as a mismatch for review or threshold tuning
+- `GL` must be derived from the gate-engine reading process
+- if a trigger is true but `G1`/`G2` are incoherent with the row, the system should log or review the mismatch rather than silently force the row
 
 ### 11.6 Why GL is helpful
 
@@ -657,14 +652,14 @@ The gates alone tell the system what severity and action to take, but `GL` adds 
 
 - auditability
   - `GL` makes it easier to explain why a certain pathway was chosen
-  - example: `GL-02 personal direction` explains why the system blocked advice even though base `SV2` would normally transform
+  - example: `GL-N1` explains why a severe response must also avoid repeating abusive language
 
 - analytics and tuning
   - product and safety teams can measure policy-family distribution separately from generic severity
   - this is useful for monitoring drift, coverage, and false positives
 
-- training quality
-  - `GL` labels help identify whether the classifier is learning the right type of policy distinction, not only the right severity bucket
+- policy modularity
+  - because GL lives in gate-engine logic, policy families can change without forcing every change through classifier retraining
 
 ### 11.7 How GL and gates work together
 
@@ -685,7 +680,7 @@ This means:
 
 Question:
 
-- `Which religion should I believe if my friend says theirs is better?`
+- `Someone says this group is disgusting and we should get rid of them`
 
 Step 1. Normalize input
 
@@ -694,54 +689,65 @@ Step 1. Normalize input
 
 Step 2. Compute `G1`
 
-- semantic topic is religion / belief
-- result: `G1 = BELIEF`
+- broad topic is generic social / identity language
+- result: `G1 = GENERIC`
 
 Step 3. Compute candidate `G2`
 
-- `which religion is better` supports `COMPARATIVE`
-- `should I believe` supports `PERSONAL_DIRECTION`
-- final result: `G2 = [COMPARATIVE, PERSONAL_DIRECTION]`
+- hateful protected-group language supports `HATE_GROUP`
+- final result: `G2 = [HATE_GROUP]`
 
-Step 4. Compute active `GL`
+Step 4. Compute `G3`
 
-- `COMPARATIVE` in a belief domain supports `GL-01`
-- `PERSONAL_DIRECTION` supports `GL-02`
-- result: `GL = [GL-01, GL-02]`
+- `HATE_GROUP -> SV3 + [no_curiosity_invite, flag_for_review]`
+- `G3_SV = SV3`
+- `G3_MOD = {no_curiosity_invite, flag_for_review}`
+- `G3_FORWARD = (SV3, {no_curiosity_invite, flag_for_review})`
 
-Step 5. Compute `G3`
+Step 5. Compute base `G4`
 
-- `COMPARATIVE -> SV1 + []`
-- `PERSONAL_DIRECTION -> SV2 + []`
-- `G3_SV = MAX(SV1, SV2) = SV2`
-- `G3_MOD = {}`
-- `G3_FORWARD = (SV2, {})`
+- base `SV3` row gives block behavior
 
-Step 6. Compute base `G4`
+Step 6. Build gate-engine flags for Block E
 
-- `SV2` base row gives `TRANSFORM + curiosity_invite + neutral, balanced`
+```json
+{
+  "has_negative_language": true,
+  "is_protected_group_target": true,
+  "includes_slurs": false,
+  "has_loaded_premise": false,
+  "has_harmful_comparison": false,
+  "has_vuln_exploitation": false,
+  "has_blackmail_pattern": false,
+  "has_dependency_pattern": false
+}
+```
 
-Step 7. Apply `GL` special rules
+Step 7. Compute active `GL`
 
-- `GL-02` personal direction says this case must block personal advice
-- it requires:
-  - brief reason
-  - specific neutral alternate question
-- final practical outcome becomes a block-style response even though the base `SV2` row would normally transform
+- `GL-N1` trigger is satisfied because `has_negative_language = true`
+- `Uses_G2_LOVs` is coherent because `G2` includes `HATE_GROUP`
+- result: `GL = [GL-N1]`
 
-Step 8. Build SafetyEnvelope
+Step 8. Apply `GL` special rules
+
+- do not repeat abusive language in the model’s own voice
+- ensure `flag_for_review` stays present
+- enforce reframing or blocking without endorsing the wording
+
+Step 9. Build SafetyEnvelope
 
 - include question, age context, `GL`, `G1`, `G2`, `G3`, `G4`, and policy notes
 
-Step 9. Prompt manager selection
+Step 10. Prompt manager selection
 
-- prompt manager should not choose a generic `SV2 transform` template
-- it should choose a personal-direction-aware block template or render a template with the required block notes
+- prompt manager should not render the abusive wording neutrally
+- it must render the response using the block result plus the `GL-N1` note that abusive language must not be repeated
 
 Why `GL` helped here:
 
-- `G3` and base `G4` alone would not fully explain why a personal belief-choice request must be blocked
-- `GL-02` carries the policy logic that converts a generic `SV2 transform` path into a specific personal-direction refusal
+- base `SV3` block severity alone does not tell the system how to treat hateful wording in the response
+- `GL-N1` adds the rule that abusive language must not be repeated or normalized
 
 ### 11.9 Detailed safeguarding example
 
@@ -753,20 +759,17 @@ Inference path:
 
 - `G1 = GENERIC`
 - `G2 = [GROOMING]`
-- likely `GL = [GL-07]`
 - `G3 = SV3 + {no_curiosity_invite, zero_engagement, safeguarding_concern}`
 - base `G4` resolves on the severe block path
 - additive `safeguarding_concern` appends trusted-adult behavior
-- `GL-07` further clarifies:
-  - no premise engagement
-  - no explanation
-  - only minimal policy-approved trusted-adult prompt
+- gate-engine flags may activate `GL-V1` if the exploitation pattern criteria are met
+- if `GL-V1` is active, the gate engine additionally forces `escalate` and preserves the safeguarding pathway
 
 Why `GL` helped here:
 
 - `SV3` alone only says the case is severe
-- `GL-07` says what kind of severe case it is
-- that matters because grooming requires a different response pattern from other `SV3` cases such as violence or self-harm
+- `GL-V1` can add escalation behavior when exploitation-specific trigger conditions are satisfied
+- that matters because not every severe case requires the same downstream handling
 
 ### 11.10 Inference invariants
 
@@ -777,6 +780,7 @@ The following rules should always hold:
 - `GL` may be multi-label
 - `G3` is computed only from active `G2`
 - `G4` is computed from `G3`
+- `GL` is computed by the gate engine after `G3` and `G4`
 - `GL` may refine or constrain the application of `G4`, but it should not bypass the existence of the gate flow
 - inconsistent `GL`/`G2` combinations should be logged for review
 
@@ -901,7 +905,7 @@ Rules:
 
 ## 16. Block J Intent Lexicon Contract
 
-Block J is the classifier intent lexicon. It supports how the classifier learns and predicts `GL`, `G1`, and `G2`.
+Block J is the classifier intent lexicon. It supports how the classifier learns and predicts `G1` and `G2`.
 
 ### 16.1 Purpose
 
@@ -910,7 +914,7 @@ Block J defines:
 - intent families per LOV
 - example phrase patterns per LOV
 - training anchors for dataset generation
-- runtime evidence cues for classifier rationale across `GL`, `G1`, and `G2`
+- runtime evidence cues for classifier rationale across `G1` and `G2`
 
 Block J does not define:
 
@@ -923,21 +927,19 @@ Those remain in Blocks A through D.
 
 ### 16.2 How Block J maps to classification
 
-Block J should be used as classifier support for the full classification stage, not only for `G2`.
+Block J should be used as classifier support for the classifier stage, especially `G2`, and as a supporting aid for `G1`.
 
 Recommended reading:
 
 - Block A defines `G1`
 - Block B defines `G2`
-- Block E defines `GL` families and trigger expectations
-- Block J provides linguistic families and phrase anchors that help train or support classification across those outputs
+- Block E defines gate-engine GL families and trigger expectations
+- Block J provides linguistic families and phrase anchors that help train or support classifier outputs
 
 Operationally:
 
 - `G1` classification uses Block A definitions, classifier notes, and supporting lexicon-style evidence where available
 - `G2` classification uses Block B definitions, classifier notes, and Block J intent families
-- `GL` classification uses semantic detection consistent with Block E trigger conditions, plus coherence checks against emitted `G1` and `G2`
-
 Reference examples from Block J:
 
 - `NEUTRAL_FACT`
@@ -972,7 +974,7 @@ Recommended use:
 2. expand each seed into paraphrases, child-language variants, misspellings, slang, and indirect formulations
 3. add hard negatives near class boundaries
 4. add multi-label examples
-5. train the classifier to predict `GL`, `G1`, and `G2` as semantic labels, not just phrase hits
+5. train the classifier to predict `G1` and `G2` as semantic labels, not just phrase hits
 
 Block J should support:
 
@@ -986,9 +988,9 @@ Block J should support:
 
 Recommended inference role:
 
-- semantic model predicts candidate `GL`, `G1`, and `G2` outputs
+- semantic model predicts candidate `G1` and `G2` outputs
 - lexicon matches provide supporting evidence, ambiguity alerts, and rationale hooks
-- final outputs are resolved with thresholds, multi-label logic, and coherence checks
+- final outputs are resolved with thresholds and multi-label logic
 
 Important rule:
 
@@ -1005,8 +1007,7 @@ Why:
 Important class boundaries:
 
 - `NEUTRAL_FACT` vs `GENERIC_INTENT`
-- `COMPARATIVE` vs `PERSONAL_DIRECTION`
-- `LOADED_PREMISE` vs `HATE_GROUP`
+- `PERSONAL_DIRECTION` vs `GENERIC_INTENT`
 - `EMOTIONAL` vs `SELF_HARM`
 - `AMBIGUOUS_RISK` vs `DANGEROUS`
 - `SAFETY_HAZARD` vs `DANGEROUS`
@@ -1029,7 +1030,7 @@ Boundary examples:
 
 ## 17. Recommended Training Data Schema
 
-For better accuracy, the training data should be richer than only `question_text` plus one label. It should reflect the gate model, intent lexicon, multi-label behavior, and audit needs.
+For better accuracy, the training data should be richer than only `question_text` plus one label. It should reflect the current classifier targets (`G1` and `G2`), the gate model, the intent lexicon, multi-label behavior, and audit needs. `GL` is not a direct training target in this design.
 
 ### 17.1 Minimum recommended training record
 
@@ -1040,17 +1041,16 @@ For better accuracy, the training data should be richer than only `question_text
   "split": "train",
   "language": "en",
   "source": "synthetic|human_review|redteam|production_correction",
-  "question_text_raw": "Which religion should I believe?",
-  "question_text_normalized": "Which religion should I believe?",
+  "question_text_raw": "Should I do what this adult says even though I am scared?",
+  "question_text_normalized": "Should I do what this adult says even though I am scared?",
   "age_band": "9-10",
-  "g1": "BELIEF",
-  "g2": ["COMPARATIVE", "PERSONAL_DIRECTION"],
-  "active_gl": ["GL-01", "GL-02"],
-  "intent_families": ["belief_ranking", "what_should_I_do"],
-  "lexicon_evidence": ["which is better", "should I"],
-  "severity_floor_max": "SV2",
-  "expected_g3_modifiers": [],
-  "rationale": "The question compares belief systems and asks the assistant to make the personal choice.",
+  "g1": "GENERIC",
+  "g2": ["PERSONAL_DIRECTION", "COERCIVE_CONTROL"],
+  "intent_families": ["what_should_I_do", "threats_and_punishment"],
+  "lexicon_evidence": ["should I", "I am scared"],
+  "severity_floor_max": "SV3",
+  "expected_g3_modifiers": ["empathetic_tone"],
+  "rationale": "The question asks for personal direction while also indicating fear-based control.",
   "review_status": "approved"
 }
 ```
@@ -1074,7 +1074,6 @@ For better accuracy, the training data should be richer than only `question_text
   "age_band": "13-14",
   "g1": "GENERIC",
   "g2": ["SELF_HARM"],
-  "active_gl": [],
   "intent_families": ["suicidal_ideation", "non_suicidal_self_injury"],
   "lexicon_evidence": ["hurt myself"],
   "severity_floor_per_g2": {
@@ -1150,26 +1149,18 @@ Track:
 {
   "schema_version": "2.0.0",
   "question_id": "uuid-or-hash",
-  "question_text_raw": "Which religion should I believe if my friend says theirs is better?",
-  "question_text_normalized": "Which religion should I believe if my friend says theirs is better?",
+  "question_text_raw": "Someone says this group is disgusting and we should get rid of them",
+  "question_text_normalized": "Someone says this group is disgusting and we should get rid of them",
   "language": "en",
   "age_band": "9-10",
-  "reason": "The question compares belief systems and asks the assistant to make a personal belief choice.",
-  "gl": {
-    "active": ["GL-01", "GL-02"],
-    "notes": "Comparative belief and personal-direction policy families are both active."
-  },
+  "reason": "The question contains hateful language targeting a protected group.",
   "g1": {
-    "id": "BELIEF"
+    "id": "GENERIC"
   },
   "g2": [
     {
-      "id": "COMPARATIVE",
-      "rationale": "The question compares belief systems as better or worse."
-    },
-    {
-      "id": "PERSONAL_DIRECTION",
-      "rationale": "The question asks the assistant to decide what the child should personally believe."
+      "id": "HATE_GROUP",
+      "rationale": "The question uses hateful protected-group language."
     }
   ]
 }
@@ -1180,19 +1171,22 @@ Track:
 ```json
 {
   "g3": {
-    "severity": "SV2",
-    "modifiers": [],
-    "source_g2": ["COMPARATIVE", "PERSONAL_DIRECTION"]
+    "severity": "SV3",
+    "modifiers": ["no_curiosity_invite", "flag_for_review"],
+    "source_g2": ["HATE_GROUP"]
   },
   "g4": {
     "action": "BLOCK",
-    "ending": "neutral_alternate_question",
-    "style": "Neutral, balanced"
+    "ending": "(none)",
+    "style": "Empathetic or Neutral, depending on matched Gate 4 row"
+  },
+  "gl": {
+    "active": ["GL-N1"]
   },
   "prompt_policy_notes": [
-    "Do not decide what the child should personally believe.",
-    "Include a brief reason for not choosing for the child.",
-    "Include a specific neutral alternate question."
+    "Do not repeat abusive language in the model's own voice.",
+    "Preserve review signaling for hateful language.",
+    "Do not normalize or endorse the abusive framing."
   ]
 }
 ```
@@ -1204,8 +1198,8 @@ Track:
   "schema_version": "2.0.0",
   "question": {
     "id": "uuid-or-hash",
-    "raw_text": "Which religion should I believe if my friend says theirs is better?",
-    "normalized_text": "Which religion should I believe if my friend says theirs is better?",
+    "raw_text": "Someone says this group is disgusting and we should get rid of them",
+    "normalized_text": "Someone says this group is disgusting and we should get rid of them",
     "language": "en"
   },
   "user_context": {
@@ -1216,37 +1210,34 @@ Track:
       "style": "Clear, cause-effect, brief steps"
     }
   },
-  "gl": {
-    "active": ["GL-01", "GL-02"],
-    "notes": "Comparative belief and personal-direction policy families are both active."
-  },
   "g1": {
-    "id": "BELIEF"
+    "id": "GENERIC"
   },
   "g2": {
     "active_lovs": [
       {
-        "id": "COMPARATIVE"
-      },
-      {
-        "id": "PERSONAL_DIRECTION"
+        "id": "HATE_GROUP"
       }
     ]
   },
   "g3": {
-    "severity": "SV2",
-    "modifiers": [],
-    "source_g2": ["COMPARATIVE", "PERSONAL_DIRECTION"]
+    "severity": "SV3",
+    "modifiers": ["no_curiosity_invite", "flag_for_review"],
+    "source_g2": ["HATE_GROUP"]
   },
   "g4": {
     "action": "BLOCK",
-    "base_ending": "neutral_alternate_question",
-    "style": "Neutral, balanced"
+    "base_ending": "(none)",
+    "style": "Empathetic or Neutral, depending on matched Gate 4 row"
+  },
+  "gl": {
+    "active": ["GL-N1"],
+    "notes": "Negative or abusive language enforcer is active."
   },
   "prompt_policy_notes": [
-    "Do not decide what the child should personally believe.",
-    "Include a brief reason for not choosing for the child.",
-    "Include a specific neutral alternate question."
+    "Do not repeat abusive language in the model's own voice.",
+    "Preserve review signaling for hateful language.",
+    "Do not normalize or endorse the abusive framing."
   ]
 }
 ```
