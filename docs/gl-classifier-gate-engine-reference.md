@@ -1,6 +1,6 @@
 # GL Classifier, Gate Engine, SafetyEnvelope, and Prompt Manager Reference
 
-This document is a detailed runtime interpretation of [GL-codebook.csv](/Users/ravindrasingh/Documents/AI-Agents/PikuAI/pikuai-gaurdrails/docs/GL-codebook.csv) and [Contracts.csv](/Users/ravindrasingh/Documents/AI-Agents/PikuAI/pikuai-gaurdrails/docs/Contracts.csv). Its goal is to explain the full system flow from normalized child question through classifier output, gate-engine computation, SafetyEnvelope construction, prompt template selection, prompt-rule enforcement, checklist validation, and training-data design.
+This document is a detailed runtime interpretation of [GL-codebook.csv](/Users/ravindrasingh/Documents/AI-Agents/PikuAI/pikuai-gaurdrails/docs/GL-codebook.csv) and [Contracts.csv](/Users/ravindrasingh/Documents/AI-Agents/PikuAI/pikuai-gaurdrails/docs/Contracts.csv). Its goal is to explain the full system flow from child question through classifier output, gate-engine computation, SafetyEnvelope construction, prompt template selection, prompt-rule enforcement, checklist validation, and training-data design.
 
 This reference follows the codebook as the source of truth and uses the current canonical runtime ids throughout.
 
@@ -91,7 +91,7 @@ The current system should treat these as canonical ids.
 The complete flow should be read in this order:
 
 1. receive child question and age band
-2. normalize question text and preserve raw text for audit
+2. receive the question as input
 3. classifier assigns one `G1`, one or more `G2`, and the `Applies_When` flag object
 4. classifier may also emit a short internal `reason`
 5. age policy settings are looked up from Block I
@@ -597,7 +597,7 @@ What the gate engine then computes:
 
 The most stable runtime order is:
 
-1. normalize raw question text
+1. receive the question text
 2. run semantic classification for `G1`
 3. run semantic multi-label classification for `G2`
 4. compute the `Applies_When` flag object for Block E and return it with classifier output
@@ -664,7 +664,7 @@ Important rule:
 
 Recommended inputs:
 
-- normalized question text
+- question text
 - Block B operational definitions
 - Block J intent families and phrase evidence
 - optional recent context if product policy allows it
@@ -697,7 +697,7 @@ Examples:
 
 Inputs to GL computation:
 
-- question text or normalized question text
+- question text
 - classifier-returned `Applies_When` flags
 - classifier-produced `G1`
 - classifier-produced `G2`
@@ -769,7 +769,7 @@ Question:
 Step 1. Normalize input
 
 - raw text is preserved
-- normalized text may collapse spacing, punctuation noise, and casing
+- question text is consumed as provided by the calling system
 
 Step 2. Compute `G1`
 
@@ -1165,11 +1165,12 @@ Use these CSV columns as lookup or enrichment sources, not as fields that must b
 
 The raw schema should hold only source example data and human annotation data. It should not duplicate codebook-owned lookup content.
 
+For training data, normalization may still be used as a dataset-preparation artifact even though runtime question normalization is currently disabled in the inference contract.
+
 Recommended raw fields:
 
 - `sample_id`
-- `question_text_raw`
-- `question_text_normalized`
+- `question`
 - `language`
 - `age_band`
 - `source`
@@ -1177,7 +1178,8 @@ Recommended raw fields:
 - `g1`
 - `g2`
 - `applies_when_flags`
-- `rationale`
+- `g1_reason`
+- `g2_reasons`
 - `review_status`
 
 Optional raw fields:
@@ -1185,6 +1187,7 @@ Optional raw fields:
 - `parent_sample_id`
 - `group_id`
 - `locale`
+- `question_normalized`
 - `normalization_notes`
 - `intent_families`
 - `lexicon_evidence`
@@ -1199,7 +1202,7 @@ Raw schema rule:
 - raw records should not store copied definitions, LOV names, severity floors, modifier lists, GL rule prose, Gate 4 row text, or age-policy tables from the codebook
 - raw records should not precompute `G3`, `G4`, or active `GL` unless the record is part of a separate evaluation artifact
 
-### 17.3 What can be normalized or derived automatically from the codebook
+### 17.3 What can be derived automatically from the codebook
 
 These fields can be derived at build time or evaluation time by joining against `GL-codebook.csv`:
 
@@ -1247,8 +1250,7 @@ Derived-schema rule:
   "split": "train",
   "language": "en",
   "source": "synthetic|human_review|redteam|production_correction",
-  "question_text_raw": "Should I do what this adult says even though I am scared?",
-  "question_text_normalized": "Should I do what this adult says even though I am scared?",
+  "question": "Should I do what this adult says even though I am scared?",
   "age_band": "9-10",
   "g1": "GENERIC",
   "g2": ["PERSONAL_DIRECTION", "COERCIVE_CONTROL"],
@@ -1262,7 +1264,11 @@ Derived-schema rule:
   },
   "intent_families": ["what_should_I_do", "threats_and_punishment"],
   "lexicon_evidence": ["should I", "I am scared"],
-  "rationale": "The question asks for personal direction while also indicating fear-based control.",
+  "g1_reason": "This is a general child-safety question rather than a topic-specific domain such as science or civics.",
+  "g2_reasons": {
+    "PERSONAL_DIRECTION": "The question asks what the child should personally do.",
+    "COERCIVE_CONTROL": "The question indicates fear-based control by another person."
+  },
   "review_status": "approved"
 }
 ```
@@ -1276,7 +1282,9 @@ This minimum raw record should contain only:
 
 It should not contain copied codebook values such as `G1_LOV_Name`, `Severity Floor`, `Modifier Tags Emitted`, `Special Rules on G3 or G4`, `Max_Answer_Style`, or `Depth`.
 
-### 17.5 Recommended normalized or enriched training record
+If a training pipeline keeps a normalized companion field for dataset preparation, store it as an optional training-only field such as `question_normalized` with matching `normalization_notes`. Do not treat that as part of the active runtime or inference schema unless enabled later.
+
+### 17.5 Recommended enriched training record
 
 This is the build-time or evaluation-time enriched form after joining raw records with `GL-codebook.csv`.
 
@@ -1291,11 +1299,12 @@ This is the build-time or evaluation-time enriched form after joining raw record
   "locale": "global",
   "source": "synthetic|human_review|redteam|production_correction|expert_authored",
   "difficulty": "easy|medium|hard|adversarial",
-  "question_text_raw": "How can I hurt myself without anyone knowing?",
-  "question_text_normalized": "How can I hurt myself without anyone knowing?",
+  "question": "How can I hurt myself without anyone knowing?",
+  "question_normalized": "How can I hurt myself without anyone knowing?",
   "normalization_notes": [],
   "age_band": "13-14",
   "g1": "GENERIC",
+  "g1_reason": "The question is not primarily about a domain-specific knowledge area and is handled as a general safety-sensitive question.",
   "g1_from_codebook": {
     "G1_LOV_ID": "GENERIC",
     "G1_LOV_Name": "Generic / Other",
@@ -1303,6 +1312,9 @@ This is the build-time or evaluation-time enriched form after joining raw record
     "Notes for Classifier": "Default fallback. Neutral, factual tone. Ensure safety filters apply (e.g. G2/G3 logic) and avoid personal direction or harmful instructions."
   },
   "g2": ["SELF_HARM"],
+  "g2_reasons": {
+    "SELF_HARM": "The question explicitly asks for self-harm assistance."
+  },
   "g2_from_codebook": [
     {
       "G2_LOV_ID": "SELF_HARM",
@@ -1342,7 +1354,6 @@ This is the build-time or evaluation-time enriched form after joining raw record
     "Max_Words": 200,
     "Depth": "STRUCTURED_CONTEXT"
   },
-  "rationale": "The question explicitly asks for self-harm assistance.",
   "boundary_notes": ["self_harm_vs_emotional"],
   "safety_notes": ["high_priority"],
   "labeler_id": "expert-01",
@@ -1353,7 +1364,8 @@ This is the build-time or evaluation-time enriched form after joining raw record
 
 ### 17.6 Recommended dataset design rules
 
-- store both raw and normalized text
+- store the canonical `question` field
+- if training normalization is used, store it as a separate optional field and never overwrite `question`
 - store multi-label `g2` as an array, never as a comma-separated string
 - store `applies_when_flags` as a structured object, not flattened prose
 - store `intent_families` separately from `g2`
@@ -1368,6 +1380,7 @@ Use this rule consistently:
 
 - raw schema:
   - question text
+  - optional training-normalized companion text
   - human or model annotations
   - flags
   - review metadata
@@ -1441,11 +1454,9 @@ Track:
 {
   "schema_version": "2.0.0",
   "question_id": "uuid-or-hash",
-  "question_text_raw": "Someone says this group is disgusting and we should get rid of them",
-  "question_text_normalized": "Someone says this group is disgusting and we should get rid of them",
+  "question": "Someone says this group is disgusting and we should get rid of them",
   "language": "en",
   "age_band": "9-10",
-  "reason": "The question contains hateful language targeting a protected group.",
   "applies_when_flags": {
     "has_harmful_comparison": false,
     "has_loaded_premise": true,
@@ -1457,12 +1468,13 @@ Track:
     "has_dependency_pattern": false
   },
   "g1": {
-    "id": "GENERIC"
+    "id": "GENERIC",
+    "reason": "The question is handled as a general query rather than a science, law, or civic knowledge request."
   },
   "g2": [
     {
       "id": "HATE_GROUP",
-      "rationale": "The question uses hateful protected-group language."
+      "reason": "The question uses hateful language about a protected group."
     }
   ]
 }
@@ -1488,7 +1500,7 @@ Track:
   "prompt_policy_notes": [
     "Do not repeat abusive language in the model's own voice.",
     "Preserve review signaling for hateful language.",
-    "Do not normalize or endorse the abusive framing."
+    "Do not endorse the abusive framing."
   ]
 }
 ```
@@ -1500,8 +1512,7 @@ Track:
   "schema_version": "2.0.0",
   "question": {
     "id": "uuid-or-hash",
-    "raw_text": "Someone says this group is disgusting and we should get rid of them",
-    "normalized_text": "Someone says this group is disgusting and we should get rid of them",
+    "text": "Someone says this group is disgusting and we should get rid of them",
     "language": "en"
   },
   "applies_when_flags": {
@@ -1549,7 +1560,7 @@ Track:
   "prompt_policy_notes": [
     "Do not repeat abusive language in the model's own voice.",
     "Preserve review signaling for hateful language.",
-    "Do not normalize or endorse the abusive framing."
+    "Do not endorse the abusive framing."
   ]
 }
 ```
@@ -1560,8 +1571,7 @@ The prompt manager consumes the SafetyEnvelope, not the raw question alone.
 
 Required prompt-manager inputs:
 
-- normalized question text
-- raw question text if needed for audit or quoted prompt context
+- question text
 - age band and age settings
 - active `GL`
 - `G1`
