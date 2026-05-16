@@ -2,7 +2,7 @@ import csv
 import json
 from pathlib import Path
 
-from training.slm_classifier.data_pipeline import DATASET_SPLITS_PATH, LABEL_VOCAB_PATH, build_dataset_splits, build_group_id
+from training.slm_classifier.data_pipeline import DATASET_SPLITS_PATH, LABEL_VOCAB_PATH, build_dataset_splits, build_group_id, validate_dataset_rows
 from training.slm_classifier.source_normalizer import CANONICAL_COLUMNS, discover_source_files, expand_authoring_rows, write_canonical_jsonl_with_metadata, write_normalized_csv
 
 
@@ -207,3 +207,20 @@ def test_canonical_jsonl_preserves_topic_column(tmp_path: Path) -> None:
 
     assert rows
     assert rows[0]["topic"] == "School"
+
+
+def test_dataset_validation_does_not_require_g2_all() -> None:
+    rows = [
+        {
+            "sample_id": "row-1",
+            "question": "Why is the sky blue?",
+            "context": "",
+            "topic": "Science",
+            "g1": "SCIENCE",
+            "g2": ["NEUTRAL_FACT"],
+            "intent_families": [],
+            "intent_phrases": [],
+        }
+    ]
+
+    validate_dataset_rows(rows)

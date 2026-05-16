@@ -1,6 +1,7 @@
 from app.guardrails import prompt_contract, slm_classifier
 from app.models.child_profile import ChildProfile
 from training.slm_classifier.slm_backend import _decode_g2_predictions
+from training.slm_classifier.data_pipeline import primary_g2_label
 
 
 def test_slm_classifier_maps_neutral_belief_question_to_fact_flow() -> None:
@@ -190,12 +191,11 @@ def test_decode_g2_predictions_keeps_primary_separate_from_multilabel_supporting
     primary_g2, g2_all = _decode_g2_predictions(
         label_vocab=label_vocab,
         primary_probs=[0.75, 0.20, 0.05],
-        multilabel_probs=[0.82, 0.78, 0.91],
     )
 
     assert primary_g2 == "EMOTIONAL"
-    assert "GROOMING" in g2_all
     assert g2_all[0] == "EMOTIONAL"
+    assert g2_all == ["EMOTIONAL"]
 
 
 def test_decode_g2_predictions_inserts_primary_when_multilabel_thresholds_miss_it() -> None:
@@ -203,13 +203,37 @@ def test_decode_g2_predictions_inserts_primary_when_multilabel_thresholds_miss_i
 
     primary_g2, g2_all = _decode_g2_predictions(
         label_vocab=label_vocab,
-        primary_probs=[0.10, 0.85, 0.05],
-        multilabel_probs=[0.22, 0.30, 0.81],
+        primary_probs=[0.10, 0.75, 0.81],
     )
 
-    assert primary_g2 == "BULLYING"
-    assert g2_all[0] == "BULLYING"
-    assert "GROOMING" in g2_all
+    assert primary_g2 == "GROOMING"
+    assert g2_all[0] == "GROOMING"
+    assert "BULLYING" not in g2_all
+    assert "EMOTIONAL" not in g2_all
+
+
+def test_decode_g2_predictions_can_keep_multiple_labels_from_primary_head_probs() -> None:
+    label_vocab = {"g2": ["EMOTIONAL", "BULLYING", "GROOMING"]}
+
+    primary_g2, g2_all = _decode_g2_predictions(
+        label_vocab=label_vocab,
+        primary_probs=[0.81, 0.83, 0.84],
+    )
+
+    assert primary_g2 == "GROOMING"
+    assert g2_all == ["EMOTIONAL", "BULLYING", "GROOMING"]
+
+
+def test_decode_g2_predictions_inserts_primary_when_threshold_filters_it_out() -> None:
+    label_vocab = {"g2": ["EMOTIONAL", "BULLYING", "GROOMING"]}
+
+    primary_g2, g2_all = _decode_g2_predictions(
+        label_vocab=label_vocab,
+        primary_probs=[0.79, 0.18, 0.03],
+    )
+
+    assert primary_g2 == "EMOTIONAL"
+    assert g2_all == ["EMOTIONAL"]
 
 
 def test_slm_classifier_uses_primary_g2_only_for_g3() -> None:
@@ -225,3 +249,19 @@ def test_slm_classifier_uses_primary_g2_only_for_g3() -> None:
     assert "EMOTIONAL" in decision.gate_values["G2_all"]
     assert "GROOMING" in decision.gate_values["G2_all"]
     assert decision.gate_values["G3"] == "SV2"
+
+
+def test_primary_g2_label_prioritizes_grooming_over_lower_risk_labels() -> None:
+    assert primary_g2_label(["BULLYING", "VULN_EXPLOIT", "GROOMING"]) == "GROOMING"
+
+
+def test_heuristic_classifier_detects_grooming_secrecy_language() -> None:
+    normalized = {
+        "text": "Someone who says they know my school on Facebook Messenger said our friendship should be only between us.",
+        "recent_context": [],
+        "child_profile": {"age": 12, "age_group": "11-12", "language": "en"},
+    }
+
+    decision = slm_classifier.classify_heuristic(normalized)
+
+    assert "GROOMING" in decision.gate_values["G2_all"]

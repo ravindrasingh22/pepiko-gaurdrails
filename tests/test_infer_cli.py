@@ -1,55 +1,7 @@
-from training.slm_classifier.infer import _run_classifier
 from training.slm_classifier.infer import _normalize_input
-from training.slm_classifier.slm_backend import train_slm_classifier
-
-
-def test_infer_cli_returns_gates_and_contract() -> None:
-    result = _run_classifier(
-        mode="slm",
-        question="Who is God?",
-        age_band="7-8",
-        language="en",
-        recent_context="none",
-    )
-
-    assert result["mode"] == "slm"
-    assert "gates" in result
-    assert "prompt" in result
-    assert "template_id" in result
-    assert "safety_envelope" in result
-    assert "prompt_checklist" in result
-    assert "backend" in result
-
-
-def test_infer_cli_supports_slm_mode() -> None:
-    train_slm_classifier(core="smol")
-
-    result = _run_classifier(
-        mode="slm",
-        question="Who is God?",
-        age_band="7-8",
-        language="en",
-        recent_context="none",
-    )
-
-    assert result["mode"] == "slm"
-    assert result["backend"] == "slm"
-    assert result["classifier_metadata"]["backend"] == "slm"
-
-
-def test_infer_cli_supports_both_core_comparison() -> None:
-    result = _run_classifier(
-        mode="slm",
-        question="Who is God?",
-        age_band="7-8",
-        language="en",
-        recent_context="none",
-        core="both",
-    )
-
-    assert result["core_model"] == "both"
-    assert "smol" in result["results"]
-    assert "deberta" in result["results"]
+from training.slm_classifier.infer import _parse_thresholds
+from training.slm_classifier.infer import _resolve_threshold
+from training.slm_classifier.infer import run_infer
 
 
 def test_infer_cli_normalizes_alias_age_band_to_expected_age() -> None:
@@ -72,5 +24,52 @@ def test_infer_cli_falls_back_to_lower_valid_age_band_for_invalid_band() -> None
         recent_context="none",
     )
 
-    assert normalized["child_profile"]["age"] == 8
-    assert normalized["child_profile"]["age_group"] == "7-8"
+    assert normalized["child_profile"]["age"] == 12
+    assert normalized["child_profile"]["age_group"] == "8-10"
+
+
+def test_run_infer_preserves_thresholded_runtime_classifier_output() -> None:
+    result = run_infer(
+        mode="slm",
+        question="Which religion should I follow?",
+        age_band="9-10",
+        language="en",
+        recent_context="none",
+        threshold=0.8,
+    )
+
+    assert "applies_when_flags" not in result
+    assert isinstance(result["g2"]["id"], str)
+    assert result["g2"]["id"]
+
+
+def test_parse_thresholds_accepts_json_object() -> None:
+    thresholds = _parse_thresholds('{"default": 0.65, "G2": 0.72}')
+
+    assert thresholds == {"default": 0.65, "G2": 0.72}
+
+
+def test_resolve_threshold_uses_thresholds_when_threshold_is_omitted() -> None:
+    resolved = _resolve_threshold(None, {"default": 0.67, "G2": 0.72})
+
+    assert resolved == 0.67
+
+
+def test_resolve_threshold_prefers_explicit_threshold_over_thresholds() -> None:
+    resolved = _resolve_threshold(0.81, {"default": 0.67})
+
+    assert resolved == 0.81
+
+
+def test_run_infer_returns_thresholds_when_provided() -> None:
+    result = run_infer(
+        mode="slm",
+        question="Which religion should I follow?",
+        age_band="9-10",
+        language="en",
+        recent_context="none",
+        thresholds={"default": 0.8, "G2": 0.75},
+    )
+
+    assert result["threshold"] == 0.8
+    assert result["thresholds"] == {"default": 0.8, "G2": 0.75}

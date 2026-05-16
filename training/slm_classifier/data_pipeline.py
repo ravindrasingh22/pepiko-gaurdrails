@@ -5,7 +5,7 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
-from training.slm_classifier.codebook import label_columns, parse_codebook
+from training.slm_classifier.codebook import parse_codebook
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW_DIR = ROOT / "data" / "raw"
@@ -15,11 +15,26 @@ MANIFEST_PATH = PROCESSED_DIR / "piku_gl_classifier_manifest.json"
 DATASET_SPLITS_PATH = PROCESSED_DIR / "piku_gl_classifier_splits.json"
 LABEL_VOCAB_PATH = PROCESSED_DIR / "piku_gl_classifier_label_vocab.json"
 SUPPORTED_EXTENSIONS = {".jsonl", ".json", ".csv", ".xlsx"}
-GL_COLUMNS = label_columns()
 CODEBOOK = parse_codebook()
 G1_VOCAB = list(CODEBOOK.g1_specs.keys())
 G2_VOCAB = list(CODEBOOK.g2_specs.keys())
-G2_PRIORITY = list(G2_VOCAB)
+G2_PRIORITY = [
+    "UNSAFE_SEXUAL_CONTENT",
+    "GROOMING",
+    "COERCIVE_CONTROL",
+    "VULN_EXPLOIT",
+    "SELF_HARM",
+    "DANGEROUS",
+    "HATE_GROUP",
+    "VIOLENCE",
+    "PERSONAL_DIRECTION",
+    "AMBIGUOUS_RISK",
+    "SAFETY_HAZARD",
+    "EMOTIONAL",
+    "BULLYING",
+    "NEUTRAL_FACT",
+    "GENERIC_INTENT",
+]
 G3_VOCAB = ["SV0", "SV1", "SV2", "SV3", "SV4"]
 G4_VOCAB = ["ALLOW", "TRANSFORM", "TRANSFORM_HOLD", "BLOCK", "BLOCK_HARD", "BLOCK_ESCALATE"]
 DEFAULT_TOPIC = "General Learning"
@@ -70,14 +85,10 @@ def write_manifest() -> DatasetManifest:
 def build_input_text(row: dict[str, str]) -> str:
     return (
         "Classify the child-safety guideline signals.\n"
-        f"Language: {row.get('language', 'en')}\n"
-        f"Recent context: {row.get('recent_context', 'none')}\n"
+        f"Topic: {row.get('topic', '') or DEFAULT_TOPIC}\n"
+        f"Recent context: {row.get('context', '') or 'none'}\n"
         f"Question: {row['question']}"
     )
-
-
-def build_label_vector(row: dict[str, str | int | float]) -> list[float]:
-    return [float(row[column]) for column in GL_COLUMNS]
 
 
 def build_group_id(row: dict[str, object]) -> str:
@@ -96,9 +107,10 @@ def dataset_fingerprint(rows: list[dict[str, object]]) -> str:
         {
             "sample_id": row.get("sample_id"),
             "question": row.get("question"),
+            "context": row.get("context"),
+            "topic": row.get("topic"),
             "g1": row.get("g1"),
             "g2": row.get("g2"),
-            "applies_when_flags": row.get("applies_when_flags"),
         }
         for row in rows
     ]
@@ -131,6 +143,10 @@ def validate_dataset_rows(rows: list[dict[str, object]]) -> None:
     for row in rows:
         if not str(row.get("question", "")).strip():
             raise ValueError(f"Missing question in row {row.get('sample_id')}")
+        if "context" not in row:
+            raise ValueError(f"Missing context in row {row.get('sample_id')}")
+        if not str(row.get("topic", "")).strip():
+            raise ValueError(f"Missing topic in row {row.get('sample_id')}")
         if str(row.get("g1", "")).strip() not in G1_VOCAB:
             raise ValueError(f"Unsupported G1 label in row {row.get('sample_id')}: {row.get('g1')}")
         g2_values = parse_g2_values(row.get("g2", ""))
@@ -139,27 +155,48 @@ def validate_dataset_rows(rows: list[dict[str, object]]) -> None:
         unsupported = [value for value in g2_values if value not in G2_VOCAB]
         if unsupported:
             raise ValueError(f"Unsupported G2 labels in row {row.get('sample_id')}: {unsupported}")
-        flags = row.get("applies_when_flags")
-        if not isinstance(flags, dict):
-            raise ValueError(f"Missing applies_when_flags object in row {row.get('sample_id')}")
+        if not isinstance(row.get("intent_families"), list):
+            raise ValueError(f"Missing intent_families list in row {row.get('sample_id')}")
+        if not isinstance(row.get("intent_phrases"), list):
+            raise ValueError(f"Missing intent_phrases list in row {row.get('sample_id')}")
 
 
 def build_topic_vocab(rows: list[dict[str, object]] | None = None) -> list[str]:
-    if rows:
-        topics = sorted({str(row.get("topic", "")).strip() for row in rows if str(row.get("topic", "")).strip()})
-    else:
-        topics = [DEFAULT_TOPIC]
+    topics = sorted(
+        {
+            str(row.get("topic", "")).strip()
+            for row in (rows or [])
+            if str(row.get("topic", "")).strip()
+        }
+    )
     if DEFAULT_TOPIC not in topics:
         topics.append(DEFAULT_TOPIC)
     return topics
 
 
 def write_label_vocab(rows: list[dict[str, object]] | None = None, target_path: Path = LABEL_VOCAB_PATH) -> Path:
+    intent_families = sorted(
+        {
+            str(item).strip()
+            for row in (rows or [])
+            for item in row.get("intent_families", [])
+            if str(item).strip()
+        }
+    )
+    intent_phrases = sorted(
+        {
+            str(item).strip()
+            for row in (rows or [])
+            for item in row.get("intent_phrases", [])
+            if str(item).strip()
+        }
+    )
     payload = {
-        "gl_columns": GL_COLUMNS,
         "topic": build_topic_vocab(rows),
         "g1": G1_VOCAB,
         "g2": G2_VOCAB,
+        "intent_families": intent_families,
+        "intent_phrases": intent_phrases,
         "age_bands": list(CODEBOOK.age_bands.keys()),
     }
     target_path.parent.mkdir(parents=True, exist_ok=True)

@@ -669,6 +669,13 @@ Recommended inputs:
 - Block J intent families and phrase evidence
 - optional recent context if product policy allows it
 
+Block J runtime support should come from two sources:
+
+- direct phrase matching over `question` and `context`
+- learned auxiliary prediction from trained SLM heads for:
+  - `intent_families`
+  - `intent_phrases`
+
 Recommended decision pattern:
 
 1. produce candidate `G2` scores from the classifier
@@ -676,6 +683,20 @@ Recommended decision pattern:
 3. apply class thresholds
 4. allow multi-label outputs where justified
 5. apply boundary-resolution rules for confusing pairs
+
+Default runtime threshold rule:
+
+- unless explicitly overridden, classifier thresholds should default to `0.8`
+- this default should be applied consistently to:
+  - `G2` multi-label activation
+  - `Applies_When` boolean activation from score outputs
+  - learned Block J `intent_families`
+  - learned Block J `intent_phrases`
+
+Important rule:
+
+- Block J evidence may support `G2`
+- Block J evidence must not replace the classifier's main `G2` resolution logic
 
 Examples:
 
@@ -780,6 +801,33 @@ Step 3. Compute candidate `G2`
 
 - hateful protected-group language supports `HATE_GROUP`
 - final result: `G2 = [HATE_GROUP]`
+
+Step 3A. Compute Block J evidence
+
+- direct phrase matching may or may not find explicit Block J anchors
+- if trained SLM Block J heads are available, they may also predict intent families and phrases
+- runtime should preserve both forms of evidence in a stable object:
+
+```json
+{
+  "intent_lexicon": {
+    "matched_lovs": [],
+    "evidence": [],
+    "learned": {
+      "predicted_families": [],
+      "predicted_phrases": [],
+      "family_scores": {},
+      "phrase_scores": {}
+    }
+  }
+}
+```
+
+Operational rule:
+
+- `intent_lexicon.learned` should always exist in infer, gate, and prompt-contract payloads
+- when the backend is heuristic or fallback, return empty learned arrays and score maps
+- when the backend is trained SLM, fill `predicted_families`, `predicted_phrases`, and score maps from the Block J auxiliary heads
 
 Step 4. Compute `Applies_When` flags in classifier output
 
@@ -1058,6 +1106,9 @@ Recommended use:
 3. add hard negatives near class boundaries
 4. add multi-label examples
 5. train the classifier to predict `G1`, `G2`, and the `Applies_When` flag object as semantic outputs, not just phrase hits
+6. for trained SLM backends, also learn Block J auxiliary outputs for:
+   - `intent_families`
+   - `intent_phrases`
 
 Block J should support:
 
@@ -1066,14 +1117,63 @@ Block J should support:
 - rationale generation
 - threshold tuning
 - confusion analysis
+- auxiliary multi-task supervision for trained SLM inference
 
 ### 16.4 How Block J should be used at inference
 
 Recommended inference role:
 
 - semantic model predicts candidate `G1`, `G2`, and `Applies_When` flags
-- lexicon matches provide supporting evidence, ambiguity alerts, and rationale hooks
+- direct lexicon matches provide supporting evidence, ambiguity alerts, and rationale hooks
+- trained SLM Block J heads may predict likely `intent_families` and `intent_phrases` as additional support
 - final outputs are resolved with thresholds and multi-label logic
+
+Recommended runtime order:
+
+1. run classifier inference for `topic`, `G1`, `G2`, and `Applies_When`
+2. run direct Block J phrase matching on `question` and `context`
+3. if a trained SLM backend is active, decode learned Block J outputs:
+   - `predicted_families`
+   - `predicted_phrases`
+   - `family_scores`
+   - `phrase_scores`
+4. combine semantic classifier evidence, direct Block J evidence, and learned Block J evidence
+5. finalize `G2`
+6. generate `reason`, `g1.reason`, and `g2[].reason`
+7. pass only classifier outputs plus flags into gate-engine computation
+
+Current CLI contract:
+
+- `infer.py`, `gate.py`, and `final_prompt.py` should expose a `--threshold` parameter
+- if omitted, `--threshold` defaults to `0.8`
+- when provided, the runtime should use that value consistently for:
+  - `G2` activation
+  - `Applies_When` activation
+  - learned Block J family activation
+  - learned Block J phrase activation
+
+Runtime output contract:
+
+```json
+{
+  "intent_lexicon": {
+    "matched_lovs": ["PERSONAL_DIRECTION"],
+    "evidence": [
+      {
+        "g2_id": "PERSONAL_DIRECTION",
+        "families": ["what_should_I_do", "personal_choice"],
+        "matched_phrases": ["what should I do", "should I"]
+      }
+    ],
+    "learned": {
+      "predicted_families": [],
+      "predicted_phrases": [],
+      "family_scores": {},
+      "phrase_scores": {}
+    }
+  }
+}
+```
 
 Important rule:
 
@@ -1167,40 +1267,40 @@ The raw schema should hold only source example data and human annotation data. I
 
 For training data, normalization may still be used as a dataset-preparation artifact even though runtime question normalization is currently disabled in the inference contract.
 
-Recommended raw fields:
+Recommended raw authoring fields:
 
-- `sample_id`
 - `question`
-- `language`
-- `age_band`
-- `source`
-- `difficulty`
+- `context`
+- `topic`
 - `g1`
 - `g2`
 - `applies_when_flags`
-- `g1_reason`
-- `g2_reasons`
+- `intent_families`
+- `intent_phrases`
 - `review_status`
 
-Optional raw fields:
+Fields not required in raw authoring files:
 
-- `parent_sample_id`
-- `group_id`
-- `locale`
-- `question_normalized`
-- `normalization_notes`
-- `intent_families`
-- `lexicon_evidence`
-- `boundary_notes`
-- `safety_notes`
-- `labeler_id`
-- `created_at`
+- `sample_id`
+  - generate this during normalization or dataset build
+- `split`
+  - assign this during processed dataset creation, not manual authoring
+
+Fields that are not codebook-backed and are not part of the minimum raw schema:
+
+- `source`
+- `difficulty`
+- `rationale`
 
 Raw schema rule:
 
 - raw records should store annotations and example text
 - raw records should not store copied definitions, LOV names, severity floors, modifier lists, GL rule prose, Gate 4 row text, or age-policy tables from the codebook
 - raw records should not precompute `G3`, `G4`, or active `GL` unless the record is part of a separate evaluation artifact
+- raw `intent_families` and `intent_phrases` should be populated from Block J by LOV lookup, not written as free-form manual prose
+- if the raw authoring file omits `context`, treat it as `""`
+- if the raw authoring file omits `topic`, treat it as `General Learning`
+- if the raw authoring file omits `review_status`, default it to `approved`
 
 ### 17.3 What can be derived automatically from the codebook
 
@@ -1235,7 +1335,7 @@ These fields can be derived at build time or evaluation time by joining against 
 
 - from Block J using `LOV`
   - `intent_families`
-  - `lexicon_phrase_bank`
+  - `intent_phrases`
 
 Derived-schema rule:
 
@@ -1245,13 +1345,9 @@ Derived-schema rule:
 
 ```json
 {
-  "schema_version": "2.0.0",
-  "sample_id": "uuid",
-  "split": "train",
-  "language": "en",
-  "source": "synthetic|human_review|redteam|production_correction",
   "question": "Should I do what this adult says even though I am scared?",
-  "age_band": "9-10",
+  "context": "",
+  "topic": "Relationships & Safety",
   "g1": "GENERIC",
   "g2": ["PERSONAL_DIRECTION", "COERCIVE_CONTROL"],
   "applies_when_flags": {
@@ -1263,26 +1359,29 @@ Derived-schema rule:
     "has_dependency_pattern": false
   },
   "intent_families": ["what_should_I_do", "threats_and_punishment"],
-  "lexicon_evidence": ["should I", "I am scared"],
-  "g1_reason": "This is a general child-safety question rather than a topic-specific domain such as science or civics.",
-  "g2_reasons": {
-    "PERSONAL_DIRECTION": "The question asks what the child should personally do.",
-    "COERCIVE_CONTROL": "The question indicates fear-based control by another person."
-  },
+  "intent_phrases": ["what should I do", "should I"],
   "review_status": "approved"
 }
 ```
 
-This minimum raw record should contain only:
+This minimum raw authoring record should contain only:
 
 - example text
+- broad descriptive topic
 - human-annotated classifier targets
 - `Applies_When` flags
 - traceability or review metadata
 
 It should not contain copied codebook values such as `G1_LOV_Name`, `Severity Floor`, `Modifier Tags Emitted`, `Special Rules on G3 or G4`, `Max_Answer_Style`, or `Depth`.
 
-If a training pipeline keeps a normalized companion field for dataset preparation, store it as an optional training-only field such as `question_normalized` with matching `normalization_notes`. Do not treat that as part of the active runtime or inference schema unless enabled later.
+During normalization or processed-dataset build, the pipeline may then add generated fields such as:
+
+- `sample_id`
+- `split`
+- `question_normalized`
+- `normalization_notes`
+
+Training normalization may still run as a preprocessing step when building normalized training artifacts, but the raw training schema above should stay minimal.
 
 ### 17.5 Recommended enriched training record
 
@@ -1292,19 +1391,13 @@ This is the build-time or evaluation-time enriched form after joining raw record
 {
   "schema_version": "2.0.0",
   "sample_id": "uuid",
-  "parent_sample_id": null,
   "split": "train|validation|test",
-  "group_id": "paraphrase-cluster-id",
-  "language": "en",
-  "locale": "global",
-  "source": "synthetic|human_review|redteam|production_correction|expert_authored",
-  "difficulty": "easy|medium|hard|adversarial",
   "question": "How can I hurt myself without anyone knowing?",
+  "context": "",
+  "topic": "Mental Health & Safety",
   "question_normalized": "How can I hurt myself without anyone knowing?",
   "normalization_notes": [],
-  "age_band": "13-14",
   "g1": "GENERIC",
-  "g1_reason": "The question is not primarily about a domain-specific knowledge area and is handled as a general safety-sensitive question.",
   "g1_from_codebook": {
     "G1_LOV_ID": "GENERIC",
     "G1_LOV_Name": "Generic / Other",
@@ -1312,9 +1405,6 @@ This is the build-time or evaluation-time enriched form after joining raw record
     "Notes for Classifier": "Default fallback. Neutral, factual tone. Ensure safety filters apply (e.g. G2/G3 logic) and avoid personal direction or harmful instructions."
   },
   "g2": ["SELF_HARM"],
-  "g2_reasons": {
-    "SELF_HARM": "The question explicitly asks for self-harm assistance."
-  },
   "g2_from_codebook": [
     {
       "G2_LOV_ID": "SELF_HARM",
@@ -1334,7 +1424,7 @@ This is the build-time or evaluation-time enriched form after joining raw record
     "has_dependency_pattern": false
   },
   "intent_families": ["suicidal_ideation", "non_suicidal_self_injury"],
-  "lexicon_evidence": ["hurt myself"],
+  "intent_phrases": ["I want to die", "how can I hurt myself"],
   "severity_floor_per_g2": {
     "SELF_HARM": "SV3"
   },
@@ -1354,25 +1444,20 @@ This is the build-time or evaluation-time enriched form after joining raw record
     "Max_Words": 200,
     "Depth": "STRUCTURED_CONTEXT"
   },
-  "boundary_notes": ["self_harm_vs_emotional"],
-  "safety_notes": ["high_priority"],
-  "labeler_id": "expert-01",
-  "review_status": "approved",
-  "created_at": "2026-05-13"
+  "review_status": "approved"
 }
 ```
 
 ### 17.6 Recommended dataset design rules
 
 - store the canonical `question` field
-- if training normalization is used, store it as a separate optional field and never overwrite `question`
+- store `context` as a plain string and default it to empty when no context is available
+- store `topic` as a descriptive single string and default it to `General Learning` when absent
 - store multi-label `g2` as an array, never as a comma-separated string
 - store `applies_when_flags` as a structured object, not flattened prose
-- store `intent_families` separately from `g2`
+- populate `intent_families` and `intent_phrases` from Block J using LOV lookup
 - include `expected_g3` and `expected_g4` for evaluation and consistency checks
-- cluster paraphrases with `group_id` so near-duplicates stay in one split
-- track source type so synthetic and real-world data can be measured separately
-- track `boundary_notes` for hard confusion classes
+- keep normalization in normalized training artifacts rather than expanding the raw schema
 
 ### 17.7 Raw vs derived field rule
 
@@ -1380,9 +1465,11 @@ Use this rule consistently:
 
 - raw schema:
   - question text
-  - optional training-normalized companion text
+  - context text
+  - topic text
   - human or model annotations
   - flags
+  - codebook-derived intent families and phrases
   - review metadata
 
 - derived schema:
@@ -1403,7 +1490,9 @@ CSV column usage summary:
   - `g1`
   - `g2`
   - `applies_when_flags`
-  - plus dataset metadata such as `sample_id`, `source`, `age_band`, and review fields
+  - `context`
+  - `topic`
+  - plus lightweight metadata such as `sample_id` and `review_status`
 
 - enrich from codebook automatically:
   - from Block A: `G1_LOV_Name`, `One-line Definition`, `Notes for Classifier`

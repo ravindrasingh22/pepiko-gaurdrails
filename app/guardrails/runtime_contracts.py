@@ -21,6 +21,19 @@ NEGATIVE_LANGUAGE_TERMS = ("disgusting", "lazy", "bad", "stupid", "hate", "get r
 SLUR_MARKERS = ("slur",)
 
 
+def _normalize_lexicon_text(text: str) -> str:
+    return " ".join((text or "").lower().split())
+
+
+def _empty_learned_intent() -> dict[str, Any]:
+    return {
+        "predicted_families": [],
+        "predicted_phrases": [],
+        "family_scores": {},
+        "phrase_scores": {},
+    }
+
+
 def _question_id(question: str, age_band: str, language: str) -> str:
     payload = f"{language}|{age_band}|{question.strip()}"
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
@@ -68,20 +81,63 @@ def build_applies_when_flags(question: str, g1_id: str, g2_ids: list[str]) -> di
     }
 
 
+def match_intent_lexicon(question: str, context: str = "", candidate_g2_ids: list[str] | None = None) -> dict[str, Any]:
+    haystack = _normalize_lexicon_text(f"{context} {question}")
+    candidates = candidate_g2_ids or list(CODEBOOK.intent_lexicon.keys())
+    matched_lovs: list[str] = []
+    evidence: list[dict[str, Any]] = []
+    for g2_id in candidates:
+        spec = CODEBOOK.intent_lexicon.get(g2_id)
+        if not spec:
+            continue
+        matched_phrases = [phrase for phrase in spec.phrases if _normalize_lexicon_text(phrase) and _normalize_lexicon_text(phrase) in haystack]
+        if not matched_phrases:
+            continue
+        matched_lovs.append(g2_id)
+        evidence.append(
+            {
+                "g2_id": g2_id,
+                "families": list(spec.families),
+                "matched_phrases": matched_phrases,
+            }
+        )
+    return {
+        "matched_lovs": matched_lovs,
+        "evidence": evidence,
+    }
+
+
 def classifier_output_from_decision(question: str, child_profile: ChildProfile, decision: GuardrailDecision) -> dict[str, Any]:
+    precomputed = decision.classifier_metadata.get("runtime_classifier_output", {}) if isinstance(decision.classifier_metadata, dict) else {}
+    if isinstance(precomputed, dict) and precomputed.get("question") == question:
+        return precomputed
     gates = decision.gates or decision.gate_values
+    topic = str(gates.get("topic") or decision.signals.get("topic") or "General Learning")
     g1_id = str(gates.get("G1", "GENERIC"))
     raw_g2 = list(gates.get("G2_all", [gates.get("G2", "GENERIC_INTENT")]))
     g2_ids = canonicalize_g2_ids(raw_g2)
     age_band = child_profile.age_group
+    context = str(decision.input.get("recent_context", "") or "")
     flags = build_applies_when_flags(question, g1_id, g2_ids)
+    intent_lexicon = match_intent_lexicon(question, context, g2_ids)
+    learned_intent = (
+        decision.classifier_metadata.get("head_confidences", {}).get("intent_lexicon_learned", {})
+        if isinstance(decision.classifier_metadata, dict)
+        else {}
+    )
+    intent_lexicon["learned"] = {
+        **_empty_learned_intent(),
+        **(learned_intent or {}),
+    }
     return {
         "schema_version": "2.0.0",
         "question_id": _question_id(question, age_band, child_profile.language),
         "question": question,
+        "topic": topic,
         "language": child_profile.language,
         "age_band": age_band,
         "applies_when_flags": flags,
+        "intent_lexicon": intent_lexicon,
         "g1": {
             "id": g1_id,
             "reason": decision.g1_reason or decision.reason,
@@ -257,6 +313,7 @@ def safety_envelope_from_runtime(classifier_output: dict[str, Any], gate_output:
         "g4": gate_output["g4"],
         "gl": gate_output["gl"],
         "prompt_policy_notes": gate_output["prompt_policy_notes"],
+        "intent_lexicon": classifier_output.get("intent_lexicon", {"matched_lovs": [], "evidence": []}),
     }
 
 
@@ -268,6 +325,7 @@ def prompt_contract_payload(question: str, child_profile: ChildProfile, decision
         "raw_infer": classifier_output,
         "gates": gate_output,
         "safety_envelope": envelope,
+        "intent_lexicon": classifier_output.get("intent_lexicon", {"matched_lovs": [], "evidence": []}),
         "prompt_template": {"id": template_id},
         "final_prompt": final_prompt,
     }

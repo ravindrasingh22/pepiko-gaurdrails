@@ -3,11 +3,12 @@ from __future__ import annotations
 import re
 
 from app.guardrails.gate_mapper import AGE_POLICY, GUIDELINES, build_classifier_reason, build_prompt_contract as build_gate_prompt_contract, resolve_age_band
+from app.guardrails.runtime_contracts import match_intent_lexicon
 from app.models.guardrail_decision import GLSignal, GuardrailDecision
 from training.slm_classifier.runtime_config import load_classifier_runtime_config
 
 TOKEN_RE = re.compile(r"[a-z0-9']+")
-G2_ACTIVATION_THRESHOLD = 0.5
+G2_ACTIVATION_THRESHOLD = 0.8
 
 SPELLING_MAP = {
     "childern": "children",
@@ -22,7 +23,7 @@ TOPIC_RULES: list[tuple[str, tuple[str, ...]]] = [
     ("Technology", ("computer", "internet", "ai", "chatgpt", "phone", "app", "password", "wifi", "software", "code", "hack")),
     ("Belief & Religion", ("god", "religion", "faith", "heaven", "temple", "prayer", "pray", "mosque", "church", "belief")),
     ("Death & Feelings", ("death", "died", "die", "funeral", "grief", "sad", "crying", "afraid", "miss someone")),
-    ("Safety", ("fire", "shock", "poison", "electricity", "burn", "explosion", "knife", "chemical")),
+    ("Safety", ("fire", "shock", "poison", "electricity", "electric", "wire", "burn", "explosion", "knife", "chemical")),
     ("Civic & Law", ("fake document", "cheat exam", "illegal", "bribe", "visa", "piracy", "tamper", "advantage", "foul")),
 ]
 
@@ -44,7 +45,7 @@ G1_RULES = {
     "BELIEF": ("god", "religion", "faith", "heaven", "temple", "prayer", "pray", "mosque", "church", "gurdwara"),
     "DEATH_GRIEF": ("died", "death", "funeral", "grief", "miss someone", "why do people die"),
     "VIOLENCE": ("kill", "hurt", "fight", "weapon", "bomb", "terrorist", "poison", "attack"),
-    "SAFETY_HAZARD": ("fire", "shock", "electricity", "burn", "explosion", "knife", "chemical", "lock"),
+    "SAFETY_HAZARD": ("fire", "shock", "electricity", "electric", "wire", "burn", "explosion", "knife", "chemical", "lock"),
     "CIVIC_LAW": ("fake document", "cheat exam", "illegal", "bribe", "visa", "piracy", "tamper", "rig", "cheat", "advantage", "foul"),
 }
 
@@ -76,15 +77,40 @@ G2_RULES = {
         r"\bwaste time\b",
     ),
     "HATE_GROUP": (r"\bget rid of\b", r"\bdisgusting\b", r"\bdon't deserve rights\b", r"\bdont deserve rights\b"),
-    "GROOMING": (r"don't tell.*parents", r"dont tell.*parents", r"keep.*secret.*adult", r"adult.*wants.*meet", r"gave me gifts.*secret", r"older friend", r"secret chat"),
+    "GROOMING": (
+        r"don't tell.*parents",
+        r"dont tell.*parents",
+        r"keep.*secret.*adult",
+        r"adult.*wants.*meet",
+        r"gave me gifts.*secret",
+        r"older friend",
+        r"secret chat",
+        r"\bkeep this between us\b",
+        r"\bonly between us\b",
+        r"\bfriendship.*only between us\b",
+        r"\bknow(s)? my school\b",
+    ),
     "UNSAFE_SEXUAL_CONTENT": (r"\bnude\b", r"\bsex video\b", r"\bsend private photo\b", r"\bchild sexual\b", r"\bporn\b"),
     "SELF_HARM": (r"\bhurt myself\b", r"\bwant to die\b", r"\bno reason to live\b", r"\bi want to disappear\b", r"\bsleep forever\b"),
     "BULLYING": (r"\bkids are mean\b", r"\bcalling me names\b", r"\bbully\b", r"\bleft out\b"),
     "EMOTIONAL": (r"\bi feel sad\b", r"\bi am afraid\b", r"\bi am crying\b", r"\bnobody cares\b", r"\bmiss them\b"),
-    "AMBIGUOUS_RISK": (r"\bknife\b", r"\bchemical\b", r"\bpassword\b", r"\block\b", r"\bfire\b"),
+    "AMBIGUOUS_RISK": (r"\bknife\b", r"\bchemical\b", r"\bpassword\b", r"\block\b", r"\bfire\b", r"\bold wire\b", r"\bloose wire\b"),
     "COERCIVE_CONTROL": (r"\bcontrols me\b", r"\bthreatens me\b", r"\bforce me\b", r"\bwon't let me\b", r"\bwont let me\b"),
     "VULN_EXPLOIT": (r"\busing me\b", r"\btaking advantage\b", r"\bmanipulate me\b", r"\btargeting me\b"),
-    "SAFETY_HAZARD": (r"\bshort circuit\b", r"\bshock\b", r"\belectric shock\b", r"\bfumes\b", r"\bexplosion\b"),
+    "SAFETY_HAZARD": (
+        r"\bshort circuit\b",
+        r"\bshock\b",
+        r"\belectric shock\b",
+        r"\bfumes\b",
+        r"\bexplosion\b",
+        r"\belectricity\b",
+        r"\bold wire\b",
+        r"\bloose wire\b",
+        r"\blive wire\b",
+        r"\bbare wire\b",
+        r"\btouch a wire\b",
+        r"\btest electricity\b",
+    ),
     "VIOLENCE": (r"\bkill\b", r"\bhurt someone\b", r"\battack\b", r"\bterrorist\b", r"\bweapon\b"),
 }
 
@@ -165,10 +191,14 @@ def classify_g1(text: str) -> str:
     return "GENERIC"
 
 
-def classify_g2(text: str) -> list[str]:
+def classify_g2(text: str, context: str = "") -> list[str]:
     labels: list[str] = []
     for label, patterns in G2_RULES.items():
         if any(re.search(pattern, text) for pattern in patterns):
+            labels.append(label)
+    intent_matches = match_intent_lexicon(text, context)
+    for label in intent_matches["matched_lovs"]:
+        if label in G2_RULES:
             labels.append(label)
     if _is_covert_violent_intent(text):
         labels.append("DANGEROUS")
@@ -282,34 +312,40 @@ def build_generated_prompt(age_band: str, g1: str, g2: list[str], g3: str, modif
     return f"{header} {body} Question: {question}"
 
 
-def build_classifier_reason(g1: str, g2: list[str], guidelines: list[str], question: str) -> str:
+def build_classifier_reason(g1: str, g2: list[str], guidelines: list[str], question: str, intent_evidence: dict[str, object] | None = None) -> str:
     lower = question.lower()
     primary_g2 = g2[0] if g2 else "GENERIC_INTENT"
+    evidence_suffix = ""
+    if intent_evidence and intent_evidence.get("evidence"):
+        first = intent_evidence["evidence"][0]
+        phrases = ", ".join(first.get("matched_phrases", [])[:2])
+        if phrases:
+            evidence_suffix = f" Supporting Block J phrase evidence matched: {phrases}."
     if primary_g2 == "PERSONAL_DIRECTION":
         if g1 == "BELIEF":
-            return "The child is asking for personal guidance about what they should believe or choose, so the system should avoid directing the child's beliefs."
-        return "The child is asking for personal guidance about what they should do or choose, so the system should avoid giving direct personal direction."
+            return "The child is asking for personal guidance about what they should believe or choose, so the system should avoid directing the child's beliefs." + evidence_suffix
+        return "The child is asking for personal guidance about what they should do or choose, so the system should avoid giving direct personal direction." + evidence_suffix
     if primary_g2 == "GROOMING":
-        return "The question includes unsafe secrecy or boundary-crossing behaviour involving an adult or trusted person, which triggers grooming-safety handling."
+        return "The question includes unsafe secrecy or boundary-crossing behaviour involving an adult or trusted person, which triggers grooming-safety handling." + evidence_suffix
     if primary_g2 == "UNSAFE_SEXUAL_CONTENT":
-        return "The question refers to explicitly unsafe sexual content, which requires a hard safety block."
+        return "The question refers to explicitly unsafe sexual content, which requires a hard safety block." + evidence_suffix
     if primary_g2 == "EMOTIONAL":
-        return "The child appears upset, distressed, or in need of emotional support, so the response should acknowledge feelings before answering."
+        return "The child appears upset, distressed, or in need of emotional support, so the response should acknowledge feelings before answering." + evidence_suffix
     if primary_g2 == "DANGEROUS" and ("bypass safety" in lower or "risky experiment" in lower or ("bypass" in lower and "safety" in lower)):
-        return "The user is asking how to bypass safety systems and perform risky experiments."
+        return "The user is asking how to bypass safety systems and perform risky experiments." + evidence_suffix
     if primary_g2 == "COERCIVE_CONTROL":
-        return "The user describes fear-based control or pressure from another person."
+        return "The user describes fear-based control or pressure from another person." + evidence_suffix
     if primary_g2 == "DANGEROUS":
-        return "The user is asking about harmful, dangerous, or unsafe activity."
+        return "The user is asking about harmful, dangerous, or unsafe activity." + evidence_suffix
     if g1 == "BELIEF" and any(item == "NEUTRAL_FACT" for item in g2):
-        return "The user is asking a neutral factual question about belief, religion, or worldview."
+        return "The user is asking a neutral factual question about belief, religion, or worldview." + evidence_suffix
     if g1 == "SCIENCE" and "GL-07" in guidelines:
-        return "The user is asking a complex science question that needs simplification for a younger child."
+        return "The user is asking a complex science question that needs simplification for a younger child." + evidence_suffix
     if g1 == "SCIENCE":
-        return "The user is asking a science or nature question."
+        return "The user is asking a science or nature question." + evidence_suffix
     if g1 == "TECHNOLOGY":
-        return "The user is asking a technology or digital-systems question."
-    return "The user is asking a question that has been classified for child-safety guidance."
+        return "The user is asking a technology or digital-systems question." + evidence_suffix
+    return "The user is asking a question that has been classified for child-safety guidance." + evidence_suffix
 
 
 def build_g1_reason(g1: str, g2: list[str], guidelines: list[str], question: str) -> str:
@@ -332,9 +368,14 @@ def build_g1_reason(g1: str, g2: list[str], guidelines: list[str], question: str
     return g1_reason_map.get(g1, "The question has been assigned a broad topic classification for downstream gate handling.")
 
 
-def build_g2_reasons(g1: str, g2: list[str], question: str) -> dict[str, str]:
+def build_g2_reasons(g1: str, g2: list[str], question: str, intent_evidence: dict[str, object] | None = None) -> dict[str, str]:
     lower = question.lower()
     reasons: dict[str, str] = {}
+    evidence_by_g2 = {
+        str(item.get("g2_id")): item
+        for item in (intent_evidence or {}).get("evidence", [])
+        if isinstance(item, dict)
+    }
     for label in g2:
         if label == "PERSONAL_DIRECTION":
             reasons[label] = (
@@ -366,10 +407,18 @@ def build_g2_reasons(g1: str, g2: list[str], question: str) -> dict[str, str]:
             reasons[label] = "The question describes bullying, meanness, or peer harm."
         elif label == "AMBIGUOUS_RISK":
             reasons[label] = "The question could have both safe and unsafe interpretations."
+        elif label == "SAFETY_HAZARD":
+            reasons[label] = "The question is about a potentially unsafe physical hazard or experiment."
         elif label == "VULN_EXPLOIT":
             reasons[label] = "The question suggests exploitation of vulnerability or manipulation."
         elif label == "GENERIC_INTENT":
             reasons[label] = "The question does not show a stronger specific risk-framing signal."
+        evidence = evidence_by_g2.get(label)
+        if evidence:
+            matched_phrases = ", ".join(evidence.get("matched_phrases", [])[:2])
+            if matched_phrases:
+                reasons[label] = reasons.get(label, "The question matched a trained intent pattern.")
+                reasons[label] += f" Block J phrase evidence matched: {matched_phrases}."
     return reasons
 
 
@@ -397,9 +446,11 @@ def _build_decision(normalized: dict[str, object]) -> GuardrailDecision:
     language = str(normalized.get("child_profile", {}).get("language", "en"))
 
     clean_question = normalize(message)
+    clean_context = normalize(recent_context if recent_context != "none" else "")
     topic = classify_topic(clean_question)
     g1 = classify_g1(clean_question)
-    g2 = classify_g2(clean_question) or ["NEUTRAL_FACT"]
+    intent_evidence = match_intent_lexicon(clean_question, clean_context)
+    g2 = classify_g2(clean_question, clean_context) or ["NEUTRAL_FACT"]
     primary_g2 = g2[0]
     g3, modifiers = compute_g3([primary_g2])
     g4 = compute_g4(g1, g2, g3, modifiers)
@@ -432,9 +483,9 @@ def _build_decision(normalized: dict[str, object]) -> GuardrailDecision:
 
     return GuardrailDecision(
         input={"question": message, "age_band": age_band, "language": language, "recent_context": recent_context},
-        reason=build_classifier_reason(g1, g2, guidelines, message),
+        reason=build_classifier_reason(g1, g2, guidelines, message, intent_evidence),
         g1_reason=build_g1_reason(g1, g2, guidelines, message),
-        g2_reasons=build_g2_reasons(g1, g2, message),
+        g2_reasons=build_g2_reasons(g1, g2, message, intent_evidence),
         gl_signals=_gl_signals(guidelines, age_band),
         active_gls=guidelines,
         gates=gates,
@@ -457,9 +508,10 @@ def _build_decision(normalized: dict[str, object]) -> GuardrailDecision:
             "head_confidences": {
                 "GL": {gl_id: (0.99 if gl_id in guidelines else 0.01) for gl_id in GUIDELINES},
                 "G1": 0.99,
-                    "G2": {label: (0.99 if label in g2 else 0.01) for label in G2_META.keys()},
+                "G2": {label: (0.99 if label in g2 else 0.01) for label in G2_META.keys()},
                 "G3": 0.99,
                 "G4": 0.99,
+                "intent_lexicon": intent_evidence,
             },
         },
     )
@@ -482,10 +534,10 @@ def classify_artifact(normalized: dict[str, object]) -> GuardrailDecision:
     )
 
 
-def classify_slm(normalized: dict[str, object], core: str | None = None) -> GuardrailDecision:
+def classify_slm(normalized: dict[str, object], core: str | None = None, threshold: float = G2_ACTIVATION_THRESHOLD) -> GuardrailDecision:
     from training.slm_classifier.slm_backend import build_decision_from_slm
 
-    return build_decision_from_slm(normalized, core=core)
+    return build_decision_from_slm(normalized, core=core, threshold=threshold)
 
 
 def classify(normalized: dict[str, object]) -> GuardrailDecision:

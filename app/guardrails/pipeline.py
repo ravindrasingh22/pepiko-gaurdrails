@@ -43,7 +43,7 @@ def _terminal_answer(decision: GuardrailDecision) -> str:
 def _g2_score_payload(decision: GuardrailDecision) -> dict[str, object]:
     classifier_metadata = dict(decision.classifier_metadata or {})
     head_confidences = dict(classifier_metadata.get("head_confidences", {}))
-    raw_g2_scores = head_confidences.get("G2", {})
+    raw_g2_scores = head_confidences.get("G2_all", {})
     if isinstance(raw_g2_scores, dict):
         g2_scores = {str(label): float(score) for label, score in raw_g2_scores.items()}
     else:
