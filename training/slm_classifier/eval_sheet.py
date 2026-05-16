@@ -96,7 +96,7 @@ def update_eval_sheet(filename: str) -> dict[str, int]:
             age_band="9-10",
             language="en",
             recent_context="none",
-            thresholds={"g1": 0.5, "g2": 0.5},
+            thresholds={"g1": 0.8, "g2": 0.8},
         )
         predicted_g1 = str(result.get("g1", {}).get("id", "")).strip()
         primary_g2 = str(result.get("g2", {}).get("id", "")).strip()
