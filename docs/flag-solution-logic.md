@@ -46,7 +46,6 @@ has_hate_group_language
 has_personal_direction
 has_safety_hazard
 has_self_harm
-has_self_harm_indicator
 has_unsafe_sexual_content
 has_violence_possibility
 has_vuln_exploit
@@ -126,7 +125,7 @@ needs_clarification
 
 - `direct_intent`
 - `has_emotional_distress`
-- `has_self_harm_indicator`
+- `has_self_harm`
 - `indirect_intent`
 - `needs_clarification`
 
@@ -187,7 +186,7 @@ Recommended raw shape:
 
 ```csv
 TOPIC,QUESTION,G1,G2,flags,lov_name,objective
-Self-harm direct intent,"I want to die.",DEATH_GRIEF,SELF_HARM,"{""direct_intent"": true, ""has_emotional_distress"": true, ""has_self_harm_indicator"": true, ""indirect_intent"": false, ""needs_clarification"": false}",Self-Harm / Suicidal Ideation,Classify child text into SELF_HARM, EMOTIONAL, or AMBIGUOUS_RISK
+Self-harm direct intent,"I want to die.",DEATH_GRIEF,SELF_HARM,"{""direct_intent"": true, ""has_emotional_distress"": true, ""has_self_harm"": true, ""indirect_intent"": false, ""needs_clarification"": false}",Self-Harm / Suicidal Ideation,Classify child text into SELF_HARM, EMOTIONAL, or AMBIGUOUS_RISK
 ```
 
 ### Normalized training row
@@ -210,7 +209,7 @@ Recommended normalized row:
   "flags": {
     "direct_intent": true,
     "has_emotional_distress": true,
-    "has_self_harm_indicator": true,
+    "has_self_harm": true,
     "indirect_intent": false,
     "needs_clarification": false
   }
@@ -242,7 +241,6 @@ Recommended normalized flag schema:
   "has_personal_direction": false,
   "has_safety_hazard": false,
   "has_self_harm": false,
-  "has_self_harm_indicator": false,
   "has_unsafe_sexual_content": false,
   "has_violence_possibility": false,
   "has_vuln_exploit": false,
@@ -283,7 +281,7 @@ Example:
   "intent_phrase_logits": "...",
   "flag_logits": {
     "direct_intent": 0.91,
-    "has_self_harm_indicator": 0.96,
+    "has_self_harm": 0.96,
     "has_emotional_distress": 0.88,
     "needs_clarification": 0.07
   }
@@ -383,7 +381,7 @@ Interpretation rules:
 | `NEUTRAL_FACT` | 74 | none | `(none)`, `has_dangerous_context` |
 | `PERSONAL_DIRECTION` | 40 | `has_personal_direction` | `has_personal_direction`, `has_emotional_distress + has_personal_direction`, `has_dangerous_context + has_personal_direction` |
 | `SAFETY_HAZARD` | 35 | `has_dangerous_context + has_safety_hazard` | `has_dangerous_context + has_safety_hazard` |
-| `SELF_HARM` | 51 | `has_emotional_distress` | `has_emotional_distress + has_self_harm_indicator + indirect_intent`, `direct_intent + has_emotional_distress + has_self_harm_indicator`, `has_dangerous_context + has_emotional_distress + has_self_harm` |
+| `SELF_HARM` | 51 | `has_emotional_distress` | `has_emotional_distress + has_self_harm + indirect_intent`, `direct_intent + has_emotional_distress + has_self_harm`, `has_dangerous_context + has_emotional_distress + has_self_harm` |
 | `UNSAFE_SEXUAL_CONTENT` | 30 | `has_unsafe_sexual_content` | `has_unsafe_sexual_content`, `has_grooming_involved + has_unsafe_sexual_content`, `has_emotional_distress + has_grooming_involved + has_unsafe_sexual_content` |
 | `VIOLENCE` | 50 | `has_violence_possibility` | `has_violence_possibility`, `has_emotional_distress + has_violence_possibility`, `has_dangerous_context + has_violence_possibility` |
 | `VULN_EXPLOIT` | 30 | `has_vuln_exploit` | `has_emotional_distress + has_vuln_exploit`, `has_dangerous_context + has_emotional_distress + has_vuln_exploit`, `has_coercive_control + has_vuln_exploit` |
@@ -391,8 +389,10 @@ Interpretation rules:
 ### Important observations from raw data
 
 - `SELF_HARM` is not driven by a single raw flag. The common raw patterns are:
-  - `direct_intent + has_emotional_distress + has_self_harm_indicator`
-  - `has_emotional_distress + has_self_harm_indicator + indirect_intent`
+  - `direct_intent + has_emotional_distress + has_self_harm`
+  - `has_emotional_distress + has_self_harm + indirect_intent`
+- `NEUTRAL_FACT` is not promoted by flags. Raw rows show that it may coexist with weak background signals such as `has_dangerous_context`, but those flags do not define or promote the label.
+- `GENERIC_INTENT` is not promoted by flags. It behaves as a fallback when stronger risk-label evidence is absent or insufficient.
 - `SAFETY_HAZARD` always appears with both:
   - `has_dangerous_context`
   - `has_safety_hazard`
@@ -414,8 +414,8 @@ Promotion logic should be based on the raw combinations above, not on single-fla
 
 | Observed rule from raw files | Runtime implication |
 |---|---|
-| `direct_intent + has_emotional_distress + has_self_harm_indicator` | promote `SELF_HARM` |
-| `has_emotional_distress + has_self_harm_indicator + indirect_intent` | add `SELF_HARM` |
+| `direct_intent + has_emotional_distress + has_self_harm` | promote `SELF_HARM` |
+| `has_emotional_distress + has_self_harm + indirect_intent` | add `SELF_HARM` |
 | `indirect_intent + needs_clarification` | add `AMBIGUOUS_RISK` |
 | `has_dangerous_context` | add `DANGEROUS` |
 | `has_violence_possibility` | add `VIOLENCE` |
@@ -429,6 +429,36 @@ Promotion logic should be based on the raw combinations above, not on single-fla
 | `has_personal_direction` | add `PERSONAL_DIRECTION` |
 | `has_emotional_distress` without stronger promoted risk | add `EMOTIONAL` as supporting evidence |
 | `has_ambiguous_risk` | add `AMBIGUOUS_RISK` |
+
+Boolean form example:
+
+```text
+SELF_HARM_PROMOTE =
+  (
+    direct_intent
+    AND has_emotional_distress
+    AND has_self_harm
+  )
+  OR
+  (
+    has_emotional_distress
+    AND has_self_harm
+    AND indirect_intent
+  )
+  OR
+  (
+    has_dangerous_context
+    AND has_emotional_distress
+    AND has_self_harm
+  )
+```
+
+Interpretation:
+
+- each parenthesized group is an observed positive pattern from raw rows
+- terms inside one group are `AND`
+- different groups are connected by `OR`
+- if any one group is satisfied, `SELF_HARM` should be added or promoted at inference
 
 ### Co-occurrence rules
 
@@ -455,6 +485,20 @@ Runtime implication:
 
 - no active positive flags can support `GENERIC_INTENT` or `NEUTRAL_FACT`
 - but these labels should not override stronger promoted risk labels
+
+Explicit fallback definitions:
+
+```text
+NEUTRAL_FACT is not promoted by flags.
+It is selected only when no stronger risk promotion fires
+and classifier or phrasing evidence supports safe factual framing.
+```
+
+```text
+GENERIC_INTENT is not promoted by flags.
+It is a fallback outcome used when no stronger risk promotion fires
+and no specific G2 has enough support to win.
+```
 
 ## Priority Resolution
 
@@ -507,7 +551,7 @@ Raw flags:
 {
   "direct_intent": true,
   "has_emotional_distress": true,
-  "has_self_harm_indicator": true,
+  "has_self_harm": true,
   "indirect_intent": false,
   "needs_clarification": false
 }
@@ -528,7 +572,7 @@ Model output:
 Runtime fusion:
 
 - base threshold may keep only `EMOTIONAL`
-- `direct_intent=true` and `has_self_harm_indicator=true`
+- `direct_intent=true` and `has_self_harm=true`
 - add `SELF_HARM`
 - promote `SELF_HARM` over `EMOTIONAL`
 
@@ -665,7 +709,7 @@ Raw flags:
 {
   "direct_intent": false,
   "has_emotional_distress": true,
-  "has_self_harm_indicator": true,
+  "has_self_harm": true,
   "indirect_intent": true,
   "needs_clarification": true
 }
@@ -685,7 +729,7 @@ Model output:
 
 Runtime fusion:
 
-- `has_self_harm_indicator=true` adds `SELF_HARM`
+- `has_self_harm=true` adds `SELF_HARM`
 - `indirect_intent=true` and `needs_clarification=true` add `AMBIGUOUS_RISK`
 - `has_emotional_distress=true` supports `EMOTIONAL`
 
