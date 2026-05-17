@@ -38,6 +38,24 @@ G2_PRIORITY = [
 G3_VOCAB = ["SV0", "SV1", "SV2", "SV3", "SV4"]
 G4_VOCAB = ["ALLOW", "TRANSFORM", "TRANSFORM_HOLD", "BLOCK", "BLOCK_HARD", "BLOCK_ESCALATE"]
 DEFAULT_TOPIC = "General Learning"
+FLAG_VOCAB = [
+    "direct_intent",
+    "has_ambiguous_risk",
+    "has_bullying_involved",
+    "has_coercive_control",
+    "has_dangerous_context",
+    "has_emotional_distress",
+    "has_grooming_involved",
+    "has_hate_group_language",
+    "has_personal_direction",
+    "has_safety_hazard",
+    "has_self_harm",
+    "has_unsafe_sexual_content",
+    "has_violence_possibility",
+    "has_vuln_exploit",
+    "indirect_intent",
+    "needs_clarification",
+]
 
 
 @dataclass
@@ -111,6 +129,7 @@ def dataset_fingerprint(rows: list[dict[str, object]]) -> str:
             "topic": row.get("topic"),
             "g1": row.get("g1"),
             "g2": row.get("g2"),
+            "flags": row.get("flags", {}),
         }
         for row in rows
     ]
@@ -159,6 +178,15 @@ def validate_dataset_rows(rows: list[dict[str, object]]) -> None:
             raise ValueError(f"Missing intent_families list in row {row.get('sample_id')}")
         if not isinstance(row.get("intent_phrases"), list):
             raise ValueError(f"Missing intent_phrases list in row {row.get('sample_id')}")
+        flags = row.get("flags", {})
+        if not isinstance(flags, dict):
+            raise ValueError(f"Missing flags dict in row {row.get('sample_id')}")
+        unknown_flags = [key for key in flags if str(key) not in FLAG_VOCAB]
+        if unknown_flags:
+            raise ValueError(f"Unknown flags in row {row.get('sample_id')}: {sorted(unknown_flags)}")
+        invalid_flags = [key for key, value in flags.items() if not isinstance(value, bool)]
+        if invalid_flags:
+            raise ValueError(f"Non-boolean flags in row {row.get('sample_id')}: {sorted(invalid_flags)}")
 
 
 def build_topic_vocab(rows: list[dict[str, object]] | None = None) -> list[str]:
@@ -195,6 +223,7 @@ def write_label_vocab(rows: list[dict[str, object]] | None = None, target_path: 
         "topic": build_topic_vocab(rows),
         "g1": G1_VOCAB,
         "g2": G2_VOCAB,
+        "flags": FLAG_VOCAB,
         "intent_families": intent_families,
         "intent_phrases": intent_phrases,
         "age_bands": list(CODEBOOK.age_bands.keys()),
