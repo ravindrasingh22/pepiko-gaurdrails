@@ -1,264 +1,257 @@
 # Flag Solution Logic
 
-This document defines a full flag-based solution for the SLM classifier pipeline.
+This document defines a flag-based solution that stays consistent with the current repository constraints.
 
-The goal is to improve runtime quality for:
+Constraints:
 
-- `G1` classification
-- primary `G2` classification
-- calculated `G2_all`
-- safety-sensitive promotion of high-risk classes
-- better separation of close labels such as:
-  - `SELF_HARM` vs `EMOTIONAL` vs `AMBIGUOUS_RISK`
-  - `GROOMING` vs `VULN_EXPLOIT` vs `COERCIVE_CONTROL`
-  - `DANGEROUS` vs `VIOLENCE` vs `SAFETY_HAZARD`
-  - `BULLYING` vs `HATE_GROUP`
-  - `PERSONAL_DIRECTION` vs `GENERIC_INTENT`
+- `G1` is trained as a single-label output.
+- primary `G2` is trained as a single-label output.
+- `G2_all` is not a training target.
+- `G2_all` is calculated only at inference.
+- only flags that already exist in the raw CSV files are allowed in this design.
+- promotion logic must remain grounded in the flag semantics already present in the raw training files.
 
-This design assumes:
+This document does not introduce new flag names.
 
-- `G1` remains a single-label classifier output
-- primary `G2` remains a single-label classifier output
-- `G2_all` is calculated at inference
-- flags are trained and used as supporting evidence
-- `G3` and `G4` remain deterministic runtime outputs
+## Scope
 
-## Problem
+The purpose of flags in this repo is:
 
-The current classifier can suffer from:
+- improve separation between close `G2` classes
+- improve safety recall for high-risk classes
+- support calculated `G2_all`
+- provide additional evidence for runtime fusion
 
-- heavy `G1=GENERIC` bias
-- risky content collapsing into broad classes like `EMOTIONAL` or `AMBIGUOUS_RISK`
-- weak recall for high-risk classes unless phrasing is very explicit
-- poor separation among nearby categories
-- calculated `G2_all` that lacks direct evidence beyond label scores and heuristics
+Flags do not replace:
 
-Flags address this by introducing structured evidence signals that can be:
+- `topic`
+- `G1`
+- primary `G2`
 
-- normalized from raw authoring sheets
-- trained as auxiliary targets
-- reused directly at runtime
-- used to promote or suppress labels
+## Existing Raw Flags
 
-## Flag Principles
+These are the only flags currently present in the raw CSV files.
 
-Flags must follow these rules:
-
-1. Flags are evidence, not policy.
-2. Flags do not replace `G1` or `G2`.
-3. Flags should be local and interpretable.
-4. Flags should be usable both in training and runtime.
-5. Flags should improve recall for safety-critical cases without exploding false positives.
-
-Good flags answer narrow questions such as:
-
-- does this text contain direct self-harm intent?
-- does this text contain secrecy pressure?
-- does this text contain blackmail?
-- is this safe factual explanation rather than a harmful request?
-- does this text ask the assistant to choose for the child?
-
-Bad flags are:
-
-- too broad
-- redundant with `G2`
-- impossible to validate from text
-- too policy-heavy
-
-## Flag Categories
-
-Recommended flags are grouped into four groups.
-
-### 1. Harm intent flags
-
-- `has_self_harm_signal`
-- `has_direct_intent`
-- `has_indirect_ideation`
-- `has_harm_to_others`
-- `has_instructional_request`
-- `has_illicit_instruction_request`
-- `has_violence_signal`
-
-### 2. Manipulation and exploitation flags
-
-- `has_secrecy_pattern`
-- `has_blackmail_pattern`
-- `has_dependency_pattern`
-- `has_adult_child_dynamic`
-- `has_vulnerability_targeting`
-- `has_control_pattern`
-- `has_fear_based_authority`
-
-### 3. Disambiguation and safe-negative flags
-
-- `is_safe_factual`
-- `is_prevention_or_help_seeking`
-- `is_historical_or_explanatory`
-- `is_hypothetical_not_instructional`
-- `is_emotional_without_self_harm`
-- `is_peer_conflict`
-- `is_protected_group_target`
-- `is_school_rule_or_law_context`
-
-### 4. Prompt-shaping and ambiguity flags
-
-- `has_personal_direction`
-- `has_loaded_premise`
-- `has_negative_language`
-- `includes_slurs`
-- `needs_clarification`
-- `has_harmful_comparison`
-
-## Mapping Flags to G2
-
-Flags should support `G2`, not duplicate it exactly.
-
-Recommended support map:
-
-| Flag | Strongly Supports |
-|---|---|
-| `has_self_harm_signal` | `SELF_HARM` |
-| `has_direct_intent` | `SELF_HARM`, `DANGEROUS`, `VIOLENCE` |
-| `has_indirect_ideation` | `SELF_HARM`, `AMBIGUOUS_RISK` |
-| `has_harm_to_others` | `VIOLENCE`, `DANGEROUS` |
-| `has_illicit_instruction_request` | `DANGEROUS` |
-| `has_secrecy_pattern` | `GROOMING`, `VULN_EXPLOIT` |
-| `has_blackmail_pattern` | `VULN_EXPLOIT` |
-| `has_dependency_pattern` | `VULN_EXPLOIT`, `GROOMING` |
-| `has_adult_child_dynamic` | `GROOMING` |
-| `has_control_pattern` | `COERCIVE_CONTROL` |
-| `has_fear_based_authority` | `COERCIVE_CONTROL` |
-| `is_safe_factual` | `NEUTRAL_FACT` |
-| `is_prevention_or_help_seeking` | `NEUTRAL_FACT`, sometimes `EMOTIONAL` |
-| `is_emotional_without_self_harm` | `EMOTIONAL` |
-| `is_peer_conflict` | `BULLYING` |
-| `is_protected_group_target` | `HATE_GROUP` |
-| `has_personal_direction` | `PERSONAL_DIRECTION` |
-| `needs_clarification` | `AMBIGUOUS_RISK` |
-
-## Raw Training Sheet Design
-
-The raw CSV authoring format can include wide columns. That is fine.
-
-Recommended columns:
+### Full union of existing flags
 
 ```text
-TOPIC
-QUESTION
-CONTEXT
-G1
-G2
-G2_all
-flags
-intent_families
-intent_phrases
-review_status
-objective
-source_notes
+direct_intent
+has_ambiguous_risk
+has_bullying_involved
+has_coercive_control
+has_dangerous_context
+has_emotional_distress
+has_grooming_involved
+has_hate_group_language
+has_personal_direction
+has_safety_hazard
+has_self_harm
+has_self_harm_indicator
+has_unsafe_sexual_content
+has_violence_possibility
+has_vuln_exploit
+indirect_intent
+needs_clarification
 ```
 
-The `flags` column should be JSON.
+### File-by-file flag usage
 
-Example raw row:
+#### `ambiguous_risk_training_schema.csv`
+
+- `has_ambiguous_risk`
+- `has_dangerous_context`
+- `has_emotional_distress`
+- `has_safety_hazard`
+
+#### `bullying_training_schema.csv`
+
+- `has_bullying_involved`
+- `has_dangerous_context`
+- `has_emotional_distress`
+- `has_hate_group_language`
+- `has_violence_possibility`
+
+#### `coercive_control_training_schema.csv`
+
+- `has_bullying_involved`
+- `has_coercive_control`
+- `has_dangerous_context`
+- `has_emotional_distress`
+- `has_violence_possibility`
+- `has_vuln_exploit`
+
+#### `dangerous_training_schema.csv`
+
+- `has_bullying_involved`
+- `has_dangerous_context`
+- `has_emotional_distress`
+- `has_self_harm`
+- `has_violence_possibility`
+
+#### `grooming_training_schema.csv`
+
+- `has_coercive_control`
+- `has_emotional_distress`
+- `has_grooming_involved`
+- `has_vuln_exploit`
+
+#### `hate_group_training_schema.csv`
+
+- `has_bullying_involved`
+- `has_dangerous_context`
+- `has_emotional_distress`
+- `has_hate_group_language`
+- `has_violence_possibility`
+
+#### `personal_direction_training_schema.csv`
+
+- `has_bullying_involved`
+- `has_coercive_control`
+- `has_dangerous_context`
+- `has_emotional_distress`
+- `has_grooming_involved`
+- `has_personal_direction`
+- `has_self_harm`
+- `has_unsafe_sexual_content`
+- `has_violence_possibility`
+- `has_vuln_exploit`
+
+#### `safety_hazard_training_schema.csv`
+
+- `has_dangerous_context`
+- `has_emotional_distress`
+- `has_safety_hazard`
+
+#### `self_harm.csv`
+
+- `direct_intent`
+- `has_emotional_distress`
+- `has_self_harm_indicator`
+- `indirect_intent`
+- `needs_clarification`
+
+#### `unsafe_sexual_content_training_schema.csv`
+
+- `has_bullying_involved`
+- `has_coercive_control`
+- `has_emotional_distress`
+- `has_grooming_involved`
+- `has_unsafe_sexual_content`
+- `has_vuln_exploit`
+
+#### `violence_training_schema.csv`
+
+- `has_ambiguous_risk`
+- `has_bullying_involved`
+- `has_dangerous_context`
+- `has_emotional_distress`
+- `has_personal_direction`
+- `has_self_harm`
+- `has_violence_possibility`
+
+#### `vuln_exploit_training_schema.csv`
+
+- `has_bullying_involved`
+- `has_coercive_control`
+- `has_dangerous_context`
+- `has_emotional_distress`
+- `has_grooming_involved`
+- `has_self_harm`
+- `has_unsafe_sexual_content`
+- `has_vuln_exploit`
+
+## How Flags Should Be Used
+
+Flags should be used in two places:
+
+1. normalization for training
+2. inference-time fusion
+
+Flags should not be used to create a new training target for `G2_all`.
+
+## Training Data Structure
+
+The current training target remains:
+
+- `topic`
+- `g1`
+- primary `g2`
+- intent families
+- intent phrases
+
+Flags are auxiliary evidence.
+
+### Raw row structure
+
+Recommended raw shape:
 
 ```csv
-TOPIC,QUESTION,CONTEXT,G1,G2,G2_all,flags,intent_families,intent_phrases,review_status
-Self-harm direct intent,"I want to die tonight.","none",DEATH_GRIEF,SELF_HARM,"[""SELF_HARM"",""EMOTIONAL""]","{""has_self_harm_signal"":true,""has_direct_intent"":true,""has_indirect_ideation"":false,""is_emotional_without_self_harm"":false,""is_safe_factual"":false}","[""suicidal_ideation""]","[""I want to die""]",approved
+TOPIC,QUESTION,G1,G2,flags,lov_name,objective
+Self-harm direct intent,"I want to die.",DEATH_GRIEF,SELF_HARM,"{""direct_intent"": true, ""has_emotional_distress"": true, ""has_self_harm_indicator"": true, ""indirect_intent"": false, ""needs_clarification"": false}",Self-Harm / Suicidal Ideation,Classify child text into SELF_HARM, EMOTIONAL, or AMBIGUOUS_RISK
 ```
 
-## Normalized Training Structure
+### Normalized training row
 
-During normalization, flags should be parsed into a stable machine-readable object.
+`G2_all` should not be part of the training contract.
 
 Recommended normalized row:
 
 ```json
 {
   "sample_id": "self_harm_001",
-  "question": "I want to die tonight.",
+  "question": "I want to die.",
   "context": "none",
   "topic": "Self-harm direct intent",
   "g1": "DEATH_GRIEF",
   "g2": ["SELF_HARM"],
-  "g2_all": ["SELF_HARM", "EMOTIONAL"],
   "intent_families": ["suicidal_ideation"],
   "intent_phrases": ["I want to die"],
   "review_status": "approved",
   "flags": {
-    "has_self_harm_signal": true,
-    "has_direct_intent": true,
-    "has_indirect_ideation": false,
-    "has_instructional_request": false,
-    "has_illicit_instruction_request": false,
-    "has_secrecy_pattern": false,
-    "has_blackmail_pattern": false,
-    "has_dependency_pattern": false,
-    "has_adult_child_dynamic": false,
-    "has_control_pattern": false,
-    "has_fear_based_authority": false,
-    "is_safe_factual": false,
-    "is_prevention_or_help_seeking": false,
-    "is_historical_or_explanatory": false,
-    "is_hypothetical_not_instructional": false,
-    "is_emotional_without_self_harm": false,
-    "is_peer_conflict": false,
-    "is_protected_group_target": false,
-    "has_personal_direction": false,
-    "has_loaded_premise": false,
-    "has_negative_language": false,
-    "includes_slurs": false,
-    "needs_clarification": false,
-    "has_harmful_comparison": false
+    "direct_intent": true,
+    "has_emotional_distress": true,
+    "has_self_harm_indicator": true,
+    "indirect_intent": false,
+    "needs_clarification": false
   }
 }
 ```
 
 ## Normalization Rules
 
-Normalization must do the following:
+Normalization should:
 
-1. Parse `flags` from JSON if provided.
-2. Fill missing flags with `false`.
-3. Validate flag keys against a known schema.
-4. Optionally infer a small set of obvious flags from text if absent.
-5. Keep author-provided flags as source-of-truth unless they are invalid.
+1. parse the `flags` JSON column
+2. retain only known raw-file flags
+3. fill missing known flags with `false`
+4. reject unknown flags rather than silently expanding the schema
+5. preserve author-provided flag values exactly
 
-Recommended flag schema:
+Recommended normalized flag schema:
 
 ```json
 {
-  "has_self_harm_signal": "bool",
-  "has_direct_intent": "bool",
-  "has_indirect_ideation": "bool",
-  "has_harm_to_others": "bool",
-  "has_instructional_request": "bool",
-  "has_illicit_instruction_request": "bool",
-  "has_violence_signal": "bool",
-  "has_secrecy_pattern": "bool",
-  "has_blackmail_pattern": "bool",
-  "has_dependency_pattern": "bool",
-  "has_adult_child_dynamic": "bool",
-  "has_vulnerability_targeting": "bool",
-  "has_control_pattern": "bool",
-  "has_fear_based_authority": "bool",
-  "is_safe_factual": "bool",
-  "is_prevention_or_help_seeking": "bool",
-  "is_historical_or_explanatory": "bool",
-  "is_hypothetical_not_instructional": "bool",
-  "is_emotional_without_self_harm": "bool",
-  "is_peer_conflict": "bool",
-  "is_protected_group_target": "bool",
-  "is_school_rule_or_law_context": "bool",
-  "has_personal_direction": "bool",
-  "has_loaded_premise": "bool",
-  "has_negative_language": "bool",
-  "includes_slurs": "bool",
-  "needs_clarification": "bool",
-  "has_harmful_comparison": "bool"
+  "direct_intent": false,
+  "has_ambiguous_risk": false,
+  "has_bullying_involved": false,
+  "has_coercive_control": false,
+  "has_dangerous_context": false,
+  "has_emotional_distress": false,
+  "has_grooming_involved": false,
+  "has_hate_group_language": false,
+  "has_personal_direction": false,
+  "has_safety_hazard": false,
+  "has_self_harm": false,
+  "has_self_harm_indicator": false,
+  "has_unsafe_sexual_content": false,
+  "has_violence_possibility": false,
+  "has_vuln_exploit": false,
+  "indirect_intent": false,
+  "needs_clarification": false
 }
 ```
 
-## Training Targets
+## Training Logic
 
 Recommended training outputs:
 
@@ -267,9 +260,17 @@ Recommended training outputs:
 3. primary `g2` head
 4. intent-family head
 5. intent-phrase head
-6. flag head
+6. optional auxiliary flag head
 
-The flag head should be a multi-label sigmoid output.
+Important:
+
+- flags can be trained as auxiliary targets
+- `G2_all` is not trained
+- flags are not a replacement for `G2`
+
+### Optional auxiliary flag head
+
+If added, the flag head should predict only the existing raw flags.
 
 Example:
 
@@ -281,247 +282,282 @@ Example:
   "intent_family_logits": "...",
   "intent_phrase_logits": "...",
   "flag_logits": {
-    "has_self_harm_signal": 0.97,
-    "has_direct_intent": 0.91,
-    "is_safe_factual": 0.02
+    "direct_intent": 0.91,
+    "has_self_harm_indicator": 0.96,
+    "has_emotional_distress": 0.88,
+    "needs_clarification": 0.07
   }
 }
 ```
 
-Recommended loss weighting:
+## Inference Structure
 
-- `topic`: medium
-- `g1`: medium
-- primary `g2`: high
-- intent heads: medium-low
-- flag head: high for safety-critical flags
+At inference, the model should output:
 
-Flags that should receive extra loss weight:
+- `topic`
+- `G1`
+- primary `G2`
+- intent-family probabilities
+- intent-phrase probabilities
+- optional predicted flag probabilities
 
-- `has_self_harm_signal`
-- `has_direct_intent`
-- `has_harm_to_others`
-- `has_illicit_instruction_request`
-- `has_secrecy_pattern`
-- `has_blackmail_pattern`
-- `has_adult_child_dynamic`
-- `has_control_pattern`
+Then runtime fusion should calculate `G2_all`.
 
-## Runtime Inference Structure
-
-At inference, use:
-
-- `question`
-- `recent_context`
-- normalized text
-- classifier outputs
-- predicted flags
-- lexicon matches
-- heuristic evidence
-
-Recommended runtime classifier output:
+Recommended classifier-facing internal structure:
 
 ```json
 {
-  "question": "Someone online says our friendship should stay secret from my parents.",
-  "language": "en",
-  "age_band": "9-10",
-  "topic": "Online secrecy concern",
+  "question": "An older person online says our chats should stay secret.",
+  "context": "They say I am special and should not tell my parents.",
+  "topic": "...",
   "g1": {
-    "id": "GENERIC",
-    "reason": "The question is about a relationship and safety situation, not a factual domain like science or belief."
+    "id": "GENERIC"
   },
   "g2_primary": {
     "id": "GROOMING",
-    "score": 0.74
+    "score": 0.63
   },
   "g2_head_scores": {
-    "GROOMING": 0.74,
-    "VULN_EXPLOIT": 0.62,
-    "COERCIVE_CONTROL": 0.14,
-    "EMOTIONAL": 0.10
+    "GROOMING": 0.63,
+    "VULN_EXPLOIT": 0.52,
+    "EMOTIONAL": 0.18
   },
   "flags": {
-    "has_secrecy_pattern": {
-      "score": 0.95,
+    "has_grooming_involved": {
+      "score": 0.94,
       "triggered": true
     },
-    "has_adult_child_dynamic": {
-      "score": 0.81,
+    "has_vuln_exploit": {
+      "score": 0.61,
       "triggered": true
     },
-    "has_blackmail_pattern": {
-      "score": 0.09,
+    "has_emotional_distress": {
+      "score": 0.24,
       "triggered": false
     }
-  },
-  "intent_lexicon": {
-    "matched_lovs": ["GROOMING"],
-    "evidence": [
-      {
-        "g2_id": "GROOMING",
-        "matched_phrases": ["secret from my parents"]
-      }
-    ]
   }
 }
 ```
 
-## Runtime Fusion Logic
+## How G2_all Should Be Calculated
 
-Inference should be a fusion pipeline, not a single raw argmax.
-
-Recommended order:
-
-1. Predict `topic`
-2. Predict `G1`
-3. Predict primary `G2`
-4. Predict flags
-5. Predict intent families and phrases
-6. Collect heuristic and lexicon evidence
-7. Build calculated `G2_all`
-8. Promote or suppress high-risk labels based on flags
-9. Resolve primary `G2` from fused set using priority rules
-10. Derive `G3` and `G4`
-
-## Calculating G2_all
-
-`G2_all` should be calculated from:
+Since `G2_all` is no longer in training, it should be calculated at inference from:
 
 1. per-label probabilities from the primary `G2` head
-2. predicted flag evidence
-3. lexicon evidence
-4. heuristics
+2. predicted flags
+3. intent lexicon evidence
+4. existing heuristics
 
-Recommended rule:
+Recommended base rule:
 
 ```text
 G2_all =
   classifier-head labels above threshold
-  UNION flag-supported labels
-  UNION lexicon-supported labels
-  UNION heuristic-supported labels
+  UNION labels supported by active flags
+  UNION labels supported by intent lexicon
+  UNION labels supported by heuristics
 ```
 
-Recommended thresholds:
+Primary `G2` must always be included in `G2_all`.
 
-- default `G2` secondary threshold: `0.80`
-- high-risk override threshold: `0.45` to `0.60`
-- safe factual threshold: stricter when any high-risk evidence exists
+## Existing Flag-to-Label Support
 
-Example:
+This section maps only the existing raw flags to `G2` support.
 
-```json
-{
-  "g2_head_scores": {
-    "SELF_HARM": 0.43,
-    "EMOTIONAL": 0.51,
-    "AMBIGUOUS_RISK": 0.34
-  },
-  "flags": {
-    "has_self_harm_signal": {
-      "score": 0.94,
-      "triggered": true
-    },
-    "has_direct_intent": {
-      "score": 0.88,
-      "triggered": true
-    }
-  }
-}
-```
+| Flag | Supports |
+|---|---|
+| `direct_intent` | `SELF_HARM` |
+| `indirect_intent` | `SELF_HARM`, `AMBIGUOUS_RISK` |
+| `has_self_harm_indicator` | `SELF_HARM` |
+| `has_self_harm` | `SELF_HARM` |
+| `needs_clarification` | `AMBIGUOUS_RISK` |
+| `has_ambiguous_risk` | `AMBIGUOUS_RISK` |
+| `has_bullying_involved` | `BULLYING` |
+| `has_coercive_control` | `COERCIVE_CONTROL` |
+| `has_dangerous_context` | `DANGEROUS` |
+| `has_emotional_distress` | `EMOTIONAL` |
+| `has_grooming_involved` | `GROOMING` |
+| `has_hate_group_language` | `HATE_GROUP` |
+| `has_personal_direction` | `PERSONAL_DIRECTION` |
+| `has_safety_hazard` | `SAFETY_HAZARD` |
+| `has_unsafe_sexual_content` | `UNSAFE_SEXUAL_CONTENT` |
+| `has_violence_possibility` | `VIOLENCE` |
+| `has_vuln_exploit` | `VULN_EXPLOIT` |
 
-Even though `SELF_HARM` is below the default secondary threshold, the flags justify adding or promoting it.
+## Promotion Logic
 
-## Promotion and Suppression Rules
+Promotion logic must stay consistent with what the raw files already define.
+
+That means:
+
+- use existing flags only
+- do not invent new safety flags
+- do not attach semantics that are absent from the raw files
 
 ### Self-harm promotion
 
 If:
 
-- `has_self_harm_signal=true`
-- and one of:
-  - `has_direct_intent=true`
-  - `has_indirect_ideation=true`
-  - intent-family match is self-harm related
+- `direct_intent=true`
+or
+- `has_self_harm_indicator=true`
+or
+- `has_self_harm=true`
 
 Then:
 
 - add `SELF_HARM` to `G2_all`
-- promote primary `G2` to `SELF_HARM` unless a higher-priority blocked class applies
-
-### Grooming promotion
 
 If:
 
-- `has_secrecy_pattern=true`
-- and `has_adult_child_dynamic=true`
+- `direct_intent=true`
+or
+- `has_self_harm_indicator=true`
 
 Then:
 
-- add `GROOMING`
-- if `GROOMING` score is moderately close to top label, promote it above lower-risk classes
-
-### Vulnerability exploitation promotion
+- `SELF_HARM` should outrank lower-risk classes such as `EMOTIONAL` and `AMBIGUOUS_RISK`
 
 If:
 
-- `has_blackmail_pattern=true`
-or
-- `has_dependency_pattern=true`
-or
-- `has_vulnerability_targeting=true`
+- `indirect_intent=true`
+and
+- `needs_clarification=true`
 
 Then:
 
-- add `VULN_EXPLOIT`
-
-### Coercive control promotion
-
-If:
-
-- `has_control_pattern=true`
-or
-- `has_fear_based_authority=true`
-
-Then:
-
-- add `COERCIVE_CONTROL`
+- include both `SELF_HARM` and `AMBIGUOUS_RISK` in `G2_all`
 
 ### Dangerous promotion
 
 If:
 
-- `has_instructional_request=true`
-- and `has_harm_to_others=true`
-or
-- `has_illicit_instruction_request=true`
+- `has_dangerous_context=true`
 
 Then:
 
-- add `DANGEROUS`
-- suppress `NEUTRAL_FACT`
-
-### Safe factual suppression guard
+- add `DANGEROUS` to `G2_all`
 
 If:
 
-- `is_safe_factual=true`
-- and no critical harm flags are active
+- `has_dangerous_context=true`
+and
+- `has_violence_possibility=true`
 
 Then:
 
-- allow `NEUTRAL_FACT`
+- include both `DANGEROUS` and `VIOLENCE`
 
-If any strong high-risk flags are active:
+### Grooming promotion
 
-- do not allow `NEUTRAL_FACT` to dominate
+If:
 
-## Primary G2 Resolution
+- `has_grooming_involved=true`
 
-After `G2_all` is built, choose primary `G2` using a priority order.
+Then:
 
-Recommended order:
+- add `GROOMING`
+
+If:
+
+- `has_grooming_involved=true`
+and
+- `has_vuln_exploit=true`
+
+Then:
+
+- include both `GROOMING` and `VULN_EXPLOIT`
+
+### Vulnerability exploitation promotion
+
+If:
+
+- `has_vuln_exploit=true`
+
+Then:
+
+- add `VULN_EXPLOIT`
+
+If:
+
+- `has_vuln_exploit=true`
+and
+- `has_coercive_control=true`
+
+Then:
+
+- include both `VULN_EXPLOIT` and `COERCIVE_CONTROL`
+
+### Coercive control promotion
+
+If:
+
+- `has_coercive_control=true`
+
+Then:
+
+- add `COERCIVE_CONTROL`
+
+### Bullying and hate-group logic
+
+If:
+
+- `has_bullying_involved=true`
+
+Then:
+
+- add `BULLYING`
+
+If:
+
+- `has_hate_group_language=true`
+
+Then:
+
+- add `HATE_GROUP`
+
+If both are true:
+
+- include both in `G2_all`
+- use score/priority logic to decide primary label
+
+### Personal direction
+
+If:
+
+- `has_personal_direction=true`
+
+Then:
+
+- add `PERSONAL_DIRECTION`
+
+### Safety hazard
+
+If:
+
+- `has_safety_hazard=true`
+
+Then:
+
+- add `SAFETY_HAZARD`
+
+### Emotional distress
+
+If:
+
+- `has_emotional_distress=true`
+
+Then:
+
+- add `EMOTIONAL`
+
+This should remain a lower-priority supporting label when stronger risk flags are present.
+
+## Priority Resolution
+
+After building `G2_all`, resolve primary `G2` using risk-first priority.
+
+Recommended runtime order:
 
 1. `UNSAFE_SEXUAL_CONTENT`
 2. `GROOMING`
@@ -539,14 +575,21 @@ Recommended order:
 14. `NEUTRAL_FACT`
 15. `GENERIC_INTENT`
 
-This priority should apply only after fusion, not before.
+This priority should be applied after:
 
-## End-to-End Example 1: Self-harm
+- classifier-head thresholding
+- flag promotions
+- lexicon additions
+- heuristic additions
+
+## Detailed Examples
+
+### Example 1: Self-harm
 
 Question:
 
 ```text
-I keep thinking about disappearing forever and I don't know what to do.
+I want to die tonight.
 ```
 
 Context:
@@ -555,61 +598,52 @@ Context:
 none
 ```
 
-Normalized flags for training:
+Raw flags:
 
 ```json
 {
-  "has_self_harm_signal": true,
-  "has_direct_intent": false,
-  "has_indirect_ideation": true,
-  "has_personal_direction": true,
-  "is_emotional_without_self_harm": false,
-  "is_safe_factual": false
+  "direct_intent": true,
+  "has_emotional_distress": true,
+  "has_self_harm_indicator": true,
+  "indirect_intent": false,
+  "needs_clarification": false
 }
 ```
 
-Runtime prediction:
+Model output:
 
 ```json
 {
   "g2_head_scores": {
-    "EMOTIONAL": 0.52,
-    "SELF_HARM": 0.47,
-    "PERSONAL_DIRECTION": 0.26,
-    "AMBIGUOUS_RISK": 0.18
-  },
-  "flags": {
-    "has_self_harm_signal": {"score": 0.96, "triggered": true},
-    "has_indirect_ideation": {"score": 0.91, "triggered": true},
-    "has_personal_direction": {"score": 0.72, "triggered": true}
-  },
-  "intent_lexicon": {
-    "matched_lovs": ["SELF_HARM"]
+    "EMOTIONAL": 0.46,
+    "SELF_HARM": 0.42,
+    "AMBIGUOUS_RISK": 0.11
   }
 }
 ```
 
-Fused output:
+Runtime fusion:
+
+- base threshold may keep only `EMOTIONAL`
+- `direct_intent=true` and `has_self_harm_indicator=true`
+- add `SELF_HARM`
+- promote `SELF_HARM` over `EMOTIONAL`
+
+Final:
 
 ```json
 {
   "g2_primary": "SELF_HARM",
-  "g2_all": ["SELF_HARM", "EMOTIONAL", "PERSONAL_DIRECTION"]
+  "g2_all": ["SELF_HARM", "EMOTIONAL"]
 }
 ```
 
-Reason:
-
-- raw `EMOTIONAL` score is slightly higher
-- flags and intent evidence strongly support `SELF_HARM`
-- safety promotion raises `SELF_HARM` to primary
-
-## End-to-End Example 2: Grooming
+### Example 2: Grooming plus vulnerability exploitation
 
 Question:
 
 ```text
-An older person online told me not to tell my parents about our chats.
+Someone older online told me our chats are secret and says they will get upset if I tell anyone.
 ```
 
 Context:
@@ -618,53 +652,45 @@ Context:
 They say I am special and only they understand me.
 ```
 
-Normalized flags:
+Raw flags:
 
 ```json
 {
-  "has_secrecy_pattern": true,
-  "has_adult_child_dynamic": true,
-  "has_dependency_pattern": true,
-  "has_blackmail_pattern": false,
-  "is_safe_factual": false
+  "has_grooming_involved": true,
+  "has_vuln_exploit": true,
+  "has_emotional_distress": true,
+  "has_coercive_control": false
 }
 ```
 
-Runtime output:
+Model output:
 
 ```json
 {
   "g2_head_scores": {
-    "EMOTIONAL": 0.31,
-    "GROOMING": 0.29,
-    "VULN_EXPLOIT": 0.24
-  },
-  "flags": {
-    "has_secrecy_pattern": {"score": 0.97, "triggered": true},
-    "has_adult_child_dynamic": {"score": 0.84, "triggered": true},
-    "has_dependency_pattern": {"score": 0.79, "triggered": true}
-  },
-  "intent_lexicon": {
-    "matched_lovs": ["GROOMING", "VULN_EXPLOIT"]
+    "GROOMING": 0.58,
+    "VULN_EXPLOIT": 0.44,
+    "EMOTIONAL": 0.22
   }
 }
 ```
 
-Fused output:
+Runtime fusion:
+
+- threshold keeps `GROOMING`
+- flags add `VULN_EXPLOIT`
+- `has_emotional_distress=true` adds `EMOTIONAL` only if score or heuristics support it
+
+Final:
 
 ```json
 {
   "g2_primary": "GROOMING",
-  "g2_all": ["GROOMING", "VULN_EXPLOIT", "EMOTIONAL"]
+  "g2_all": ["GROOMING", "VULN_EXPLOIT"]
 }
 ```
 
-Reason:
-
-- secrecy + adult-child dynamic is more specific than general emotional distress
-- `VULN_EXPLOIT` is retained as secondary support
-
-## End-to-End Example 3: Dangerous vs Safe Factual
+### Example 3: Dangerous plus violence
 
 Question:
 
@@ -678,37 +704,36 @@ Context:
 none
 ```
 
-Normalized flags:
+Raw flags:
 
 ```json
 {
-  "has_harm_to_others": true,
-  "has_instructional_request": true,
-  "has_illicit_instruction_request": true,
-  "is_safe_factual": false,
-  "is_historical_or_explanatory": false
+  "has_dangerous_context": true,
+  "has_violence_possibility": true,
+  "has_emotional_distress": false,
+  "has_self_harm": false,
+  "has_bullying_involved": false
 }
 ```
 
-Runtime output:
+Model output:
 
 ```json
 {
   "g2_head_scores": {
-    "DANGEROUS": 0.58,
-    "VIOLENCE": 0.34,
+    "DANGEROUS": 0.61,
+    "VIOLENCE": 0.39,
     "NEUTRAL_FACT": 0.12
-  },
-  "flags": {
-    "has_harm_to_others": {"score": 0.95, "triggered": true},
-    "has_instructional_request": {"score": 0.92, "triggered": true},
-    "has_illicit_instruction_request": {"score": 0.94, "triggered": true},
-    "is_safe_factual": {"score": 0.03, "triggered": false}
   }
 }
 ```
 
-Fused output:
+Runtime fusion:
+
+- threshold keeps `DANGEROUS`
+- `has_violence_possibility=true` adds `VIOLENCE`
+
+Final:
 
 ```json
 {
@@ -717,17 +742,12 @@ Fused output:
 }
 ```
 
-Reason:
-
-- intent is instructional and harmful
-- `NEUTRAL_FACT` is suppressed
-
-## End-to-End Example 4: Emotional but not Self-harm
+### Example 4: Ambiguous self-harm
 
 Question:
 
 ```text
-I feel sad because my best friend moved away.
+Sometimes I want to disappear forever.
 ```
 
 Context:
@@ -736,51 +756,48 @@ Context:
 none
 ```
 
-Normalized flags:
+Raw flags:
 
 ```json
 {
-  "has_self_harm_signal": false,
-  "has_direct_intent": false,
-  "has_indirect_ideation": false,
-  "is_emotional_without_self_harm": true,
-  "is_safe_factual": false
+  "direct_intent": false,
+  "has_emotional_distress": true,
+  "has_self_harm_indicator": true,
+  "indirect_intent": true,
+  "needs_clarification": true
 }
 ```
 
-Runtime output:
+Model output:
 
 ```json
 {
   "g2_head_scores": {
-    "EMOTIONAL": 0.76,
-    "SELF_HARM": 0.08,
-    "AMBIGUOUS_RISK": 0.07
-  },
-  "flags": {
-    "is_emotional_without_self_harm": {"score": 0.89, "triggered": true},
-    "has_self_harm_signal": {"score": 0.04, "triggered": false}
+    "EMOTIONAL": 0.48,
+    "SELF_HARM": 0.41,
+    "AMBIGUOUS_RISK": 0.29
   }
 }
 ```
 
-Fused output:
+Runtime fusion:
+
+- `has_self_harm_indicator=true` adds `SELF_HARM`
+- `indirect_intent=true` and `needs_clarification=true` add `AMBIGUOUS_RISK`
+- `has_emotional_distress=true` supports `EMOTIONAL`
+
+Final:
 
 ```json
 {
-  "g2_primary": "EMOTIONAL",
-  "g2_all": ["EMOTIONAL"]
+  "g2_primary": "SELF_HARM",
+  "g2_all": ["SELF_HARM", "EMOTIONAL", "AMBIGUOUS_RISK"]
 }
 ```
 
-Reason:
+## Output Structure at Inference
 
-- emotional distress is present
-- self-harm promotion is blocked by negative evidence
-
-## Inference Output Structure
-
-Recommended final classifier-facing payload:
+Recommended classifier-facing structure:
 
 ```json
 {
@@ -795,8 +812,7 @@ Recommended final classifier-facing payload:
   },
   "g2": {
     "id": "...",
-    "reason": "...",
-    "score": 0.0
+    "reason": "..."
   },
   "g2_all": {
     "ids": ["...", "..."],
@@ -806,12 +822,12 @@ Recommended final classifier-facing payload:
     "selection_reasons": {
       "...": [
         "Classifier head score above threshold.",
-        "Added by self-harm promotion rule."
+        "Added because raw-flag-equivalent evidence supports the label."
       ]
     }
   },
   "flags": {
-    "has_self_harm_signal": {
+    "has_dangerous_context": {
       "score": 0.0,
       "triggered": true
     }
@@ -819,59 +835,18 @@ Recommended final classifier-facing payload:
 }
 ```
 
-## Recommended Implementation Phases
-
-### Phase 1
-
-- normalize `flags` from raw CSVs
-- validate schema
-- store flags in canonical JSONL
-
-### Phase 2
-
-- add auxiliary flag head to the SLM classifier
-- train flags jointly with `topic`, `G1`, `G2`
-
-### Phase 3
-
-- add runtime fusion logic for promotion/suppression
-- emit `selection_reasons` for `G2_all`
-
-### Phase 4
-
-- add per-flag evaluation metrics
-- calibrate thresholds for high-risk promotions
-
-## Evaluation Requirements
-
-Track:
-
-- primary `G2` accuracy
-- `G2_all` overlap recall
-- high-risk false-negative rate
-- flag precision/recall
-- promotion-rule activation counts
-- disagreement between raw `G2` head and fused output
-
-Most important slices:
-
-- self-harm indirect ideation
-- grooming secrecy
-- blackmail / exposure threats
-- violence vs dangerous
-- safe factual negatives near high-risk language
-
 ## Summary
 
-The flag solution improves inference because it gives the runtime a second layer of interpretable evidence beyond the raw `G2` argmax.
+The consistent design for this repo is:
 
-The full design is:
+- train only primary `G2`
+- do not train `G2_all`
+- retain and normalize only the flags that already exist in the raw sheets
+- optionally train those flags as auxiliary outputs
+- calculate `G2_all` at inference from:
+  - primary `G2` head scores
+  - existing raw-flag semantics
+  - intent lexicon
+  - heuristics
 
-- normalize flags from raw data
-- train flags as auxiliary targets
-- predict them at inference
-- fuse them with `G2` head scores, lexicon evidence, and heuristics
-- use them to calculate better `G2_all`
-- use them to safely promote high-risk labels
-
-This preserves the classifier contract while materially improving recall, disambiguation, and safety quality.
+This keeps the implementation aligned with the raw training files and avoids schema drift.
