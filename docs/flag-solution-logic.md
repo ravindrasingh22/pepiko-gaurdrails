@@ -28,6 +28,14 @@ Flags do not replace:
 - `G1`
 - primary `G2`
 
+Important:
+
+- flags must not be treated as one-to-one label definitions
+- a flag is evidence, not a final class
+- the same flag can support multiple `G2` labels
+- the same `G2` label can be supported by multiple different flag combinations
+- final `G2` resolution must come from fused evidence, not from a single flag firing
+
 ## Existing Raw Flags
 
 These are the only flags currently present in the raw CSV files.
@@ -367,6 +375,8 @@ Interpretation rules:
 - `Always flags` means the flag is true in every row for that `G2`
 - `Strong observed combinations` are the most common positive-flag combinations found in raw rows for that `G2`
 - these combinations are the safest basis for promotion logic
+- these combinations are not exclusive definitions of the label
+- overlapping combinations across labels are expected and must be resolved by fusion and priority rules
 
 | G2 | Rows | Always flags | Strong observed combinations |
 |---|---:|---|---|
@@ -391,6 +401,12 @@ Interpretation rules:
 - `SELF_HARM` is not driven by a single raw flag. The common raw patterns are:
   - `direct_intent + has_emotional_distress + has_self_harm`
   - `has_emotional_distress + has_self_harm + indirect_intent`
+- there are no one-to-one flag definitions for `G2`
+- several flags are shared across multiple labels, especially:
+  - `has_emotional_distress`
+  - `has_dangerous_context`
+  - `has_violence_possibility`
+- overlapping flag combinations are normal and must be expected in runtime fusion
 - `NEUTRAL_FACT` is not promoted by flags. Raw rows show that it may coexist with weak background signals such as `has_dangerous_context`, but those flags do not define or promote the label.
 - `GENERIC_INTENT` is not promoted by flags. It behaves as a fallback when stronger risk-label evidence is absent or insufficient.
 - `SAFETY_HAZARD` always appears with both:
@@ -409,6 +425,17 @@ Interpretation rules:
 ## Promotion Logic
 
 Promotion logic should be based on the raw combinations above, not on single-flag intuition alone.
+
+Promotion rules must be read as:
+
+- observed evidence patterns
+- not one-to-one label definitions
+- not exclusive class signatures
+
+If the same flag or flag combination appears across multiple labels, runtime should:
+
+1. keep all supported labels in `G2_all`
+2. use classifier scores, lexicon evidence, heuristics, and priority rules to resolve primary `G2`
 
 ### Core rules
 
