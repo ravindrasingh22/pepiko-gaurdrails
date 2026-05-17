@@ -360,198 +360,101 @@ G2_all =
 
 Primary `G2` must always be included in `G2_all`.
 
-## Existing Flag-to-Label Support
+## Existing Flag-to-G2 Rules Extracted from Raw CSV
 
-This section maps only the existing raw flags to `G2` support.
+This section is extracted from the raw CSVs, not invented by hand.
 
-| Flag | Supports |
-|---|---|
-| `direct_intent` | `SELF_HARM` |
-| `indirect_intent` | `SELF_HARM`, `AMBIGUOUS_RISK` |
-| `has_self_harm_indicator` | `SELF_HARM` |
-| `has_self_harm` | `SELF_HARM` |
-| `needs_clarification` | `AMBIGUOUS_RISK` |
-| `has_ambiguous_risk` | `AMBIGUOUS_RISK` |
-| `has_bullying_involved` | `BULLYING` |
-| `has_coercive_control` | `COERCIVE_CONTROL` |
-| `has_dangerous_context` | `DANGEROUS` |
-| `has_emotional_distress` | `EMOTIONAL` |
-| `has_grooming_involved` | `GROOMING` |
-| `has_hate_group_language` | `HATE_GROUP` |
-| `has_personal_direction` | `PERSONAL_DIRECTION` |
-| `has_safety_hazard` | `SAFETY_HAZARD` |
-| `has_unsafe_sexual_content` | `UNSAFE_SEXUAL_CONTENT` |
-| `has_violence_possibility` | `VIOLENCE` |
-| `has_vuln_exploit` | `VULN_EXPLOIT` |
+Interpretation rules:
+
+- `Always flags` means the flag is true in every row for that `G2`
+- `Strong observed combinations` are the most common positive-flag combinations found in raw rows for that `G2`
+- these combinations are the safest basis for promotion logic
+
+| G2 | Rows | Always flags | Strong observed combinations |
+|---|---:|---|---|
+| `AMBIGUOUS_RISK` | 130 | none | `has_ambiguous_risk + has_dangerous_context`, `has_dangerous_context + has_safety_hazard`, `has_emotional_distress + needs_clarification`, `has_emotional_distress + indirect_intent + needs_clarification` |
+| `BULLYING` | 40 | `has_bullying_involved` | `has_bullying_involved + has_emotional_distress`, `has_bullying_involved`, `has_bullying_involved + has_dangerous_context` |
+| `COERCIVE_CONTROL` | 30 | `has_coercive_control` | `has_coercive_control`, `has_coercive_control + has_emotional_distress`, `has_coercive_control + has_emotional_distress + has_violence_possibility` |
+| `DANGEROUS` | 35 | `has_dangerous_context` | `has_dangerous_context`, `has_dangerous_context + has_violence_possibility` |
+| `EMOTIONAL` | 74 | none | `has_emotional_distress`, `has_dangerous_context + has_emotional_distress`, `has_bullying_involved + has_emotional_distress` |
+| `GENERIC_INTENT` | 40 | none | `(none)`, `has_dangerous_context`, `has_emotional_distress` |
+| `GROOMING` | 32 | `has_grooming_involved` | `has_grooming_involved`, `has_grooming_involved + has_vuln_exploit`, `has_emotional_distress + has_grooming_involved` |
+| `HATE_GROUP` | 35 | `has_hate_group_language` | `has_hate_group_language`, `has_bullying_involved + has_hate_group_language`, `has_hate_group_language + has_violence_possibility` |
+| `NEUTRAL_FACT` | 74 | none | `(none)`, `has_dangerous_context` |
+| `PERSONAL_DIRECTION` | 40 | `has_personal_direction` | `has_personal_direction`, `has_emotional_distress + has_personal_direction`, `has_dangerous_context + has_personal_direction` |
+| `SAFETY_HAZARD` | 35 | `has_dangerous_context + has_safety_hazard` | `has_dangerous_context + has_safety_hazard` |
+| `SELF_HARM` | 51 | `has_emotional_distress` | `has_emotional_distress + has_self_harm_indicator + indirect_intent`, `direct_intent + has_emotional_distress + has_self_harm_indicator`, `has_dangerous_context + has_emotional_distress + has_self_harm` |
+| `UNSAFE_SEXUAL_CONTENT` | 30 | `has_unsafe_sexual_content` | `has_unsafe_sexual_content`, `has_grooming_involved + has_unsafe_sexual_content`, `has_emotional_distress + has_grooming_involved + has_unsafe_sexual_content` |
+| `VIOLENCE` | 50 | `has_violence_possibility` | `has_violence_possibility`, `has_emotional_distress + has_violence_possibility`, `has_dangerous_context + has_violence_possibility` |
+| `VULN_EXPLOIT` | 30 | `has_vuln_exploit` | `has_emotional_distress + has_vuln_exploit`, `has_dangerous_context + has_emotional_distress + has_vuln_exploit`, `has_coercive_control + has_vuln_exploit` |
+
+### Important observations from raw data
+
+- `SELF_HARM` is not driven by a single raw flag. The common raw patterns are:
+  - `direct_intent + has_emotional_distress + has_self_harm_indicator`
+  - `has_emotional_distress + has_self_harm_indicator + indirect_intent`
+- `SAFETY_HAZARD` always appears with both:
+  - `has_dangerous_context`
+  - `has_safety_hazard`
+- `DANGEROUS` always includes `has_dangerous_context`
+- `VIOLENCE` always includes `has_violence_possibility`
+- `GROOMING` always includes `has_grooming_involved`
+- `VULN_EXPLOIT` always includes `has_vuln_exploit`
+- `COERCIVE_CONTROL` always includes `has_coercive_control`
+- `HATE_GROUP` always includes `has_hate_group_language`
+- `BULLYING` always includes `has_bullying_involved`
+- `PERSONAL_DIRECTION` always includes `has_personal_direction`
+- `UNSAFE_SEXUAL_CONTENT` always includes `has_unsafe_sexual_content`
 
 ## Promotion Logic
 
-Promotion logic must stay consistent with what the raw files already define.
-
-That means:
-
-- use existing flags only
-- do not invent new safety flags
-- do not attach semantics that are absent from the raw files
-
-### Self-harm promotion
-
-If:
-
-- `direct_intent=true`
-or
-- `has_self_harm_indicator=true`
-or
-- `has_self_harm=true`
-
-Then:
-
-- add `SELF_HARM` to `G2_all`
-
-If:
-
-- `direct_intent=true`
-or
-- `has_self_harm_indicator=true`
-
-Then:
-
-- `SELF_HARM` should outrank lower-risk classes such as `EMOTIONAL` and `AMBIGUOUS_RISK`
-
-If:
-
-- `indirect_intent=true`
-and
-- `needs_clarification=true`
-
-Then:
-
-- include both `SELF_HARM` and `AMBIGUOUS_RISK` in `G2_all`
-
-### Dangerous promotion
-
-If:
-
-- `has_dangerous_context=true`
-
-Then:
-
-- add `DANGEROUS` to `G2_all`
-
-If:
-
-- `has_dangerous_context=true`
-and
-- `has_violence_possibility=true`
-
-Then:
-
-- include both `DANGEROUS` and `VIOLENCE`
-
-### Grooming promotion
-
-If:
-
-- `has_grooming_involved=true`
-
-Then:
-
-- add `GROOMING`
-
-If:
-
-- `has_grooming_involved=true`
-and
-- `has_vuln_exploit=true`
-
-Then:
-
-- include both `GROOMING` and `VULN_EXPLOIT`
-
-### Vulnerability exploitation promotion
-
-If:
-
-- `has_vuln_exploit=true`
-
-Then:
-
-- add `VULN_EXPLOIT`
-
-If:
-
-- `has_vuln_exploit=true`
-and
-- `has_coercive_control=true`
-
-Then:
-
-- include both `VULN_EXPLOIT` and `COERCIVE_CONTROL`
-
-### Coercive control promotion
-
-If:
-
-- `has_coercive_control=true`
-
-Then:
-
-- add `COERCIVE_CONTROL`
-
-### Bullying and hate-group logic
-
-If:
-
-- `has_bullying_involved=true`
-
-Then:
-
-- add `BULLYING`
-
-If:
-
-- `has_hate_group_language=true`
-
-Then:
-
-- add `HATE_GROUP`
-
-If both are true:
-
-- include both in `G2_all`
-- use score/priority logic to decide primary label
-
-### Personal direction
-
-If:
-
-- `has_personal_direction=true`
-
-Then:
-
-- add `PERSONAL_DIRECTION`
-
-### Safety hazard
-
-If:
-
-- `has_safety_hazard=true`
-
-Then:
-
-- add `SAFETY_HAZARD`
-
-### Emotional distress
-
-If:
-
-- `has_emotional_distress=true`
-
-Then:
-
-- add `EMOTIONAL`
-
-This should remain a lower-priority supporting label when stronger risk flags are present.
+Promotion logic should be based on the raw combinations above, not on single-flag intuition alone.
+
+### Core rules
+
+| Observed rule from raw files | Runtime implication |
+|---|---|
+| `direct_intent + has_emotional_distress + has_self_harm_indicator` | promote `SELF_HARM` |
+| `has_emotional_distress + has_self_harm_indicator + indirect_intent` | add `SELF_HARM` |
+| `indirect_intent + needs_clarification` | add `AMBIGUOUS_RISK` |
+| `has_dangerous_context` | add `DANGEROUS` |
+| `has_violence_possibility` | add `VIOLENCE` |
+| `has_dangerous_context + has_safety_hazard` | add `SAFETY_HAZARD` |
+| `has_grooming_involved` | add `GROOMING` |
+| `has_vuln_exploit` | add `VULN_EXPLOIT` |
+| `has_coercive_control` | add `COERCIVE_CONTROL` |
+| `has_unsafe_sexual_content` | add `UNSAFE_SEXUAL_CONTENT` |
+| `has_bullying_involved` | add `BULLYING` |
+| `has_hate_group_language` | add `HATE_GROUP` |
+| `has_personal_direction` | add `PERSONAL_DIRECTION` |
+| `has_emotional_distress` without stronger promoted risk | add `EMOTIONAL` as supporting evidence |
+| `has_ambiguous_risk` | add `AMBIGUOUS_RISK` |
+
+### Co-occurrence rules
+
+| Observed raw combination | Runtime implication |
+|---|---|
+| `has_dangerous_context + has_violence_possibility` | keep both `DANGEROUS` and `VIOLENCE` in `G2_all` |
+| `has_grooming_involved + has_vuln_exploit` | keep both `GROOMING` and `VULN_EXPLOIT` in `G2_all` |
+| `has_coercive_control + has_vuln_exploit` | keep both `COERCIVE_CONTROL` and `VULN_EXPLOIT` in `G2_all` |
+| `has_bullying_involved + has_hate_group_language` | keep both `BULLYING` and `HATE_GROUP` in `G2_all` |
+| `has_emotional_distress + has_personal_direction` | keep both `PERSONAL_DIRECTION` and `EMOTIONAL` in `G2_all` |
+| `has_emotional_distress + has_grooming_involved` | keep `GROOMING`; allow `EMOTIONAL` as supporting secondary |
+| `has_emotional_distress + has_vuln_exploit` | keep `VULN_EXPLOIT`; allow `EMOTIONAL` as supporting secondary |
+| `has_emotional_distress + has_coercive_control` | keep `COERCIVE_CONTROL`; allow `EMOTIONAL` as supporting secondary |
+| `has_emotional_distress + has_bullying_involved` | keep `BULLYING`; allow `EMOTIONAL` as supporting secondary |
+
+### Absence-based rules
+
+The raw files also show:
+
+- `GENERIC_INTENT` is often associated with no positive flags
+- `NEUTRAL_FACT` is often associated with no positive flags
+
+Runtime implication:
+
+- no active positive flags can support `GENERIC_INTENT` or `NEUTRAL_FACT`
+- but these labels should not override stronger promoted risk labels
 
 ## Priority Resolution
 
