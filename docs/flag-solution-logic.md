@@ -437,25 +437,98 @@ If the same flag or flag combination appears across multiple labels, runtime sho
 1. keep all supported labels in `G2_all`
 2. use classifier scores, lexicon evidence, heuristics, and priority rules to resolve primary `G2`
 
-### Core rules
+### 1. Single-flag candidate rules
+
+These are allowed only where the raw data shows the flag is an `always flag` for that `G2`.
+
+They should be interpreted as:
+
+- strong candidate support for the label
+- not sufficient by themselves to unconditionally add the label
+- never sufficient by themselves to force primary `G2`
+
+Recommended usage:
+
+```text
+If an always-flag is active,
+the label becomes eligible for addition to G2_all,
+but final addition should still require corroboration from at least one of:
+
+1. classifier head score for that label above a support threshold
+2. lexicon evidence
+3. heuristic evidence
+```
+
+| Single flag | Runtime implication |
+|---|---|
+| `has_grooming_involved` | make `GROOMING` eligible for addition to `G2_all` |
+| `has_vuln_exploit` | make `VULN_EXPLOIT` eligible for addition to `G2_all` |
+| `has_coercive_control` | make `COERCIVE_CONTROL` eligible for addition to `G2_all` |
+| `has_hate_group_language` | make `HATE_GROUP` eligible for addition to `G2_all` |
+| `has_personal_direction` | make `PERSONAL_DIRECTION` eligible for addition to `G2_all` |
+| `has_unsafe_sexual_content` | make `UNSAFE_SEXUAL_CONTENT` eligible for addition to `G2_all` |
+| `has_bullying_involved` | make `BULLYING` eligible for addition to `G2_all` |
+
+Example:
+
+```text
+Unsafe rule:
+  if has_grooming_involved:
+      add GROOMING
+
+Safer rule:
+  if has_grooming_involved and (
+      g2_score[GROOMING] >= 0.35
+      or lexicon_support[GROOMING] == true
+      or heuristic_support[GROOMING] == true
+  ):
+      add GROOMING
+```
+
+Why this matters:
+
+- raw data tells us `has_grooming_involved` is always present in `GROOMING` rows
+- raw data does not prove that every future predicted `has_grooming_involved=true` case must receive `GROOMING`
+- without corroboration, noisy flag predictions can inflate false positives in `G2_all`
+
+### 2. Combination-based promotion rules
+
+These are stronger rules derived from observed combinations in raw rows.
 
 | Observed rule from raw files | Runtime implication |
 |---|---|
 | `direct_intent + has_emotional_distress + has_self_harm` | promote `SELF_HARM` |
-| `has_emotional_distress + has_self_harm + indirect_intent` | add `SELF_HARM` |
+| `has_emotional_distress + has_self_harm + indirect_intent` | add `SELF_HARM` and allow promotion if classifier score is close |
 | `indirect_intent + needs_clarification` | add `AMBIGUOUS_RISK` |
-| `has_dangerous_context` | add `DANGEROUS` |
-| `has_violence_possibility` | add `VIOLENCE` |
+| `has_dangerous_context + has_violence_possibility` | add `DANGEROUS` and `VIOLENCE` |
 | `has_dangerous_context + has_safety_hazard` | add `SAFETY_HAZARD` |
-| `has_grooming_involved` | add `GROOMING` |
-| `has_vuln_exploit` | add `VULN_EXPLOIT` |
-| `has_coercive_control` | add `COERCIVE_CONTROL` |
-| `has_unsafe_sexual_content` | add `UNSAFE_SEXUAL_CONTENT` |
-| `has_bullying_involved` | add `BULLYING` |
-| `has_hate_group_language` | add `HATE_GROUP` |
-| `has_personal_direction` | add `PERSONAL_DIRECTION` |
-| `has_emotional_distress` without stronger promoted risk | add `EMOTIONAL` as supporting evidence |
-| `has_ambiguous_risk` | add `AMBIGUOUS_RISK` |
+| `has_grooming_involved + has_vuln_exploit` | keep both `GROOMING` and `VULN_EXPLOIT` |
+| `has_coercive_control + has_vuln_exploit` | keep both `COERCIVE_CONTROL` and `VULN_EXPLOIT` |
+| `has_bullying_involved + has_hate_group_language` | keep both `BULLYING` and `HATE_GROUP` |
+| `has_emotional_distress + has_personal_direction` | keep both `EMOTIONAL` and `PERSONAL_DIRECTION` |
+| `has_emotional_distress + has_bullying_involved` | keep `BULLYING`; allow `EMOTIONAL` as supporting secondary |
+| `has_emotional_distress + has_grooming_involved` | keep `GROOMING`; allow `EMOTIONAL` as supporting secondary |
+| `has_emotional_distress + has_vuln_exploit` | keep `VULN_EXPLOIT`; allow `EMOTIONAL` as supporting secondary |
+| `has_emotional_distress + has_coercive_control` | keep `COERCIVE_CONTROL`; allow `EMOTIONAL` as supporting secondary |
+
+### 3. Never single-flag promote rules
+
+These flags overlap too broadly across labels and must not be used alone to promote a primary `G2`.
+
+| Flag | Why not |
+|---|---|
+| `has_emotional_distress` | appears across `SELF_HARM`, `EMOTIONAL`, `BULLYING`, `GROOMING`, `VULN_EXPLOIT`, `COERCIVE_CONTROL`, `PERSONAL_DIRECTION`, `VIOLENCE`, `AMBIGUOUS_RISK` |
+| `has_dangerous_context` | appears across `DANGEROUS`, `SAFETY_HAZARD`, `VIOLENCE`, `AMBIGUOUS_RISK`, and even some `NEUTRAL_FACT` / `GENERIC_INTENT` rows |
+| `has_violence_possibility` | appears across `VIOLENCE`, `DANGEROUS`, `HATE_GROUP`, `COERCIVE_CONTROL`, `BULLYING` |
+| `has_ambiguous_risk` | is inherently broad and not tied to a single `G2` |
+
+These flags may still:
+
+- add weak support
+- add secondary labels
+- participate inside multi-flag patterns
+
+But they should not alone force primary `G2`.
 
 Boolean form example:
 
