@@ -680,7 +680,7 @@ Final:
 
 ```json
 {
-  "g2_primary": "SELF_HARM",
+  "g2": "SELF_HARM",
   "g2_all": ["SELF_HARM", "EMOTIONAL"]
 }
 ```
@@ -732,7 +732,7 @@ Final:
 
 ```json
 {
-  "g2_primary": "GROOMING",
+  "g2": "GROOMING",
   "g2_all": ["GROOMING", "VULN_EXPLOIT"]
 }
 ```
@@ -784,7 +784,7 @@ Final:
 
 ```json
 {
-  "g2_primary": "DANGEROUS",
+  "g2": "DANGEROUS",
   "g2_all": ["DANGEROUS", "VIOLENCE"]
 }
 ```
@@ -837,7 +837,7 @@ Final:
 
 ```json
 {
-  "g2_primary": "SELF_HARM",
+  "g2": "SELF_HARM",
   "g2_all": ["SELF_HARM", "EMOTIONAL", "AMBIGUOUS_RISK"]
 }
 ```
@@ -849,6 +849,7 @@ Recommended classifier-facing structure:
 ```json
 {
   "question": "...",
+  "context": "...",
   "language": "en",
   "topic": {
     "id": "..."
