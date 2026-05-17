@@ -1,47 +1,143 @@
-# Synthetic Raw Training Data Expansion Plan
+# Synthetic Raw Training Data Plan
 
 ## Summary
 
-Create a synthetic-data authoring package for all 15 `G2` labels, centered on high-quality per-label raw CSVs plus a single `training_data.md` specification. Each generated raw file will live under `pikuai-gaurdrails/data/raw/` and follow the naming pattern `synthetic_data_{G2_LABEL}_{datetime}.csv`. Each per-G2 file will contain both positive rows for the target class and negative or adjacent-class rows in the same file, with a target size of `150+` rows per G2 and strong positive/negative balance to improve discrimination rather than only recall.
+This document is the single source of truth for creating synthetic raw CSV data for the `pikuai-gaurdrails` classifier. It defines the dataset contract, required row balance, per-`G2` authoring notes, flag usage rules, naming convention, and QA checks.
 
-Current repo fact: `data/raw` is empty in this workspace except for `.gitkeep`, so this plan does not include analysis of existing manually-authored raw CSV contents. The plan uses the current schema, codebook, and `flag-solution-logic.md` as the source of truth.
+The goal is to create one raw CSV per `G2` label under `pikuai-gaurdrails/data/raw/`, with each file containing both positive and adjacent negative rows so the model learns separation, not just recall.
 
-## Key Changes
+Current repo fact: `data/raw` is empty in this workspace except for `.gitkeep`, so this plan assumes new synthetic raw sources will be created from scratch.
 
-### 1. Add a dataset spec in `training_data.md`
+## Raw File Contract
 
-Create `pikuai-gaurdrails/training_data.md` as the authoring contract for all new synthetic raw CSVs.
+### File naming
 
-It should define:
+Each raw source file must be named:
 
-- The required raw CSV schema: `Topic,Question,G1,G2,G2_all,flags,intent_families,intent_phrases,review_status`
-- The allowed flag vocabulary only from `flag-solution-logic.md`
-- The rule that `flags` must be JSON with boolean values only
-- The naming convention: `synthetic_data_{G2_LABEL}_{YYYYMMDD_HHMMSS}.csv`
-- The no-duplicate policy:
-  - no exact duplicate `Question`
-  - no near-duplicate phrasing within the same target file
-  - no template-only rewrites that differ by one token
-- The balance policy per G2 file:
-  - `150+` total rows
-  - strong positive majority, but enough adjacent negatives to force class separation
-  - target default split for each file: `~75-80%` positives, `~20-25%` negatives/adjacent
-- The negative-row policy:
-  - negatives stay in the same per-G2 file
-  - negatives must be plausible confusers for the target class, not random unrelated easy examples
-- The flag-grounding policy:
-  - each target file must use flags consistent with the observed flag relationships in `flag-solution-logic.md`
-  - flags are evidence, not one-to-one class definitions
-  - positives should include multiple valid flag combinations, not one repeated pattern
-- The quality policy:
-  - child-like phrasing, mixed clarity, mixed directness, mixed context load
-  - realistic ambiguity and borderline cases
-  - safe labels for negatives must be deliberate and justified
-  - avoid synthetic monotony and repetitive lexical scaffolds
+`synthetic_data_{G2_LABEL}_{YYYYMMDD_HHMMSS}.csv`
 
-### 2. Define per-G2 authoring notes inside `training_data.md`
+Examples:
 
-For each of these labels:
+- `synthetic_data_VIOLENCE_20260517_143000.csv`
+- `synthetic_data_SELF_HARM_20260517_143500.csv`
+
+### Required columns
+
+Each CSV must use this header exactly:
+
+`Topic,Question,G1,G2,G2_all,flags,intent_families,intent_phrases,review_status`
+
+### Column meaning
+
+- `Topic`: human-readable topic bucket such as `Safety`, `Belief & Religion`, `Technology`, `School`, `General Learning`
+- `Question`: the user utterance to classify
+- `G1`: single primary `G1` label
+- `G2`: single primary `G2` label for training
+- `G2_all`: comma-separated or JSON-list set of all supported labels for the row
+- `flags`: JSON object containing only allowed boolean flags
+- `intent_families`: JSON list or comma-separated list when relevant
+- `intent_phrases`: JSON list or comma-separated list when relevant
+- `review_status`: use `approved` unless a later workflow introduces another fixed value
+
+### Allowed flags only
+
+Only these flags may appear in `flags`:
+
+- `direct_intent`
+- `has_ambiguous_risk`
+- `has_bullying_involved`
+- `has_coercive_control`
+- `has_dangerous_context`
+- `has_emotional_distress`
+- `has_grooming_involved`
+- `has_hate_group_language`
+- `has_personal_direction`
+- `has_safety_hazard`
+- `has_self_harm`
+- `has_unsafe_sexual_content`
+- `has_violence_possibility`
+- `has_vuln_exploit`
+- `indirect_intent`
+- `needs_clarification`
+
+Rules:
+
+- Every `flags` value must be a JSON object.
+- Every listed flag value must be a JSON boolean.
+- Unknown flags are not allowed.
+- Omitted known flags should still be present in the authored JSON where possible to keep rows explicit and reviewable.
+
+### Example row shape
+
+```csv
+Topic,Question,G1,G2,G2_all,flags,intent_families,intent_phrases,review_status
+Safety,"My cousin says I should punch a kid who keeps taking my lunch.",VIOLENCE,VIOLENCE,"[""VIOLENCE"",""BULLYING""]","{""direct_intent"": false, ""has_ambiguous_risk"": false, ""has_bullying_involved"": true, ""has_coercive_control"": false, ""has_dangerous_context"": true, ""has_emotional_distress"": true, ""has_grooming_involved"": false, ""has_hate_group_language"": false, ""has_personal_direction"": true, ""has_safety_hazard"": false, ""has_self_harm"": false, ""has_unsafe_sexual_content"": false, ""has_violence_possibility"": true, ""has_vuln_exploit"": false, ""indirect_intent"": false, ""needs_clarification"": false}","[""advice_seeking"",""peer_conflict""]","[""should punch"",""taking my lunch""]",approved
+```
+
+## Dataset Composition Rules
+
+### Per-file target size
+
+Every `G2` file must contain at least `150` rows.
+
+Default composition per file:
+
+- `120` positive rows where `G2_all` contains the target label
+- `30` adjacent negative rows where `G2_all` does not contain the target label
+
+Allowed range:
+
+- positives: `115-125`
+- negatives: `25-35`
+- total: `150-160`
+
+### Positive and negative definition
+
+For a target file such as `VIOLENCE`:
+
+- Positive rows: `G2_all` contains `VIOLENCE`
+- Negative rows: `G2_all` does not contain `VIOLENCE`
+
+Negative rows must be hard negatives:
+
+- close neighboring classes
+- ambiguous but non-target cases
+- surface-similar rows that could fool the model
+- same-domain non-target cases
+
+Do not fill negatives with easy unrelated trivia.
+
+### Diversity rules
+
+Each file must contain:
+
+- at least `4-6` positive sub-pattern clusters
+- at least `3-5` negative confuser groups
+- mixed sentence length
+- mixed directness
+- mixed emotional tone
+- mixed explicitness vs implication
+- child-like and teen-like phrasing variation
+- mixed topic contexts where valid
+
+### Duplicate policy
+
+Do not allow:
+
+- exact duplicate `Question` strings within a file
+- exact duplicate `Question` strings across files
+- near-duplicate template rewrites with only one noun or verb swapped
+- repeated scaffolds such as `"What if..."` or `"Should I..."` used excessively in one cluster
+
+Recommended uniqueness checks:
+
+- normalize case and whitespace before duplicate checks
+- strip punctuation for secondary duplicate checks
+- manually review clusters for paraphrase overuse
+
+## Label Priority and Adjacency
+
+Target labels to author:
 
 - `UNSAFE_SEXUAL_CONTENT`
 - `GROOMING`
@@ -59,100 +155,219 @@ For each of these labels:
 - `NEUTRAL_FACT`
 - `GENERIC_INTENT`
 
-Add a compact note block covering:
+Recommended adjacency map for negatives:
 
-- The label intent
-- Typical positive patterns
-- Required adjacent negative classes to include
-- Expected `G1` tendencies
-- Relevant flags from the documented raw-flag usage
-- Example flag combinations to vary across positives
-- Common false-positive traps to include as negatives
+| Target G2 | Main adjacent negative classes |
+| --- | --- |
+| `UNSAFE_SEXUAL_CONTENT` | `GROOMING`, `VULN_EXPLOIT`, `PERSONAL_DIRECTION`, `NEUTRAL_FACT` |
+| `GROOMING` | `VULN_EXPLOIT`, `COERCIVE_CONTROL`, `UNSAFE_SEXUAL_CONTENT`, `EMOTIONAL` |
+| `COERCIVE_CONTROL` | `VULN_EXPLOIT`, `GROOMING`, `BULLYING`, `EMOTIONAL` |
+| `VULN_EXPLOIT` | `GROOMING`, `COERCIVE_CONTROL`, `BULLYING`, `EMOTIONAL` |
+| `SELF_HARM` | `EMOTIONAL`, `AMBIGUOUS_RISK`, `PERSONAL_DIRECTION`, `NEUTRAL_FACT` |
+| `DANGEROUS` | `VIOLENCE`, `SAFETY_HAZARD`, `AMBIGUOUS_RISK`, `PERSONAL_DIRECTION` |
+| `HATE_GROUP` | `BULLYING`, `VIOLENCE`, `EMOTIONAL`, `NEUTRAL_FACT` |
+| `VIOLENCE` | `DANGEROUS`, `BULLYING`, `AMBIGUOUS_RISK`, `PERSONAL_DIRECTION` |
+| `PERSONAL_DIRECTION` | every stronger risk class above it, especially `VIOLENCE`, `SELF_HARM`, `UNSAFE_SEXUAL_CONTENT`, `GROOMING`, `DANGEROUS` |
+| `SAFETY_HAZARD` | `AMBIGUOUS_RISK`, `DANGEROUS`, `NEUTRAL_FACT`, `PERSONAL_DIRECTION` |
+| `AMBIGUOUS_RISK` | `SAFETY_HAZARD`, `EMOTIONAL`, `DANGEROUS`, `NEUTRAL_FACT` |
+| `EMOTIONAL` | `BULLYING`, `SELF_HARM`, `VULN_EXPLOIT`, `GENERIC_INTENT` |
+| `BULLYING` | `EMOTIONAL`, `VULN_EXPLOIT`, `VIOLENCE`, `HATE_GROUP` |
+| `NEUTRAL_FACT` | `GENERIC_INTENT`, `AMBIGUOUS_RISK`, `SAFETY_HAZARD`, `PERSONAL_DIRECTION` |
+| `GENERIC_INTENT` | `NEUTRAL_FACT`, `EMOTIONAL`, `AMBIGUOUS_RISK`, `PERSONAL_DIRECTION` |
 
-The notes must explicitly reflect the documented flag relationships, for example:
+## Flag Grounding Rules
 
-- `SELF_HARM` should vary across `direct_intent`, `indirect_intent`, `has_emotional_distress`, `needs_clarification`
-- `GROOMING`, `COERCIVE_CONTROL`, and `VULN_EXPLOIT` should intentionally overlap in some rows so the model learns separation
-- `VIOLENCE`, `DANGEROUS`, and `SAFETY_HAZARD` should include close confusers
-- `NEUTRAL_FACT` and `GENERIC_INTENT` should contain hard negatives that superficially mention risky topics without actually expressing the target risk intent
-- `PERSONAL_DIRECTION` should include advisory-seeking prompts across multiple domains, including some that should resolve to other stronger G2 labels instead
+Flags are evidence, not final classes. Do not collapse a label into one repeated flag pattern.
 
-### 3. Generate one raw CSV per G2
+Use only flag patterns grounded in `flag-solution-logic.md`:
 
-For each target G2, create one CSV in `data/raw/` using the required naming convention and same-file positive/negative mixing.
+- `SELF_HARM`: emphasize combinations across `direct_intent`, `indirect_intent`, `has_emotional_distress`, `has_self_harm`, `needs_clarification`
+- `SAFETY_HAZARD`: emphasize `has_dangerous_context` with `has_safety_hazard`
+- `AMBIGUOUS_RISK`: emphasize `has_ambiguous_risk`, `has_dangerous_context`, and some `needs_clarification`
+- `GROOMING`: use overlap between `has_grooming_involved`, `has_vuln_exploit`, `has_emotional_distress`, and occasional `has_coercive_control`
+- `COERCIVE_CONTROL`: use `has_coercive_control` with overlap into `has_vuln_exploit`, `has_emotional_distress`, and some bullying-like context where justified
+- `VULN_EXPLOIT`: use `has_vuln_exploit` with overlap into `has_coercive_control`, `has_grooming_involved`, `has_emotional_distress`
+- `VIOLENCE`: use `has_violence_possibility` with some `has_dangerous_context`, some `has_personal_direction`, and rare overlap with `has_bullying_involved`
+- `DANGEROUS`: use `has_dangerous_context` heavily, with selective `has_violence_possibility`, `has_self_harm`, or `has_emotional_distress` when grounded
+- `UNSAFE_SEXUAL_CONTENT`: use `has_unsafe_sexual_content` with selective overlap into `has_grooming_involved`, `has_vuln_exploit`, `has_emotional_distress`
+- `HATE_GROUP`: use `has_hate_group_language`, often with `has_bullying_involved` or `has_violence_possibility` only when supported
+- `PERSONAL_DIRECTION`: use `has_personal_direction` but vary whether stronger risk evidence is absent or present
 
-Authoring rules for every file:
+Authoring rule:
 
-- The file’s primary target is one G2 label
-- Positive rows must have `G2` set to the target label
-- `G2_all` should include the target label and any justified co-occurring labels
-- Negative rows must exclude the target label from `G2_all`
-- Negative rows should be drawn mostly from adjacent classes most likely to be confused with that target
-- `flags` should be fully populated as a valid JSON object over the allowed flag vocabulary
-- `review_status` should be a stable value such as `approved`
-- `intent_families` and `intent_phrases` should be present and consistent with the class/codebook expectations where available
+- At least `3` distinct positive flag combinations per target file
+- At least `1-2` negative confuser rows per file should carry overlapping flags but still resolve to a different `G2`
 
-Suggested composition per file:
+## Per-G2 Authoring Notes
 
-- `115-125` positive rows
-- `30-40` negative or adjacent rows
-- at least `4-6` distinct sub-pattern clusters inside positives
-- at least `3-5` distinct confuser categories inside negatives
+### `UNSAFE_SEXUAL_CONTENT`
 
-### 4. Include a lightweight coverage summary
+- Positive patterns: requests about sexual material, nudity, explicit content, unsafe photo-sharing, sexualized child-risk context
+- Negative confusers: grooming without explicit sexual content, manipulation without sexual content, neutral biology questions, vague embarrassment questions
+- Common `G1`: `GENERIC`, sometimes `FACT` depending on topic framing
+- Key flags: `has_unsafe_sexual_content`, optional `has_grooming_involved`, `has_vuln_exploit`, `has_emotional_distress`
+- Required variety: explicit ask, shame-based disclosure, peer pressure, online-sharing scenario, coded slang
 
-Add a short machine-readable or markdown summary alongside authoring work, either inside `training_data.md` or as a separate notes section, listing for each G2:
+### `GROOMING`
 
-- total planned rows
-- planned positive count
-- planned negative count
-- primary adjacent negative labels
-- primary flags expected in positives
-- uniqueness checks to run
+- Positive patterns: secret-keeping with older person, gift-based trust building, isolation from parents, private chat pressure
+- Negative confusers: manipulation by peers, coercive friendship, unsafe adult contact that is exploitative but not grooming, emotional secrecy without risk
+- Common `G1`: `GENERIC`
+- Key flags: `has_grooming_involved`, `has_vuln_exploit`, optional `has_coercive_control`, `has_emotional_distress`
+- Required variety: secrecy, flattery, meeting requests, special-bond framing, parent-avoidance language
 
-This gives a review checklist before normalization and training.
+### `COERCIVE_CONTROL`
 
-## Public Interfaces and Data Contract
+- Positive patterns: someone controlling movement, speech, access, clothing, messaging, friendships, or safety through threats or pressure
+- Negative confusers: general bullying, exploitation without control, grooming, ordinary rule-setting by parents
+- Common `G1`: `GENERIC`
+- Key flags: `has_coercive_control`, optional `has_vuln_exploit`, `has_emotional_distress`, `has_bullying_involved`
+- Required variety: explicit threats, guilt pressure, isolation, monitoring, forced compliance
 
-This plan does not require changing runtime or model APIs. It extends the raw authoring contract used by the normalizer.
+### `VULN_EXPLOIT`
 
-Authoring contract assumptions:
+- Positive patterns: taking advantage of fear, age, loneliness, disability, confusion, or trust
+- Negative confusers: grooming, coercive control, bullying, emotional upset without exploitation
+- Common `G1`: `GENERIC`
+- Key flags: `has_vuln_exploit`, optional `has_coercive_control`, `has_grooming_involved`, `has_emotional_distress`
+- Required variety: peer exploitation, adult exploitation, social manipulation, money/resource exploitation, emotional leverage
 
-- CSVs must remain compatible with `training/slm_classifier/source_normalizer.py`
-- `flags` must be JSON and contain only known flags
-- `G2_all` may be multi-label but must remain author-authored, not inferred during normalization
-- no new flag names will be introduced
-- file naming under `data/raw` is expanded, but parsing behavior should continue to rely on CSV schema rather than filename semantics
+### `SELF_HARM`
 
-## Test Plan
+- Positive patterns: direct self-harm desire, indirect desire to disappear, hopelessness with self-harm implication, alarming self-endangering phrasing
+- Negative confusers: sadness, grief, fear, vague distress, dangerous curiosity
+- Common `G1`: `DEATH_GRIEF`
+- Key flags: `direct_intent`, `indirect_intent`, `has_emotional_distress`, `has_self_harm`, `needs_clarification`
+- Required variety: direct statements, veiled statements, conditional statements, help-seeking, shutdown language
 
-After files are created, validate them with non-mutating checks and existing normalizer behavior.
+### `DANGEROUS`
 
-Required validation scenarios:
+- Positive patterns: harmful how-to requests, evading detection, causing injury, risky activity instructions, malicious misuse
+- Negative confusers: safety questions, accidental injury concern, neutral science curiosity, violent feelings without operational intent
+- Common `G1`: `VIOLENCE`, `SAFETY_HAZARD`, `SCIENCE`, `CIVIC_LAW`
+- Key flags: `has_dangerous_context`, optional `has_violence_possibility`, `has_self_harm`, `has_emotional_distress`
+- Required variety: step-by-step requests, hidden-harm requests, dangerous experiments, sabotage, weaponized advice
 
-- Every CSV is detected by source discovery
-- Every row passes schema detection
-- Every row has non-empty `Question`, `G1`, and `G2`
-- Every `flags` payload parses as JSON and contains booleans only
-- No unknown flags appear
-- No exact duplicate `Question` values exist within a file
-- No cross-file duplicate `Question` values exist unless intentionally justified and documented
-- Every target G2 file contains both positives and negatives
-- Negative rows in a target file do not include the target label in `G2_all`
-- `G2_all` values use only supported labels
-- Normalization can merge all new files into canonical output without rejection
+### `HATE_GROUP`
 
-Recommended additional QA checks:
+- Positive patterns: demeaning or exclusionary language toward protected groups, rights-denial, dehumanizing talk, hate-aligned endorsement
+- Negative confusers: bullying without group targeting, neutral civic questions, reporting harmful speech, confusion about stereotypes
+- Common `G1`: `CIVIC_LAW`, `GENERIC`
+- Key flags: `has_hate_group_language`, optional `has_bullying_involved`, `has_violence_possibility`, `has_emotional_distress`
+- Required variety: direct slurs are not required; include coded hostility, exclusion, disgust framing, recruitment-adjacent tone
 
-- per-file counts by positive vs negative
-- per-file counts by adjacent negative label
-- per-file flag frequency table
-- spot review of borderline cases for `GROOMING` vs `VULN_EXPLOIT`, `VIOLENCE` vs `DANGEROUS`, `SAFETY_HAZARD` vs `AMBIGUOUS_RISK`, and `NEUTRAL_FACT` vs `GENERIC_INTENT`
+### `VIOLENCE`
 
-## Assumptions and Defaults
+- Positive patterns: intent to hit, injure, attack, retaliate, fight, or advise violence
+- Negative confusers: bullying, dangerous operational requests, sports aggression talk, accidental harm, frustration venting
+- Common `G1`: `VIOLENCE`
+- Key flags: `has_violence_possibility`, optional `has_dangerous_context`, `has_personal_direction`, `has_bullying_involved`, `has_emotional_distress`
+- Required variety: self-generated intent, peer advice, revenge framing, defensive framing, conflict escalation
 
-- Use `150+` rows per G2 file.
-- Keep negatives inside each per-G2 file, not in separate shared files.
-- `data/raw` currently has no existing manual CSVs to analyze in this workspace, so the first implementation pass should create new synthetic raw sources from scratch.
-- `training_data.md` is the governing spec and should be written before generating CSVs so all later file creation follows one contract.
-- The implementation should optimize for hard negatives and adjacent-class separation, not just boosting positive recall.
+### `PERSONAL_DIRECTION`
+
+- Positive patterns: “what should I do” or “should I” requests where the main signal is guidance-seeking rather than a stronger risk label
+- Negative confusers: stronger underlying labels that happen to be phrased as advice-seeking
+- Common `G1`: varies widely by domain
+- Key flags: `has_personal_direction`, sometimes overlap with nearly any other risk flag
+- Required variety: school, family, belief, friendship, online, safety, moral choice
+- Special rule: many negative rows should look like personal direction on the surface but resolve to stronger `G2` labels
+
+### `SAFETY_HAZARD`
+
+- Positive patterns: physical safety hazard identification, accidental danger, hazardous object/environment concern
+- Negative confusers: explicit harmful intent, vague danger, neutral factual safety education, ambiguous household concern
+- Common `G1`: `SAFETY_HAZARD`, sometimes `SCIENCE`
+- Key flags: `has_dangerous_context`, `has_safety_hazard`, optional `has_emotional_distress`
+- Required variety: electricity, chemicals, tools, home hazards, school hazards, outdoor hazards
+
+### `AMBIGUOUS_RISK`
+
+- Positive patterns: potentially risky situations lacking enough detail, confusing danger, mixed emotional and hazard cues
+- Negative confusers: clear safety hazard, clear emotional distress, neutral fact, clear dangerous intent
+- Common `G1`: `SAFETY_HAZARD`, `GENERIC`
+- Key flags: `has_ambiguous_risk`, `has_dangerous_context`, optional `needs_clarification`, `has_emotional_distress`
+- Required variety: objects with unknown danger, unclear online situations, vague household risk, incomplete disclosures
+
+### `EMOTIONAL`
+
+- Positive patterns: sadness, fear, loneliness, grief, crying, shame, overwhelm without stronger self-harm or abuse signal
+- Negative confusers: self-harm, bullying, exploitation, generic venting without emotional signal
+- Common `G1`: `DEATH_GRIEF`, `GENERIC`
+- Key flags: `has_emotional_distress`
+- Required variety: grief, school stress, friendship pain, fear, embarrassment, loneliness
+
+### `BULLYING`
+
+- Positive patterns: repeated meanness, exclusion, teasing, social targeting, humiliation, harassment by peers
+- Negative confusers: emotional upset without bullying, hate-group targeting, exploitation, physical violence
+- Common `G1`: `GENERIC`
+- Key flags: `has_bullying_involved`, optional `has_emotional_distress`, `has_violence_possibility`, `has_hate_group_language`
+- Required variety: online bullying, school bullying, group exclusion, rumor spreading, mockery, intimidation
+
+### `NEUTRAL_FACT`
+
+- Positive patterns: factual questions, explanatory curiosity, neutral learning, non-advisory knowledge seeking
+- Negative confusers: risky-topic questions that are actually operational or advisory, emotionally-loaded “why” questions, ambiguous safety asks
+- Common `G1`: `FACT`, `SCIENCE`, `BELIEF`, `TECHNOLOGY`
+- Key flags: usually all false or weak background-only flags
+- Required variety: science, religion, technology, body, daily life, emotions as neutral explanation
+
+### `GENERIC_INTENT`
+
+- Positive patterns: short generic asks, incomplete prompts, broad non-factual non-risk requests, low-signal conversation starters
+- Negative confusers: neutral fact questions, emotional disclosures, advisory asks, ambiguous danger
+- Common `G1`: `GENERIC`
+- Key flags: usually none
+- Required variety: incomplete asks, broad curiosity, non-specific chat openers, context-poor questions
+
+## Per-File Coverage Template
+
+Every generated CSV should have an accompanying internal coverage note using this template:
+
+| Field | Requirement |
+| --- | --- |
+| Target `G2` | one of the 15 labels |
+| File name | `synthetic_data_{G2_LABEL}_{datetime}.csv` |
+| Total rows | `150-160` |
+| Positive rows | `115-125` |
+| Negative rows | `25-35` |
+| Positive clusters | at least `4` |
+| Negative confuser groups | at least `3` |
+| Duplicate check | exact + normalized + manual paraphrase review |
+| Flag review | only allowed flags, booleans only |
+
+## QA and Validation
+
+Before considering a file complete, verify:
+
+- file name matches the required pattern
+- header matches the required schema
+- every row has non-empty `Question`, `G1`, and `G2`
+- every positive row contains the target label in `G2_all`
+- every negative row excludes the target label from `G2_all`
+- every `G2` and `G2_all` label is supported by the repo vocabulary
+- every `flags` object parses and uses only allowed booleans
+- the positive and negative counts meet the required range
+- there are no exact duplicate questions within the file
+- there are no cross-file duplicate questions
+- the file contains multiple sub-pattern clusters rather than one prompt template repeated many times
+
+Recommended validation pass after a batch of files:
+
+- run source discovery against `data/raw`
+- normalize all files through `source_normalizer.py`
+- inspect rejected rows
+- compute per-file class balance
+- compute per-file flag distribution
+- spot-check boundary rows where adjacent classes overlap
+
+## Implementation Defaults
+
+- Use `approved` as the default `review_status`.
+- Favor explicit full-flag JSON objects rather than sparse flag objects.
+- Keep negatives in the same target file.
+- Prefer hard negatives over easy negatives.
+- Do not introduce new flags.
+- Do not treat flags as one-to-one class definitions.
+- When a row clearly belongs to a stronger risk class, do not force it into `PERSONAL_DIRECTION`, `GENERIC_INTENT`, or `NEUTRAL_FACT`.
