@@ -10,6 +10,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from app.guardrails import slm_classifier
+from training.slm_classifier.flag_logic import apply_flag_logic
 from training.slm_classifier.runtime_config import load_classifier_runtime_config
 
 DEFAULT_THRESHOLD = 0.8
@@ -130,6 +131,7 @@ def run_infer(
     topic_id = str(gates.get("topic") or decision.signals.get("topic") or "General Learning")
     result = {
         "question": question,
+        "context": recent_context,
         "language": language,
         "topic": {
             "id": topic_id,
@@ -158,7 +160,7 @@ def run_infer(
     }
     if thresholds is not None:
         result["thresholds"] = thresholds
-    return result
+    return apply_flag_logic(result, classifier_metadata)
 
 
 def main() -> None:

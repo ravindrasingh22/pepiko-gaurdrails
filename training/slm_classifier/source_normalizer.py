@@ -11,6 +11,7 @@ from training.slm_classifier.data_pipeline import (
     CANONICAL_DATASET,
     DATASET_SPLITS_PATH,
     G2_VOCAB,
+    FLAG_VOCAB,
     LABEL_VOCAB_PATH,
     CODEBOOK,
     validate_dataset_rows,
@@ -38,6 +39,7 @@ INTENT_FAMILIES_HEADER_CANDIDATES = ("intent_families", "intentfamilies")
 INTENT_PHRASES_HEADER_CANDIDATES = ("intent_phrases", "intentphrases")
 REVIEW_STATUS_HEADER_CANDIDATES = ("review_status", "reviewstatus")
 GENERATED_PROMPT_HEADER_CANDIDATES = ("generated_prompt", "generatedprompt")
+FLAGS_HEADER_CANDIDATES = ("flags",)
 CANONICAL_COLUMNS = [
     "sample_id",
     "question",
@@ -45,7 +47,7 @@ CANONICAL_COLUMNS = [
     "topic",
     "g1",
     "g2",
-    "g2_all",
+    "flags",
     "intent_families",
     "intent_phrases",
     "review_status",
@@ -59,6 +61,7 @@ class AuthoringRow:
     g1: str
     g2: list[str]
     g2_all: list[str]
+    flags: dict[str, bool]
 
 
 @dataclass
@@ -76,6 +79,7 @@ class SheetSchema:
     intent_phrases_idx: int | None = None
     review_status_idx: int | None = None
     generated_prompt_idx: int | None = None
+    flags_idx: int | None = None
     header_row_index: int = 0
 
 
@@ -200,6 +204,7 @@ def _detect_schema(path: Path) -> SheetSchema:
         intent_phrases_idx = _find_header_index(row, INTENT_PHRASES_HEADER_CANDIDATES)
         review_status_idx = _find_header_index(row, REVIEW_STATUS_HEADER_CANDIDATES)
         prompt_idx = _find_header_index(row, GENERATED_PROMPT_HEADER_CANDIDATES)
+        flags_idx = _find_header_index(row, FLAGS_HEADER_CANDIDATES)
         if None not in {question_idx, g1_idx, g2_idx}:
             return SheetSchema(
                 topic_idx=int(topic_idx) if topic_idx is not None else None,
@@ -215,6 +220,7 @@ def _detect_schema(path: Path) -> SheetSchema:
                 intent_phrases_idx=int(intent_phrases_idx) if intent_phrases_idx is not None else None,
                 review_status_idx=int(review_status_idx) if review_status_idx is not None else None,
                 generated_prompt_idx=int(prompt_idx) if prompt_idx is not None else None,
+                flags_idx=int(flags_idx) if flags_idx is not None else None,
                 header_row_index=idx,
             )
     raise ValueError(f"Unsupported raw sheet format: {path}")
@@ -235,6 +241,31 @@ def _parse_jsonish_list(raw: str) -> list[str] | None:
     separators = ";" if ";" in text else ","
     items = [item.strip() for item in text.split(separators) if item.strip()]
     return items or None
+
+
+def _default_flags() -> dict[str, bool]:
+    return {flag: False for flag in FLAG_VOCAB}
+
+
+def _parse_flags(raw: str) -> dict[str, bool]:
+    text = (raw or "").strip()
+    if not text:
+        return _default_flags()
+    try:
+        payload = json.loads(text)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"Invalid flags JSON: {exc}") from exc
+    if not isinstance(payload, dict):
+        raise ValueError("Flags must be a JSON object.")
+    unknown = [str(key) for key in payload if str(key) not in FLAG_VOCAB]
+    if unknown:
+        raise ValueError(f"Unknown flags in source data: {', '.join(sorted(dict.fromkeys(unknown)))}")
+    normalized = _default_flags()
+    for key, value in payload.items():
+        if not isinstance(value, bool):
+            raise ValueError(f"Flag '{key}' must be boolean.")
+        normalized[str(key)] = value
+    return normalized
 
 
 def _load_authoring_rows_with_rejections(path: Path = DEFAULT_SOURCE) -> AuthoringLoadResult:
@@ -266,6 +297,8 @@ def _load_authoring_rows_with_rejections(path: Path = DEFAULT_SOURCE) -> Authori
                 g2 = _clean_g2_values(raw_g2)
                 raw_g2_all = row[schema.g2_all_idx] if schema.g2_all_idx is not None and len(row) > schema.g2_all_idx else ""
                 g2_all = _clean_g2_values(raw_g2_all) if raw_g2_all.strip() else list(g2)
+                raw_flags = row[schema.flags_idx] if schema.flags_idx is not None and len(row) > schema.flags_idx else ""
+                flags = _parse_flags(raw_flags)
             except ValueError as exc:
                 rejected_rows.append(
                     RejectedAuthoringRow(
@@ -292,6 +325,7 @@ def _load_authoring_rows_with_rejections(path: Path = DEFAULT_SOURCE) -> Authori
                     g1=g1,
                     g2=g2,
                     g2_all=g2_all,
+                    flags=flags,
                 )
             )
     return AuthoringLoadResult(accepted_rows=rows, rejected_rows=rejected_rows)
@@ -333,7 +367,7 @@ def expand_authoring_rows(path: Path = DEFAULT_SOURCE) -> list[dict[str, object]
                 "topic": row.topic or "General Learning",
                 "g1": row.g1,
                 "g2": row.g2,
-                "g2_all": row.g2_all,
+                "flags": row.flags,
                 "intent_families": intent_families,
                 "intent_phrases": intent_phrases,
                 "review_status": review_status,
