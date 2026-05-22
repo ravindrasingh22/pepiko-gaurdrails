@@ -11,6 +11,8 @@ reports/*.html
 reports/*.png
 models/*
 !models/.gitkeep
+classifier/models/*
+!classifier/models/.gitkeep
 data/raw/*
 !data/raw/.gitkeep
 data/synthetic/*

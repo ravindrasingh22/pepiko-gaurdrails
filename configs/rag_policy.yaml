@@ -1,4 +1,0 @@
-retrieval:
-  curated_only: true
-  enforce_age_band: true
-  deny_high_detail_mechanism_chunks: true

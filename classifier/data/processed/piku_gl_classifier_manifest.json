@@ -1,0 +1,17 @@
+{
+  "canonical_dataset": "/Users/ravindrasingh/Documents/AI-Agents/PikuAI/pikuai-gaurdrails/classifier/data/processed/piku_gl_classifier_train.jsonl",
+  "pending_sources": [
+    "/Users/ravindrasingh/Documents/AI-Agents/PikuAI/pikuai-gaurdrails/classifier/data/staging/bullying_training_schema_negatives-40.csv",
+    "/Users/ravindrasingh/Documents/AI-Agents/PikuAI/pikuai-gaurdrails/classifier/data/staging/bullying_training_schema_negatives.csv"
+  ],
+  "ready_sources": [
+    "/Users/ravindrasingh/Documents/AI-Agents/PikuAI/pikuai-gaurdrails/classifier/data/raw/Topics, Rules & Questions - BULLYING_150.csv",
+    "/Users/ravindrasingh/Documents/AI-Agents/PikuAI/pikuai-gaurdrails/classifier/data/raw/master-data-pikuai.xlsm - Bullying.csv",
+    "/Users/ravindrasingh/Documents/AI-Agents/PikuAI/pikuai-gaurdrails/classifier/data/raw/master-data-pikuai.xlsm - bullying-from-negative-sheet.csv"
+  ],
+  "staging_ready_sources": [],
+  "blocked_sources": [
+    "/Users/ravindrasingh/Documents/AI-Agents/PikuAI/pikuai-gaurdrails/classifier/data/staging/bullying_training_schema_negatives-40.csv",
+    "/Users/ravindrasingh/Documents/AI-Agents/PikuAI/pikuai-gaurdrails/classifier/data/staging/bullying_training_schema_negatives.csv"
+  ]
+}

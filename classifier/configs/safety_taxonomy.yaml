@@ -1,0 +1,87 @@
+policy_buckets:
+  - allowed
+  - transform
+  - soft_block
+  - hard_block
+  - escalate
+
+safety_categories:
+  - NEUTRAL_FACT
+  - COMPARATIVE
+  - PD
+  - LP
+  - HATE_GROUP
+  - DANGEROUS
+  - EMOTIONAL
+  - BULLYING
+  - GROOMING
+  - UNSAFE_CONTENT
+  - COERCIVE_CONTROL
+  - VULN_EXPLOIT
+  - SELF_HARM
+  - AMBIGUOUS_RISK
+  - GENERIC_INTENT
+
+guidelines:
+  - GL-01
+  - GL-02
+  - GL-03
+  - GL-04
+  - GL-05
+  - GL-06
+  - GL-07
+  - GL-08
+  - GL-09
+  - GL-10
+  - GL-11
+  - GL-12
+  - GL-13
+
+gates:
+  G1:
+    - FACT
+    - BELIEF
+    - DEATH_GRIEF
+    - VIOLENCE
+    - SCIENCE
+    - TECHNOLOGY
+    - SAFETY_HAZARD
+    - GENERIC
+  G2:
+    - NEUTRAL_FACT
+    - COMPARATIVE
+    - PD
+    - LP
+    - HATE_GROUP
+    - DANGEROUS
+    - EMOTIONAL
+    - BULLYING
+    - GROOMING
+    - UNSAFE_CONTENT
+    - COERCIVE_CONTROL
+    - VULN_EXPLOIT
+    - SELF_HARM
+    - AMBIGUOUS_RISK
+    - GENERIC_INTENT
+  G3:
+    severity:
+      - SV0
+      - SV1
+      - SV2
+      - SV3
+    modifiers:
+      - no_curiosity_invite
+      - flag_for_review
+      - no_content_engagement
+      - empathetic_tone
+      - emotional_support_required
+      - zero_engagement
+      - safeguarding_concern
+      - no_reason_given
+      - clarification_required
+      - redirect_preferred
+      - escalate
+  G4:
+    - ALLOW
+    - TRANSFORM
+    - BLOCK

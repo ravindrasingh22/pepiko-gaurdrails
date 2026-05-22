@@ -1,0 +1,55 @@
+{
+  "g1": [
+    "FACT",
+    "BELIEF",
+    "DEATH_GRIEF",
+    "SCIENCE",
+    "TECHNOLOGY",
+    "CIVIC_LAW",
+    "GENERIC"
+  ],
+  "g2": [
+    "NEUTRAL_FACT",
+    "PERSONAL_DIRECTION",
+    "HATE_GROUP",
+    "DANGEROUS",
+    "EMOTIONAL",
+    "BULLYING",
+    "GROOMING",
+    "UNSAFE_SEXUAL_CONTENT",
+    "COERCIVE_CONTROL",
+    "VULN_EXPLOIT",
+    "SELF_HARM",
+    "AMBIGUOUS_RISK",
+    "SAFETY_HAZARD",
+    "VIOLENCE",
+    "GENERIC_INTENT"
+  ],
+  "flags": [
+    "direct_intent",
+    "has_ambiguous_risk",
+    "has_bullying_involved",
+    "has_coercive_control",
+    "has_dangerous_context",
+    "has_emotional_distress",
+    "has_grooming_involved",
+    "has_hate_group_language",
+    "has_personal_direction",
+    "has_safety_hazard",
+    "has_self_harm",
+    "has_unsafe_sexual_content",
+    "has_violence_possibility",
+    "has_vuln_exploit",
+    "indirect_intent",
+    "needs_clarification"
+  ],
+  "age_bands": [
+    "5-6",
+    "7-8",
+    "9-10",
+    "11-12",
+    "13-14",
+    "15-16",
+    "17"
+  ]
+}
