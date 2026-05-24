@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 import json
 import os
 import time
@@ -42,20 +43,17 @@ except Exception:  # pragma: no cover
 
 MODELS_ROOT = Path(__file__).resolve().parents[2] / "models"
 CORE_MODELS = {
-    "smol": {
-        "model_name": "HuggingFaceTB/SmolLM2-135M",
-        "dir_name": "piku-slm-guardrail-smollm2-135m",
-    },
-    "llama_guard": {
-        "model_name": "meta-llama/Llama-Guard-3-1B",
-        "dir_name": "piku-slm-guardrail-llama-guard-3-1b",
-    },
     "deberta": {
-        "model_name": "microsoft/deberta-v3-xsmall",
-        "dir_name": "piku-slm-guardrail-deberta-v3-xsmall",
+        "model_name": "microsoft/deberta-v3-small",
+        "dir_name": "piku-slm-guardrail-deberta-v3-small",
     },
 }
-DEFAULT_CORE = "smol"
+CORE_ALIASES = {
+    "deberta-v3-xsmall": "deberta",
+    "deberta-v3-small": "deberta",
+    "deberta": "deberta",
+}
+DEFAULT_CORE = "deberta"
 DEFAULT_CLASSIFIER_THRESHOLD = 0.8
 G2_ACTIVATION_THRESHOLD = DEFAULT_CLASSIFIER_THRESHOLD
 HIGH_PRIORITY_G2 = {
@@ -92,18 +90,7 @@ def resolve_core(core: str | None) -> str:
     if not core:
         return DEFAULT_CORE
     normalized = str(core).strip().lower()
-    aliases = {
-        "smollm2": "smol",
-        "smollm2-135m": "smol",
-        "llamaguard": "llama_guard",
-        "llama-guard": "llama_guard",
-        "llama_guard": "llama_guard",
-        "llama-guard-3": "llama_guard",
-        "llama-guard-3-1b": "llama_guard",
-        "deberta-v3-xsmall": "deberta",
-        "deberta": "deberta",
-    }
-    resolved = aliases.get(normalized, normalized)
+    resolved = CORE_ALIASES.get(normalized, normalized)
     if resolved not in CORE_MODELS:
         raise ValueError(f"Unsupported core model: {core}")
     return resolved
@@ -117,8 +104,8 @@ def model_dir_for_core(core: str | None = None) -> Path:
     return MODELS_ROOT / str(CORE_MODELS[resolve_core(core)]["dir_name"])
 
 
-def _paths_for_core(core: str | None = None) -> dict[str, Path]:
-    model_dir = model_dir_for_core(core)
+def _paths_for_core(core: str | None = None, model_dir: Path | None = None) -> dict[str, Path]:
+    model_dir = model_dir or model_dir_for_core(core)
     return {
         "model_dir": model_dir,
         "metadata": model_dir / "training_metadata.json",
@@ -128,7 +115,14 @@ def _paths_for_core(core: str | None = None) -> dict[str, Path]:
         "batch_debug": model_dir / "training_batch_debug.jsonl",
     }
 
+
 def _load_tokenizer(model_name: str) -> Any:
+    normalized_name = str(model_name or "").strip().lower()
+    if "deberta-v3" in normalized_name and importlib.util.find_spec("sentencepiece") is None:
+        raise RuntimeError(
+            f"Tokenizer for {model_name} requires the `sentencepiece` package. "
+            "Install it in the active environment and rerun training."
+        )
     try:
         tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
     except Exception as exc:
@@ -144,6 +138,17 @@ def _load_tokenizer(model_name: str) -> Any:
             tokenizer.add_special_tokens({"pad_token": "[PAD]"})
 
     return tokenizer
+
+
+def _apply_tokenizer_padding_to_model(model: Any, tokenizer: Any) -> None:
+    pad_token_id = getattr(tokenizer, "pad_token_id", None)
+    if pad_token_id is None:
+        return
+    model.config.pad_token_id = pad_token_id
+    generation_config = getattr(model, "generation_config", None)
+    if generation_config is not None:
+        generation_config.pad_token_id = pad_token_id
+
 
 def _codebook_fingerprint() -> str:
     return hashlib.sha256(DOC_CODEBOOK_PATH.read_bytes()).hexdigest()[:16]
@@ -264,17 +269,22 @@ def _training_defaults(core: str | None = None) -> dict[str, Any]:
         "freeze_backbone": False,
         "unfreeze_top_layers": 0,
         "log_every_batches": 25,
-        "checkpoint_every_batches": 1000,
+            "checkpoint_every_batches": 1000,
         "resume_if_available": False,
         "balanced_sampling": False,
+        "gradient_clip_norm": 1.0,
+        "use_class_weights": False,
         "train_intent_heads": False,
         "write_batch_debug": True,
         "batch_debug_loss_threshold": 9.0,
-    }
+        }
     if resolved_core == "smol":
         config["epochs"] = 2
-        config["batch_size"] = 2
+        config["batch_size"] = 1
         config["max_length"] = 128
+        config["learning_rate"] = 5e-6
+        config["weight_decay"] = 0.0
+        config["freeze_backbone"] = True
         config["log_every_batches"] = 10
         config["checkpoint_every_batches"] = 1000
     elif resolved_core == "llama_guard":
@@ -289,15 +299,7 @@ def _training_defaults(core: str | None = None) -> dict[str, Any]:
 
 
 def _checkpoint_is_compatible(state_dict: dict[str, Any]) -> bool:
-    required_heads = (
-        "g1_head.weight",
-        "g1_head.bias",
-        "g2_head.weight",
-        "g2_head.bias",
-        "flag_head.weight",
-        "flag_head.bias",
-    )
-    return all(key in state_dict for key in required_heads)
+    return any(key.startswith("classifier.") for key in state_dict)
 
 
 def _filter_compatible_state_dict(model: Any, state_dict: dict[str, Any]) -> tuple[dict[str, Any], list[str]]:
@@ -305,9 +307,6 @@ def _filter_compatible_state_dict(model: Any, state_dict: dict[str, Any]) -> tup
     filtered: dict[str, Any] = {}
     skipped: list[str] = []
     for key, value in state_dict.items():
-        if key.startswith("applies_when_head."):
-            skipped.append(key)
-            continue
         if key not in model_state:
             skipped.append(key)
             continue
@@ -329,7 +328,7 @@ def _build_training_metadata(
     return {
         "core_model": core,
         "model_name": model_name_for_core(core),
-        "model_type": "slm-multitask-classifier",
+        "model_type": "slm-g2-sequence-classifier",
         "runtime": "transformers-local",
         "language_scope": "english-first",
         "dataset_rows": len(rows),
@@ -427,9 +426,7 @@ class CanonicalSLMDataset(Dataset):  # pragma: no cover - exercised through trai
         self.tokenizer = tokenizer
         self.label_vocab = label_vocab
         self.max_length = max_length
-        self.g1_index = _index_map(label_vocab["g1"])
         self.g2_index = _index_map(label_vocab["g2"])
-        self.flag_vocab = list(label_vocab.get("flags", []))
 
     def __len__(self) -> int:
         return len(self.rows)
@@ -446,12 +443,7 @@ class CanonicalSLMDataset(Dataset):  # pragma: no cover - exercised through trai
         return {
             "input_ids": encoded["input_ids"].squeeze(0),
             "attention_mask": encoded["attention_mask"].squeeze(0),
-            "g1_label": torch.tensor(self.g1_index[str(row["g1"])], dtype=torch.long),
-            "g2_label": torch.tensor(self.g2_index[primary_g2_label(row.get("g2", []))], dtype=torch.long),
-            "flag_labels": torch.tensor(
-                [float(bool(row.get("flags", {}).get(label, False))) for label in self.flag_vocab],
-                dtype=torch.float32,
-            ),
+            "labels": torch.tensor(self.g2_index[primary_g2_label(row.get("g2", []))], dtype=torch.long),
             "sample_id": str(row.get("sample_id", "")),
             "question": str(row.get("question", "")),
             "context": str(row.get("context", "")),
@@ -461,69 +453,81 @@ class CanonicalSLMDataset(Dataset):  # pragma: no cover - exercised through trai
         }
 
 
-class MultiTaskSLMClassifier(nn.Module):  # pragma: no cover - exercised through training/inference path
-    def __init__(self, model_name: str, label_vocab: dict[str, list[str]], *, local_files_only: bool = False) -> None:
+class SingleHeadSLMClassifier(nn.Module):  # pragma: no cover - exercised through training/inference path
+    def __init__(self, model_name: str, num_labels: int, *, local_files_only: bool = False) -> None:
         super().__init__()
         self.backbone = AutoModel.from_pretrained(model_name, local_files_only=local_files_only)
         hidden_size = int(self.backbone.config.hidden_size)
-        self.dropout = nn.Dropout(0.1)
-        self.g1_head = nn.Linear(hidden_size, len(label_vocab["g1"]))
-        self.g2_head = nn.Linear(hidden_size, len(label_vocab["g2"]))
-        self.flag_head = nn.Linear(hidden_size, len(label_vocab.get("flags", [])))
+        dropout_prob = float(
+            getattr(self.backbone.config, "cls_dropout", None)
+            or getattr(self.backbone.config, "hidden_dropout_prob", 0.1)
+            or 0.1
+        )
+        self.dropout = nn.Dropout(dropout_prob)
+        self.classifier = nn.Linear(hidden_size, num_labels)
+        self.config = self.backbone.config
 
-    def freeze_backbone(self) -> None:
-        for parameter in self.backbone.parameters():
-            parameter.requires_grad = False
-
-    def unfreeze_backbone(self) -> None:
-        for parameter in self.backbone.parameters():
-            parameter.requires_grad = True
-
-    def unfreeze_top_layers(self, layer_count: int) -> int:
-        self.freeze_backbone()
-        requested = max(int(layer_count), 0)
-        if requested <= 0:
-            return 0
-
-        layer_container = None
-        if hasattr(self.backbone, "model") and hasattr(self.backbone.model, "layers"):
-            layer_container = self.backbone.model.layers
-        elif hasattr(self.backbone, "layers"):
-            layer_container = self.backbone.layers
-        elif hasattr(self.backbone, "encoder") and hasattr(self.backbone.encoder, "layer"):
-            layer_container = self.backbone.encoder.layer
-
-        if layer_container is None:
-            raise RuntimeError("Backbone does not expose a supported layer stack for partial unfreezing.")
-
-        total_layers = len(layer_container)
-        actual = min(requested, total_layers)
-        for layer in list(layer_container)[-actual:]:
-            for parameter in layer.parameters():
-                parameter.requires_grad = True
-        return actual
-
-    def _pool(self, hidden_state: Any, attention_mask: Any) -> Any:
-        mask = attention_mask.unsqueeze(-1).to(hidden_state.dtype)
-        summed = (hidden_state * mask).sum(dim=1)
-        counts = mask.sum(dim=1).clamp(min=1.0)
-        return summed / counts
-
-    def forward(self, input_ids: Any, attention_mask: Any) -> dict[str, Any]:
-        outputs = self.backbone(input_ids=input_ids, attention_mask=attention_mask)
-        pooled = self._pool(outputs.last_hidden_state, attention_mask)
-        pooled = pooled.to(self.g1_head.weight.dtype)
-        pooled = self.dropout(pooled)
-        return {
-            "g1_logits": self.g1_head(pooled),
-            "g2_logits": self.g2_head(pooled),
-            "flag_logits": self.flag_head(pooled),
+    def forward(
+        self,
+        input_ids: Any,
+        attention_mask: Any,
+        token_type_ids: Any | None = None,
+        **_: Any,
+    ) -> dict[str, Any]:
+        backbone_kwargs = {
+            "input_ids": input_ids,
+            "attention_mask": attention_mask,
         }
+        if token_type_ids is not None:
+            backbone_kwargs["token_type_ids"] = token_type_ids
+        outputs = self.backbone(**backbone_kwargs)
+        hidden_state = outputs.last_hidden_state
+        mask = attention_mask.unsqueeze(-1).to(hidden_state.dtype)
+        pooled = (hidden_state * mask).sum(dim=1) / mask.sum(dim=1).clamp(min=1.0)
+        pooled = self.dropout(pooled.float())
+        return {"logits": self.classifier(pooled)}
+
+
+def _model_backbone(model: Any) -> Any:
+    return getattr(model, "backbone", getattr(model, "base_model", model))
+
+
+def _freeze_backbone(model: Any) -> None:
+    for parameter in _model_backbone(model).parameters():
+        parameter.requires_grad = False
+
+
+def _unfreeze_backbone(model: Any) -> None:
+    for parameter in _model_backbone(model).parameters():
+        parameter.requires_grad = True
+
+
+def _unfreeze_top_layers(model: Any, layer_count: int) -> int:
+    _freeze_backbone(model)
+    requested = max(int(layer_count), 0)
+    if requested <= 0:
+        return 0
+    backbone = _model_backbone(model)
+    layer_container = None
+    if hasattr(backbone, "model") and hasattr(backbone.model, "layers"):
+        layer_container = backbone.model.layers
+    elif hasattr(backbone, "layers"):
+        layer_container = backbone.layers
+    elif hasattr(backbone, "encoder") and hasattr(backbone.encoder, "layer"):
+        layer_container = backbone.encoder.layer
+    if layer_container is None:
+        raise RuntimeError("Backbone does not expose a supported layer stack for partial unfreezing.")
+    total_layers = len(layer_container)
+    actual = min(requested, total_layers)
+    for layer in list(layer_container)[-actual:]:
+        for parameter in layer.parameters():
+            parameter.requires_grad = True
+    return actual
 
 
 def _prefers_cpu_on_mps(model_name: str | None = None) -> bool:
     normalized = str(model_name or "").strip().lower()
-    return "deberta" in normalized
+    return "deberta" in normalized or "smollm" in normalized or "llama-guard" in normalized
 
 
 def _device(model_name: str | None = None, device_preference: str = "auto") -> Any:
@@ -557,33 +561,20 @@ def _load_rows_by_split(dataset_path: Path, split_name: str) -> list[dict[str, A
 def _compute_loss(
     outputs: dict[str, Any],
     batch: dict[str, Any],
-    g1_loss_fn: Any,
     g2_loss_fn: Any,
-    flag_loss_fn: Any,
-    g1_loss_weight: float = 1.0,
     g2_loss_weight: float = 2.0,
-    flag_loss_weight: float = 0.45,
 ) -> Any:
-    g1_loss = g1_loss_fn(outputs["g1_logits"], batch["g1_label"])
-    g2_loss = g2_loss_fn(outputs["g2_logits"], batch["g2_label"])
-    flag_loss = flag_loss_fn(outputs["flag_logits"], batch["flag_labels"])
-    return (float(g1_loss_weight) * g1_loss) + (float(g2_loss_weight) * g2_loss) + (float(flag_loss_weight) * flag_loss)
+    g2_loss = g2_loss_fn(outputs["logits"].float(), batch["labels"])
+    return float(g2_loss_weight) * g2_loss
 
 
 def _compute_loss_breakdown(
     outputs: dict[str, Any],
     batch: dict[str, Any],
-    g1_loss_fn: Any,
     g2_loss_fn: Any,
-    flag_loss_fn: Any,
 ) -> dict[str, float]:
-    g1_loss = float(g1_loss_fn(outputs["g1_logits"], batch["g1_label"]).item())
-    g2_loss = float(g2_loss_fn(outputs["g2_logits"], batch["g2_label"]).item())
-    flag_loss = float(flag_loss_fn(outputs["flag_logits"], batch["flag_labels"]).item())
     payload = {
-        "g1_loss": g1_loss,
-        "g2_loss": g2_loss,
-        "flag_loss": flag_loss,
+        "g2_loss": float(g2_loss_fn(outputs["logits"].float(), batch["labels"]).item()),
     }
     return payload
 
@@ -591,12 +582,8 @@ def _compute_loss_breakdown(
 def _evaluate_loss(
     model: Any,
     loader: Any,
-    g1_loss_fn: Any,
     g2_loss_fn: Any,
-    flag_loss_fn: Any,
-    g1_loss_weight: float = 1.0,
     g2_loss_weight: float = 2.0,
-    flag_loss_weight: float = 0.45,
 ) -> float:
     model.eval()
     total_loss = 0.0
@@ -604,17 +591,13 @@ def _evaluate_loss(
     with torch.no_grad():
         for batch in loader:
             tensor_batch, _ = _split_batch_for_training(batch)
-            tensor_batch = {key: value.to(_device(getattr(model.backbone, "name_or_path", None))) for key, value in tensor_batch.items()}
+            tensor_batch = {key: value.to(_device(getattr(model.config, "_name_or_path", None))) for key, value in tensor_batch.items()}
             outputs = model(input_ids=tensor_batch["input_ids"], attention_mask=tensor_batch["attention_mask"])
             loss = _compute_loss(
                 outputs,
                 tensor_batch,
-                g1_loss_fn,
                 g2_loss_fn,
-                flag_loss_fn,
-                g1_loss_weight=g1_loss_weight,
                 g2_loss_weight=g2_loss_weight,
-                flag_loss_weight=flag_loss_weight,
             )
             total_loss += float(loss.item())
             total_batches += 1
@@ -634,19 +617,23 @@ def _evaluate_gate_accuracy(model: Any, loader: Any, label_vocab: dict[str, list
     }
     with torch.no_grad():
         for batch in loader:
-            device = _device(getattr(model.backbone, "name_or_path", None))
-            tensor_batch, _ = _split_batch_for_training(batch)
+            device = _device(getattr(model.config, "_name_or_path", None))
+            tensor_batch, meta_batch = _split_batch_for_training(batch)
             tensor_batch = {key: value.to(device) for key, value in tensor_batch.items()}
             outputs = model(input_ids=tensor_batch["input_ids"], attention_mask=tensor_batch["attention_mask"])
-            g1_pred = torch.argmax(outputs["g1_logits"], dim=-1)
-            g2_pred = torch.argmax(outputs["g2_logits"], dim=-1)
-            g1_correct += int((g1_pred == tensor_batch["g1_label"]).sum().item())
-            g2_correct += int((g2_pred == tensor_batch["g2_label"]).sum().item())
-            total += int(tensor_batch["g1_label"].shape[0])
-            g1_pred_values = g1_pred.cpu().tolist()
+            g2_pred = torch.argmax(outputs["logits"], dim=-1)
+            g2_correct += int((g2_pred == tensor_batch["labels"]).sum().item())
+            batch_size = int(tensor_batch["labels"].shape[0])
+            total += batch_size
+            predicted_g1_values = [
+                heuristic_classifier.classify_g1(heuristic_classifier.normalize(str(question)))
+                for question in meta_batch.get("question", [])
+            ]
+            gold_g1_values = [str(value) for value in meta_batch.get("g1_text", [])]
+            g1_correct += sum(1 for pred, gold in zip(predicted_g1_values, gold_g1_values) if pred == gold)
             g2_pred_values = g2_pred.cpu().tolist()
-            g2_gold_values = tensor_batch["g2_label"].cpu().tolist()
-            for value in g1_pred_values:
+            g2_gold_values = tensor_batch["labels"].cpu().tolist()
+            for value in predicted_g1_values:
                 g1_predictions[str(value)] += 1
             for value in g2_pred_values:
                 g2_predictions[str(value)] += 1
@@ -762,7 +749,7 @@ def train_slm_classifier(
         except ValueError:
             if enable_training:
                 raise
-    paths = _paths_for_core(resolved_core)
+    paths = _paths_for_core(resolved_core, model_dir=model_dir)
     if dataset_path.exists():
         rows = _iter_rows(dataset_path)
     if rows:
@@ -860,11 +847,16 @@ def train_slm_classifier(
         model_start = time.perf_counter()
         print(f"{log_prefix} init: loading_model model={config['model_name']}")
         print(f"{log_prefix} init: constructing_model_backbone")
-        model = MultiTaskSLMClassifier(config["model_name"], label_vocab)
+        model = SingleHeadSLMClassifier(
+            config["model_name"],
+            num_labels=len(label_vocab["g2"]),
+            local_files_only=False,
+        )
+        _apply_tokenizer_padding_to_model(model, tokenizer)
         print(f"{log_prefix} init: backbone_ready elapsed={time.perf_counter() - model_start:.2f}s")
         device_move_start = time.perf_counter()
         print(f"{log_prefix} init: moving_model_to_device device={device.type}")
-        model = model.to(device)
+        model = model.float().to(device)
         print(f"{log_prefix} init: model_on_device_ready elapsed={time.perf_counter() - device_move_start:.2f}s")
         print(f"{log_prefix} init: model_ready total_elapsed={time.perf_counter() - model_start:.2f}s")
         resumed_from_existing = False
@@ -883,28 +875,26 @@ def train_slm_classifier(
         actual_unfrozen_top_layers = 0
         requested_unfreeze_top_layers = int(config.get("unfreeze_top_layers", 0) or 0)
         if requested_unfreeze_top_layers > 0:
-            actual_unfrozen_top_layers = model.unfreeze_top_layers(requested_unfreeze_top_layers)
+            actual_unfrozen_top_layers = _unfreeze_top_layers(model, requested_unfreeze_top_layers)
             print(
                 f"{log_prefix} init: backbone_partially_unfrozen=true "
                 f"requested_top_layers={requested_unfreeze_top_layers} "
                 f"actual_top_layers={actual_unfrozen_top_layers}"
             )
         elif bool(config.get("freeze_backbone", True)):
-            model.freeze_backbone()
+            _freeze_backbone(model)
             print(f"{log_prefix} init: backbone_frozen=true")
         else:
-            model.unfreeze_backbone()
+            _unfreeze_backbone(model)
             print(f"{log_prefix} init: backbone_frozen=false")
-        g1_weights = torch.tensor(_compute_class_weights(train_rows, "g1", label_vocab["g1"]), dtype=torch.float32, device=device)
-        g2_weights = torch.tensor(_compute_class_weights(train_rows, "g2", label_vocab["g2"]), dtype=torch.float32, device=device)
-        flag_pos_weight = torch.tensor(
-            _compute_list_multilabel_pos_weight(train_rows, label_vocab.get("flags", []), "flags"),
-            dtype=torch.float32,
-            device=device,
-        )
-        g1_loss_fn = nn.CrossEntropyLoss(weight=g1_weights)
-        g2_loss_fn = nn.CrossEntropyLoss(weight=g2_weights)
-        flag_loss_fn = nn.BCEWithLogitsLoss(pos_weight=flag_pos_weight)
+        g2_weights = None
+        if bool(config.get("use_class_weights", False)):
+            g2_weights = torch.tensor(
+                _compute_class_weights(train_rows, "g2", label_vocab["g2"]),
+                dtype=torch.float32,
+                device=device,
+            )
+        g2_loss_fn = torch.nn.CrossEntropyLoss(weight=g2_weights)
         trainable_parameters = [parameter for parameter in model.parameters() if parameter.requires_grad]
         optimizer = torch.optim.AdamW(trainable_parameters, lr=config["learning_rate"], weight_decay=config["weight_decay"])
 
@@ -939,14 +929,28 @@ def train_slm_classifier(
                 loss = _compute_loss(
                     outputs,
                     tensor_batch,
-                    g1_loss_fn,
                     g2_loss_fn,
-                    flag_loss_fn,
-                    g1_loss_weight=float(config.get("g1_loss_weight", 1.0)),
                     g2_loss_weight=float(config.get("g2_loss_weight", 2.0)),
-                    flag_loss_weight=float(config.get("flag_loss_weight", 0.45)),
                 )
+                if not torch.isfinite(loss):
+                    logits = outputs["logits"].detach()
+                    labels = tensor_batch["labels"].detach()
+                    print(
+                        f"{log_prefix} epoch {epoch_index + 1} batch {batch_index}/{len(train_loader)} "
+                        f"non_finite_loss_detected loss={loss.item()}"
+                    )
+                    raise RuntimeError(
+                        "Non-finite loss detected during training. "
+                        f"logits_finite={bool(torch.isfinite(logits).all().item())} "
+                        f"logits_min={float(torch.nan_to_num(logits.float(), nan=0.0).min().item()):.6f} "
+                        f"logits_max={float(torch.nan_to_num(logits.float(), nan=0.0).max().item()):.6f} "
+                        f"labels_min={int(labels.min().item())} "
+                        f"labels_max={int(labels.max().item())}"
+                    )
                 loss.backward()
+                gradient_clip_norm = float(config.get("gradient_clip_norm", 0.0) or 0.0)
+                if gradient_clip_norm > 0.0:
+                    torch.nn.utils.clip_grad_norm_(trainable_parameters, max_norm=gradient_clip_norm)
                 optimizer.step()
                 running_loss += float(loss.item())
                 if batch_index == 1 or batch_index % int(config.get("log_every_batches", 25)) == 0 or batch_index == len(train_loader):
@@ -961,16 +965,13 @@ def train_slm_classifier(
                         loss_breakdown = _compute_loss_breakdown(
                             outputs,
                             tensor_batch,
-                            g1_loss_fn,
                             g2_loss_fn,
-                            flag_loss_fn,
                         )
                         row_count = len(meta_batch.get("sample_id", []))
-                        g1_pred_indices = torch.argmax(outputs["g1_logits"], dim=-1).detach().cpu().tolist()
-                        g2_logits = outputs["g2_logits"].detach().cpu()
+                        g2_logits = outputs["logits"].detach().cpu()
                         g2_probs = torch.softmax(g2_logits, dim=-1).tolist()
-                        g2_pred_indices = torch.argmax(outputs["g2_logits"], dim=-1).detach().cpu().tolist()
-                        g2_gold_indices = tensor_batch["g2_label"].detach().cpu().tolist()
+                        g2_pred_indices = torch.argmax(outputs["logits"], dim=-1).detach().cpu().tolist()
+                        g2_gold_indices = tensor_batch["labels"].detach().cpu().tolist()
                         g2_confusion_counter: Counter[str] = Counter()
                         debug_rows: list[dict[str, Any]] = []
                         for idx in range(row_count):
@@ -992,7 +993,7 @@ def train_slm_classifier(
                                     "question": str(meta_batch.get("question", [""])[idx]),
                                     "context": str(meta_batch.get("context", [""])[idx]),
                                     "gold_g1": str(meta_batch.get("g1_text", [""])[idx]),
-                                    "pred_g1": str(label_vocab["g1"][g1_pred_indices[idx]]),
+                                    "pred_g1": str(heuristic_classifier.classify_g1(heuristic_classifier.normalize(str(meta_batch.get("question", [""])[idx])))),
                                     "gold_g2": gold_g2,
                                     "pred_g2": pred_g2,
                                     "g2_top3": top3_scores,
@@ -1025,12 +1026,8 @@ def train_slm_classifier(
             dev_loss = _evaluate_loss(
                 model,
                 dev_loader,
-                g1_loss_fn,
                 g2_loss_fn,
-                flag_loss_fn,
-                g1_loss_weight=float(config.get("g1_loss_weight", 1.0)),
                 g2_loss_weight=float(config.get("g2_loss_weight", 2.0)),
-                flag_loss_weight=float(config.get("flag_loss_weight", 0.45)),
             ) if len(dev_rows) else 0.0
             print(
                 f"{log_prefix} epoch {epoch_index + 1} summary "
@@ -1060,7 +1057,7 @@ def train_slm_classifier(
         metadata["flag_loss_weight"] = float(config.get("flag_loss_weight", 0.45))
         metadata["train_on_all_data"] = bool(config.get("train_on_all_data", False))
         metadata["resumed_from_existing"] = resumed_from_existing
-        metadata["flags_trained"] = True
+        metadata["flags_trained"] = False
         if len(dev_rows):
             gate_eval = _evaluate_gate_accuracy(model, dev_loader, label_vocab)
             metadata["dev_gate_metrics"] = gate_eval
@@ -1125,7 +1122,7 @@ def _run_model_with_device_fallback(model: Any, encoded: dict[str, Any], model_d
 
 
 def _load_trained_model_on_device(model_dir: Path, package: LoadedSLMPackage, device: Any) -> tuple[Any, Any]:
-    if not (AutoTokenizer and torch and nn and AutoModel):
+    if not (AutoTokenizer and torch and AutoModel and nn):
         raise RuntimeError("Transformers/Torch dependencies are not available for SLM inference.")
     cache_key = (str(model_dir.resolve()), str(device.type))
     cached = _TRAINED_MODEL_CACHE.get(cache_key)
@@ -1140,7 +1137,12 @@ def _load_trained_model_on_device(model_dir: Path, package: LoadedSLMPackage, de
     previous_hf_offline = os.environ.get("HF_HUB_OFFLINE")
     os.environ["HF_HUB_OFFLINE"] = "1"
     try:
-        model = MultiTaskSLMClassifier(package.training_config["model_name"], package.label_vocab, local_files_only=True)
+        model = SingleHeadSLMClassifier(
+            package.training_config["model_name"],
+            num_labels=len(package.label_vocab["g2"]),
+            local_files_only=True,
+        )
+        _apply_tokenizer_padding_to_model(model, tokenizer)
     finally:
         if previous_hf_offline is None:
             os.environ.pop("HF_HUB_OFFLINE", None)
@@ -1149,10 +1151,6 @@ def _load_trained_model_on_device(model_dir: Path, package: LoadedSLMPackage, de
     state_dict = torch.load(model_dir / "pytorch_model.bin", map_location=device)
     filtered_state_dict, _ = _filter_compatible_state_dict(model, state_dict)
     model.load_state_dict(filtered_state_dict, strict=False)
-    if "flag_head.weight" not in state_dict:
-        with torch.no_grad():
-            model.flag_head.weight.zero_()
-            model.flag_head.bias.zero_()
     model = model.float().to(device)
     model.eval()
     loaded = (tokenizer, model)
@@ -1336,9 +1334,7 @@ def build_decision_from_slm(
     )
     encoded = {key: value.to(inference_device) for key, value in encoded.items()}
     outputs, inference_device = _run_model_with_device_fallback(model, encoded, resolved_dir, package)
-    flag_probs = torch.sigmoid(outputs["flag_logits"]).squeeze(0).cpu().tolist()
-    g1_idx = int(torch.argmax(outputs["g1_logits"], dim=-1).item())
-    g2_primary_probs = torch.softmax(outputs["g2_logits"], dim=-1).squeeze(0).cpu().tolist()
+    g2_primary_probs = torch.softmax(outputs["logits"], dim=-1).squeeze(0).cpu().tolist()
     primary_g2, g2_values = _decode_g2_predictions(
         package.label_vocab,
         g2_primary_probs,
@@ -1367,12 +1363,15 @@ def build_decision_from_slm(
         heuristic_g2_values,
         list(intent_evidence.get("matched_lovs", [])),
     )
+    predicted_g1 = heuristic_classifier.classify_g1(
+        heuristic_classifier.normalize(str(normalized.get("text", "")).strip())
+    )
     primary_g2 = primary_g2_label(g2_values) or primary_g2
     decision = _decision_from_predictions(
         normalized=normalized,
         package=package,
         model_dir=resolved_dir,
-        g1=package.label_vocab["g1"][g1_idx],
+        g1=predicted_g1,
         primary_g2=primary_g2,
         g2_values=g2_values,
         intent_evidence=intent_evidence,
@@ -1386,7 +1385,7 @@ def build_decision_from_slm(
                 "inference_device": inference_device,
                 "head_confidences": {
                     **decision.classifier_metadata.get("head_confidences", {}),
-                    "flags": {label: float(score) for label, score in zip(flag_vocab, flag_probs)},
+                    "flags": {},
                     "G2_primary": {label: float(score) for label, score in zip(package.label_vocab["g2"], g2_primary_probs)},
                     "G2_all": {
                         label: float(score)
@@ -1442,20 +1441,12 @@ def build_decision_from_slm_pure(
     with torch.no_grad():
         outputs = model(**encoded)
 
-    g1_probs = torch.softmax(outputs["g1_logits"], dim=-1).squeeze(0).cpu().tolist()
-    g2_probs = torch.softmax(outputs["g2_logits"], dim=-1).squeeze(0).cpu().tolist()
-    flag_probs = torch.sigmoid(outputs["flag_logits"]).squeeze(0).cpu().tolist()
-
-    g1_idx = int(torch.argmax(outputs["g1_logits"], dim=-1).item())
-    g2_idx = int(torch.argmax(outputs["g2_logits"], dim=-1).item())
-
-    g1 = package.label_vocab["g1"][g1_idx]
+    g2_probs = torch.softmax(outputs["logits"], dim=-1).squeeze(0).cpu().tolist()
+    g2_idx = int(torch.argmax(outputs["logits"], dim=-1).item())
+    g1 = heuristic_classifier.classify_g1(
+        heuristic_classifier.normalize(str(normalized.get("text", "")).strip())
+    )
     g2 = package.label_vocab["g2"][g2_idx]
-    flag_vocab = list(package.label_vocab.get("flags", []))
-    active_flags = {
-        label: bool(float(score) >= threshold)
-        for label, score in zip(flag_vocab, flag_probs)
-    }
 
     return GuardrailDecision(
         input={
@@ -1471,12 +1462,8 @@ def build_decision_from_slm_pure(
         response_mode="model_only",
         risk_level="model_only",
         parent_visible=False,
-        confidence=max(
-            max((float(score) for score in g1_probs), default=0.0),
-            max((float(score) for score in g2_probs), default=0.0),
-            max((float(score) for score in flag_probs), default=0.0),
-        ),
-        signals=active_flags,
+        confidence=max((float(score) for score in g2_probs), default=0.0),
+        signals={},
         classifier_metadata={
             "backend": "slm_pure",
             "backend_version": package.metadata.get(
@@ -1490,18 +1477,11 @@ def build_decision_from_slm_pure(
             "g2_threshold": threshold,
             "label_vocab_path": str(resolved_dir / "label_vocab.json"),
             "head_confidences": {
-                "G1": {
-                    label: float(score)
-                    for label, score in zip(package.label_vocab["g1"], g1_probs)
-                },
                 "G2": {
                     label: float(score)
                     for label, score in zip(package.label_vocab["g2"], g2_probs)
                 },
-                "flags": {
-                    label: float(score)
-                    for label, score in zip(flag_vocab, flag_probs)
-                },
+                "flags": {},
             },
         },
     )

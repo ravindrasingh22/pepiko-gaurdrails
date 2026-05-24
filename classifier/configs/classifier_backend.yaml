@@ -1,7 +1,7 @@
 selected_backend: slm
 rollout_mode: primary_only
-model_artifact_path: models/piku-slm-guardrail-smollm2-135m
-label_vocab_path: models/piku-slm-guardrail-smollm2-135m/label_vocab.json
+model_artifact_path: models/piku-slm-guardrail-deberta-v3-small
+label_vocab_path: models/piku-slm-guardrail-deberta-v3-small/label_vocab.json
 gl_thresholds:
   default: 0.5
   GL-05: 0.6

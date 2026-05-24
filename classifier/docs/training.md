@@ -19,10 +19,10 @@ These three docs should be treated as the primary design references for training
 - Source discovery manifest: `data/processed/piku_gl_classifier_manifest.json`
 - Supported backbones:
   - `smol` -> `HuggingFaceTB/SmolLM2-135M`
-  - `deberta` -> `microsoft/deberta-v3-xsmall`
+  - `deberta` -> `microsoft/deberta-v3-small`
 - Model output targets:
   - `models/piku-slm-guardrail-smollm2-135m/`
-  - `models/piku-slm-guardrail-deberta-v3-xsmall/`
+  - `models/piku-slm-guardrail-deberta-v3-small/`
 - CLI examples:
   - `python -m training.slm_classifier.train --core smol`
   - `python -m training.slm_classifier.train --core deberta`

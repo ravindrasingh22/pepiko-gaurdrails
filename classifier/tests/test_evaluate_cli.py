@@ -21,11 +21,11 @@ def test_evaluate_classifier_artifact_mode_returns_gate_metrics() -> None:
 
 
 def test_evaluate_classifier_slm_mode_returns_gate_metrics() -> None:
-    train_slm_classifier(core="smol")
-    results = evaluate_classifier(mode="slm", max_rows=200, core="smol")
+    train_slm_classifier(core="deberta")
+    results = evaluate_classifier(mode="slm", max_rows=200, core="deberta")
 
     assert results["mode"] == "slm"
-    assert results["core_model"] == "smol"
+    assert results["core_model"] == "deberta"
     assert "gate_metrics" in results
     assert "g2_metrics" in results
     assert "G2_accuracy" in results["gate_metrics"]

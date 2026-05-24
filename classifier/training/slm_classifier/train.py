@@ -30,7 +30,7 @@ def _dataset_is_stale(dataset_path: Path = CANONICAL_DATASET) -> bool:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Train the SLM classifier for a selected core model.")
-    parser.add_argument("--core", choices=available_cores(), default="smol")
+    parser.add_argument("--core", choices=available_cores(), default="deberta")
     parser.add_argument("--device", choices=["auto", "cpu", "mps"], default="auto")
     parser.add_argument("--epochs", type=int, default=None)
     parser.add_argument("--batch-size", type=int, default=None)
@@ -45,7 +45,7 @@ def main() -> None:
         "--balanced-sampling",
         type=_parse_bool_flag,
         default=None,
-        help="Oversample rare G2 labels during training (WeightedRandomSampler). Default: false for llama_guard, true otherwise when unset in config.",
+        help="Oversample rare G2 labels during training (WeightedRandomSampler).",
     )
     parser.add_argument("--checkpoint-every-batches", type=int, default=None)
     parser.add_argument("--resume", action="store_true", help="Resume from an existing checkpoint if present.")

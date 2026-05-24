@@ -39,7 +39,8 @@ def _expected_g1(row: dict[str, object]) -> str:
 
 
 def _expected_g2(row: dict[str, object]) -> str:
-    raw_value = str(row.get("g2", row.get("expected_g2", ""))).replace(";", ",")
+    raw = row.get("g2", row.get("expected_g2", ""))
+    raw_value = raw if isinstance(raw, list) else str(raw).replace(";", ",")
     return primary_g2_label(raw_value)
 
 
@@ -59,7 +60,7 @@ def _macro_average(values: list[float]) -> float:
 
 
 def _print_row_header() -> None:
-    print("row_index\tsample_id\tgold_g1\tpred_g1\tgold_g2\tpred_g2\tmatch\tquestion")
+    print("question\tg1\tg2\tpred_g2\tmatched")
 
 
 def _print_row_result(
@@ -72,34 +73,24 @@ def _print_row_result(
     predicted_g2: str,
 ) -> None:
     question = str(row.get("question", "")).replace("\t", " ").replace("\n", " ").strip()
-    sample_id = str(row.get("sample_id", "")).replace("\t", " ").replace("\n", " ").strip()
-    match = "yes" if gold_g1 == predicted_g1 and gold_g2 == predicted_g2 else "no"
-    print(
-        f"{row_index}\t{sample_id}\t{gold_g1}\t{predicted_g1}\t{gold_g2}\t{predicted_g2}\t{match}\t{question}"
-    )
+    matched = "true" if gold_g2 == predicted_g2 else "false"
+    print(f"{question}\t{gold_g1}\t{gold_g2}\t{predicted_g2}\t{matched}")
 
 
 def _write_row_results_csv(path: Path, rows: list[dict[str, object]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     fieldnames = [
-        "row_index",
-        "sample_id",
         "question",
-        "language",
-        "recent_context",
         "g1",
-        "pred_g1",
         "g2",
         "pred_g2",
-        "g1_match",
-        "g2_match",
-        "exact_match",
+        "matched",
     ]
     with path.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=fieldnames)
         writer.writeheader()
         for row in rows:
-            writer.writerow(row)
+            writer.writerow({key: row.get(key, "") for key in fieldnames})
 
 
 def evaluate_classifier(
@@ -107,7 +98,7 @@ def evaluate_classifier(
     mode: str = "heuristic",
     max_rows: int | None = None,
     split: str = "test",
-    core: str = "smol",
+    core: str = "deberta",
     print_rows: bool = False,
     output_csv: Path | None = None,
 ) -> dict[str, object]:
@@ -138,14 +129,7 @@ def evaluate_classifier(
         label: {"tp": 0, "fp": 0, "fn": 0, "tn": 0}
         for label in G2_VOCAB
     }
-    slice_totals: dict[str, dict[str, int]] = {
-        "dangerous_violence": {"rows": 0, "correct_g2": 0},
-        "civic_law_integrity": {"rows": 0, "correct_g2": 0},
-        "technology": {"rows": 0, "correct_g2": 0},
-        "safety_hazard": {"rows": 0, "correct_g2": 0},
-        "grief_emotional": {"rows": 0, "correct_g2": 0},
-        "grooming_unsafe_content": {"rows": 0, "correct_g2": 0},
-    }
+    slice_totals: dict[str, dict[str, int]] = {}
     for label in G2_VOCAB:
         slice_totals[f"g2_{label.lower()}"] = {"rows": 0, "correct_g2": 0}
     header_printed = False
@@ -167,7 +151,7 @@ def evaluate_classifier(
                     question=question,
                     age_band="11-12",
                     language=language,
-                    recent_context=recent_context,
+                    context=recent_context,
                 ),
                 core=core,
             )
@@ -176,7 +160,7 @@ def evaluate_classifier(
                 question=question,
                 age_band="11-12",
                 language=language,
-                recent_context=recent_context,
+                context=recent_context,
             )
             decision = slm_classifier.classify(normalized)
         predicted_gates = decision.gates or decision.gate_values
@@ -200,6 +184,7 @@ def evaluate_classifier(
                 "pred_g1": predicted_g1,
                 "g2": gold_gates["G2"],
                 "pred_g2": predicted_g2,
+                "matched": "true" if g2_match else "false",
                 "g1_match": g1_match,
                 "g2_match": g2_match,
                 "exact_match": exact_match,
@@ -237,23 +222,6 @@ def evaluate_classifier(
         summary["confusion"]["G1"][f"{gold_gates['G1']}->{predicted_g1}"] += 1
         summary["confusion"]["G2"][f"{gold_gates['G2']}->{predicted_g2}"] += 1
 
-        slice_names: list[str] = []
-        if gold_gates["G2"] == "DANGEROUS" or gold_gates["G1"] == "VIOLENCE":
-            slice_names.append("dangerous_violence")
-        if gold_gates["G1"] == "CIVIC_LAW":
-            slice_names.append("civic_law_integrity")
-        if gold_gates["G1"] == "TECHNOLOGY":
-            slice_names.append("technology")
-        if gold_gates["G1"] == "SAFETY_HAZARD":
-            slice_names.append("safety_hazard")
-        if gold_gates["G1"] == "DEATH_GRIEF" or gold_gates["G2"] == "EMOTIONAL":
-            slice_names.append("grief_emotional")
-        if gold_gates["G2"] in {"GROOMING", "UNSAFE_SEXUAL_CONTENT"}:
-            slice_names.append("grooming_unsafe_content")
-        for slice_name in slice_names:
-            slice_totals[slice_name]["rows"] += 1
-            if predicted_g2 == gold_gates["G2"]:
-                slice_totals[slice_name]["correct_g2"] += 1
         label_slice_name = f"g2_{gold_gates['G2'].lower()}"
         slice_totals[label_slice_name]["rows"] += 1
         if predicted_g2 == gold_gates["G2"]:
@@ -311,23 +279,27 @@ def main() -> None:
     parser.add_argument("--dataset", default=str(CANONICAL_DATASET))
     parser.add_argument("--max-rows", type=int, default=0)
     parser.add_argument("--split", choices=["train", "dev", "test"], default="test")
-    parser.add_argument("--core", choices=available_cores(), default="smol")
+    parser.add_argument("--core", choices=available_cores(), default="deberta")
     parser.add_argument("--print-rows", action="store_true", help="Print one TSV row per evaluated sample with a single header row.")
     parser.add_argument("--output-csv", default="", help="Write per-row evaluation results to this CSV path.")
     args = parser.parse_args()
 
     max_rows = args.max_rows if args.max_rows > 0 else None
     core = resolve_core(args.core)
+    output_csv = Path(args.output_csv) if args.output_csv else (
+        CANONICAL_DATASET.parent.parent / "eval" / f"{args.mode}_{core}_{args.split}_rows.csv"
+    )
     results = evaluate_classifier(
         dataset_path=Path(args.dataset),
         mode=args.mode,
         max_rows=max_rows,
         split=args.split,
         core=core,
-        print_rows=args.print_rows,
-        output_csv=Path(args.output_csv) if args.output_csv else None,
+        print_rows=True,
+        output_csv=output_csv,
     )
     print(json.dumps(results, indent=2))
+    print(str(output_csv))
 
 
 if __name__ == "__main__":

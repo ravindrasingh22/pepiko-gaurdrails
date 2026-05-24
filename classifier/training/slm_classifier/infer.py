@@ -14,22 +14,22 @@ from training.slm_classifier.runtime_config import load_classifier_runtime_confi
 from training.slm_classifier.slm_backend import available_cores
 
 DEFAULT_THRESHOLD = 0.8
+AGE_LOOKUP = {
+    "5-6": 6,
+    "7-8": 8,
+    "9-10": 10,
+    "11-12": 12,
+    "13-14": 14,
+    "15-16": 16,
+    "17": 17,
+}
 
 
-def _normalize_input(question: str, age_band: str, language: str, recent_context: str) -> dict[str, object]:
-    age_lookup = {
-        "5-6": 6,
-        "7-8": 8,
-        "9-10": 10,
-        "11-12": 12,
-        "13-14": 14,
-        "15-16": 16,
-        "17": 17,
-    }
-    age = age_lookup.get(age_band, 12)
+def _normalize_input(question: str, age_band: str, language: str, context: str) -> dict[str, object]:
+    age = AGE_LOOKUP.get(age_band, 12)
     return {
         "text": question,
-        "recent_context": [] if recent_context == "none" else [recent_context],
+        "recent_context": [] if context == "none" else [context],
         "child_profile": {
             "age": age,
             "age_group": age_band,
@@ -37,6 +37,10 @@ def _normalize_input(question: str, age_band: str, language: str, recent_context
         },
         "resolved_age_band": age_band,
     }
+
+
+def _backend_for_auto_mode() -> str:
+    return load_classifier_runtime_config().selected_backend
 
 
 def _classify(mode: str, normalized: dict[str, object], threshold: float, core: str | None = None):
@@ -47,7 +51,7 @@ def _classify(mode: str, normalized: dict[str, object], threshold: float, core: 
     if mode == "artifact":
         return slm_classifier.classify_artifact(normalized)
     if mode == "auto":
-        selected = load_classifier_runtime_config().selected_backend
+        selected = _backend_for_auto_mode()
         if selected == "slm":
             return slm_classifier.classify_slm(normalized, core=core, threshold=threshold)
         if selected == "artifact":
@@ -80,7 +84,7 @@ def _normalize_g2_values(raw: object) -> list[str]:
 def _g2_selection_reasons(
     *,
     question: str,
-    recent_context: str,
+    context: str,
     head_confidences: dict[str, object],
     g2_all: list[str],
     threshold: float,
@@ -96,7 +100,7 @@ def _g2_selection_reasons(
         if float(score) >= threshold
     }
     normalized_question = slm_classifier.normalize(question)
-    normalized_context = slm_classifier.normalize("" if recent_context == "none" else recent_context)
+    normalized_context = slm_classifier.normalize("" if context == "none" else context)
     heuristic_labels = set(slm_classifier.classify_g2(normalized_question, normalized_context))
     lexicon = dict(head_confidences.get("intent_lexicon", {}))
     lexicon_labels = {str(item) for item in lexicon.get("matched_lovs", []) if str(item).strip()}
@@ -182,13 +186,13 @@ def run_infer(
     question: str,
     age_band: str,
     language: str,
-    recent_context: str,
+    context: str,
     core: str | None = None,
     threshold: float | None = None,
     thresholds: dict[str, float] | None = None,
 ) -> dict[str, object]:
     effective_threshold = _resolve_threshold(threshold, thresholds)
-    normalized = _normalize_input(question, age_band, language, recent_context)
+    normalized = _normalize_input(question, age_band, language, context)
     decision = _classify(mode, normalized, effective_threshold, core=core)
     if mode == "slm_pure":
         classifier_metadata = dict(decision.classifier_metadata or {})
@@ -200,7 +204,7 @@ def run_infer(
         ]
         result = {
             "question": question,
-            "context": recent_context,
+            "context": context,
             "language": language,
             "backend": "slm_pure",
             "core_model": str(classifier_metadata.get("core_model", core or "")),
@@ -244,7 +248,7 @@ def run_infer(
     g2_reasons = dict(getattr(decision, "g2_reasons", {}) or {})
     result = {
         "question": question,
-        "context": recent_context,
+        "context": context,
         "language": language,
         "g1": {
             "id": str(gates.get("G1", "GENERIC")),
@@ -260,14 +264,14 @@ def run_infer(
             "scores": g2_all_scores,
             "selection_reasons": _g2_selection_reasons(
                 question=question,
-                recent_context=recent_context,
+                context=context,
                 head_confidences=head_confidences,
                 g2_all=g2_all,
                 threshold=effective_threshold,
                 g2_reasons=g2_reasons,
             ),
         },
-        "backend": mode if mode != "auto" else load_classifier_runtime_config().selected_backend,
+        "backend": mode if mode != "auto" else _backend_for_auto_mode(),
         "core_model": str(classifier_metadata.get("core_model", core or "")),
         "trained": bool(classifier_metadata.get("trained", False)),
         "threshold": effective_threshold,
@@ -285,9 +289,9 @@ def main() -> None:
     parser.add_argument("--mode", choices=["auto", "heuristic", "artifact", "slm", "slm_pure"], default="auto")
     parser.add_argument("--core", choices=available_cores(), default=None)
     parser.add_argument("--question", required=True)
+    parser.add_argument("--context", default="none")
     parser.add_argument("--age-band", default="9-10")
     parser.add_argument("--language", default="en")
-    parser.add_argument("--recent-context", default="none")
     parser.add_argument("--threshold", type=float, default=None)
     parser.add_argument("--thresholds", default=None, help="JSON object of thresholds. Uses threshold/default/global when present.")
     args = parser.parse_args()
@@ -298,7 +302,7 @@ def main() -> None:
                 args.question,
                 args.age_band,
                 args.language,
-                args.recent_context,
+                args.context,
                 core=args.core,
                 threshold=args.threshold,
                 thresholds=_parse_thresholds(args.thresholds),

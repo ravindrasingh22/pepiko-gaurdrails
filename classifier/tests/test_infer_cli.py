@@ -9,7 +9,7 @@ def test_infer_cli_normalizes_alias_age_band_to_expected_age() -> None:
         question="Who is God?",
         age_band="11-12",
         language="en",
-        recent_context="none",
+        context="none",
     )
 
     assert normalized["child_profile"]["age"] == 12
@@ -21,7 +21,7 @@ def test_infer_cli_falls_back_to_lower_valid_age_band_for_invalid_band() -> None
         question="Who is God?",
         age_band="8-10",
         language="en",
-        recent_context="none",
+        context="none",
     )
 
     assert normalized["child_profile"]["age"] == 12
@@ -34,7 +34,7 @@ def test_run_infer_preserves_thresholded_runtime_classifier_output() -> None:
         question="Which religion should I follow?",
         age_band="9-10",
         language="en",
-        recent_context="none",
+        context="none",
         threshold=0.8,
     )
 
@@ -74,7 +74,7 @@ def test_run_infer_returns_thresholds_when_provided() -> None:
         question="Which religion should I follow?",
         age_band="9-10",
         language="en",
-        recent_context="none",
+        context="none",
         thresholds={"default": 0.8, "G2": 0.75},
     )
 
@@ -88,7 +88,7 @@ def test_run_infer_surfaces_fused_secrecy_label_for_slm_output() -> None:
         question="Don't tell anyone about our conversations, okay?",
         age_band="9-10",
         language="en",
-        recent_context="none",
+        context="none",
         threshold=20.0,
     )
 

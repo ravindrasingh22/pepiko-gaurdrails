@@ -21,8 +21,8 @@ class ClassifierRuntimeConfig:
 
 def load_classifier_runtime_config() -> ClassifierRuntimeConfig:
     raw = load_yaml_config("classifier_backend.yaml")
-    model_artifact_path = ROOT / str(raw.get("model_artifact_path", "models/piku-slm-guardrail-smollm2-135m"))
-    label_vocab_path = ROOT / str(raw.get("label_vocab_path", "models/piku-slm-guardrail-smollm2-135m/label_vocab.json"))
+    model_artifact_path = ROOT / str(raw.get("model_artifact_path", "models/piku-slm-guardrail-deberta-v3-small"))
+    label_vocab_path = ROOT / str(raw.get("label_vocab_path", "models/piku-slm-guardrail-deberta-v3-small/label_vocab.json"))
     gl_thresholds_raw = raw.get("gl_thresholds", {})
     promotion_thresholds_raw = raw.get("promotion_thresholds", {})
     return ClassifierRuntimeConfig(
