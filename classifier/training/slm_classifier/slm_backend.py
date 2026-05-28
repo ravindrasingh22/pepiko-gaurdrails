@@ -55,17 +55,6 @@ CORE_ALIASES = {
 }
 DEFAULT_CORE = "deberta"
 DEFAULT_CLASSIFIER_THRESHOLD = 0.8
-G2_ACTIVATION_THRESHOLD = DEFAULT_CLASSIFIER_THRESHOLD
-HIGH_PRIORITY_G2 = {
-    "UNSAFE_SEXUAL_CONTENT",
-    "GROOMING",
-    "COERCIVE_CONTROL",
-    "VULN_EXPLOIT",
-    "SELF_HARM",
-    "DANGEROUS",
-    "HATE_GROUP",
-    "VIOLENCE",
-}
 
 # Inference loads a full backbone per call without this cache (very slow for eval_sheet / pytest).
 _TRAINED_MODEL_CACHE: dict[tuple[str, str], tuple[Any, Any]] = {}
@@ -111,6 +100,7 @@ def _paths_for_core(core: str | None = None, model_dir: Path | None = None) -> d
         "metadata": model_dir / "training_metadata.json",
         "label_vocab": model_dir / "label_vocab.json",
         "state": model_dir / "pytorch_model.bin",
+        "checkpoint": model_dir / "training_checkpoint.pt",
         "training_config": model_dir / "training_config.json",
         "batch_debug": model_dir / "training_batch_debug.jsonl",
     }
@@ -172,71 +162,12 @@ def _load_label_vocab() -> dict[str, list[str]]:
 def _decode_g2_predictions(
     label_vocab: dict[str, list[str]],
     primary_probs: list[float],
-    threshold: float = G2_ACTIVATION_THRESHOLD,
-) -> tuple[str, list[str]]:
+) -> str:
     g2_labels = list(label_vocab.get("g2", []))
     if not g2_labels:
-        return "GENERIC_INTENT", ["GENERIC_INTENT"]
+        return "GENERIC_INTENT"
     primary_index = max(range(len(primary_probs)), key=lambda idx: float(primary_probs[idx]))
-    primary_g2 = g2_labels[primary_index]
-    g2_all = [
-        label
-        for label, score in zip(g2_labels, primary_probs)
-        if float(score) >= threshold
-    ]
-    if primary_g2 not in g2_all:
-        g2_all.insert(0, primary_g2)
-    return primary_g2, g2_all
-
-
-def _ordered_unique(labels: list[str]) -> list[str]:
-    seen: set[str] = set()
-    ordered: list[str] = []
-    for label in labels:
-        if label not in seen:
-            ordered.append(label)
-            seen.add(label)
-    return ordered
-
-
-def _fuse_g2_predictions(
-    g2_vocab: list[str],
-    model_g2_values: list[str],
-    primary_g2: str,
-    heuristic_g2_values: list[str],
-    lexicon_g2_values: list[str],
-) -> list[str]:
-    saturated_cutoff = max(5, int(len(g2_vocab) * 0.6))
-    model_active = [label for label in model_g2_values if label in g2_vocab]
-    corroborated = _ordered_unique(
-        [label for label in heuristic_g2_values + lexicon_g2_values if label in g2_vocab]
-    )
-    is_saturated = len(model_active) >= saturated_cutoff
-
-    if is_saturated:
-        fused = [label for label in corroborated if label in model_active]
-        for label in corroborated:
-            if label in HIGH_PRIORITY_G2 and label not in fused:
-                fused.append(label)
-        if not fused:
-            fused = list(corroborated)
-    else:
-        fused = list(model_active)
-        for label in corroborated:
-            if label not in fused:
-                fused.append(label)
-
-    if primary_g2 in g2_vocab and primary_g2 != "GENERIC_INTENT" and primary_g2 in corroborated and primary_g2 not in fused:
-        fused.insert(0, primary_g2)
-
-    if "PERSONAL_DIRECTION" in fused and "NEUTRAL_FACT" in fused:
-        fused = [label for label in fused if label != "NEUTRAL_FACT"]
-
-    if not fused:
-        if primary_g2 in g2_vocab:
-            return [primary_g2]
-        return ["GENERIC_INTENT"]
-    return _ordered_unique(fused)
+    return g2_labels[primary_index]
 
 
 def ensure_label_vocab(model_dir: Path | None = None, core: str | None = None) -> Path:
@@ -257,19 +188,23 @@ def _training_defaults(core: str | None = None) -> dict[str, Any]:
         "model_name": model_name_for_core(resolved_core),
         "device": "auto",
         "max_length": 128,
-        "batch_size": 2,
+        "batch_size": 12,
         "epochs": 4,
-        "learning_rate": 2e-5,
+        "learning_rate": 5e-6,
+        "head_learning_rate": 5e-5,
         "weight_decay": 0.01,
-        "g1_loss_weight": 0.0,
+        "g1_loss_weight": 0.2,
         "g2_loss_weight": 2.0,
-        "flag_loss_weight": 0.45,
+        "flag_loss_weight": 0.3,
+        "intent_family_loss_weight": 0.15,
+         "flag_max_pos_weight": 8.0,          # Stricter cap for lower-dimensional flags
+    "intent_family_max_pos_weight": 18.0, # Higher headroom for sparse child safety behaviors
         "train_split": "train",
-        "eval_split": "dev",
+        "eval_split": "test",
         "freeze_backbone": False,
         "unfreeze_top_layers": 0,
         "log_every_batches": 25,
-            "checkpoint_every_batches": 1000,
+        "checkpoint_every_batches": 500,
         "resume_if_available": False,
         "balanced_sampling": False,
         "gradient_clip_norm": 1.0,
@@ -277,7 +212,8 @@ def _training_defaults(core: str | None = None) -> dict[str, Any]:
         "train_intent_heads": False,
         "write_batch_debug": True,
         "batch_debug_loss_threshold": 9.0,
-        }
+        "seed": 42,
+    }
     if resolved_core == "smol":
         config["epochs"] = 2
         config["batch_size"] = 1
@@ -299,7 +235,11 @@ def _training_defaults(core: str | None = None) -> dict[str, Any]:
 
 
 def _checkpoint_is_compatible(state_dict: dict[str, Any]) -> bool:
-    return any(key.startswith("classifier.") for key in state_dict)
+    return any(
+        key.startswith(prefix)
+        for key in state_dict
+        for prefix in ("g1_classifier.", "g2_classifier.", "flag_classifier.", "classifier.")
+    )
 
 
 def _filter_compatible_state_dict(model: Any, state_dict: dict[str, Any]) -> tuple[dict[str, Any], list[str]]:
@@ -320,7 +260,7 @@ def _filter_compatible_state_dict(model: Any, state_dict: dict[str, Any]) -> tup
 def _build_training_metadata(
     rows: list[dict[str, Any]],
     train_rows: list[dict[str, Any]],
-    dev_rows: list[dict[str, Any]],
+    test_rows: list[dict[str, Any]],
     trained: bool,
     training_backend: str,
     core: str,
@@ -336,7 +276,7 @@ def _build_training_metadata(
         "codebook_fingerprint": _codebook_fingerprint(),
         "group_count": len({build_group_id(row) for row in rows}),
         "train_rows": len(train_rows),
-        "dev_rows": len(dev_rows),
+        "test_rows": len(test_rows),
         "transformers_available": bool(AutoModel and AutoTokenizer and torch and nn),
         "trained": trained,
         "training_backend": training_backend,
@@ -351,11 +291,95 @@ def _existing_training_metadata(model_dir: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def _checkpoint_payload_is_compatible(payload: dict[str, Any]) -> bool:
+    model_state = payload.get("model_state")
+    return isinstance(model_state, dict) and _checkpoint_is_compatible(model_state)
+
+
+def _optimizer_state_is_compatible(optimizer: Any, optimizer_state: dict[str, Any] | None) -> bool:
+    if not isinstance(optimizer_state, dict):
+        return False
+    saved_groups = optimizer_state.get("param_groups", [])
+    current_groups = optimizer.state_dict().get("param_groups", [])
+    if not (isinstance(saved_groups, list) and len(saved_groups) == len(current_groups)):
+        return False
+    saved_state = optimizer_state.get("state", {})
+    if len(optimizer.param_groups) != len(saved_groups):
+        return False
+    for live_group, saved_group in zip(optimizer.param_groups, saved_groups):
+        live_params = list(live_group.get("params", []))
+        saved_params = list(saved_group.get("params", []))
+        if len(live_params) != len(saved_params):
+            return False
+        for live_param, saved_param_id in zip(live_params, saved_params):
+            state_entry = saved_state.get(saved_param_id, {})
+            for value in state_entry.values():
+                if hasattr(value, "shape") and tuple(value.shape) != tuple(live_param.shape):
+                    return False
+    return True
+
+
+def _build_epoch_train_loader(
+    train_rows: list[dict[str, Any]],
+    tokenizer: Any,
+    label_vocab: dict[str, list[str]],
+    config: dict[str, Any],
+    epoch_index: int,
+) -> Any:
+    train_dataset = CanonicalSLMDataset(train_rows, tokenizer, label_vocab, config["max_length"])
+    sampler = None
+    generator = torch.Generator()
+    generator.manual_seed(int(config.get("seed", 42)) + int(epoch_index))
+    if bool(config.get("balanced_sampling", True)):
+        if WeightedRandomSampler is None:
+            raise RuntimeError("WeightedRandomSampler is not available for balanced SLM training.")
+        sample_weights = _compute_sample_weights(train_rows, label_vocab)
+        sampler = WeightedRandomSampler(
+            weights=torch.tensor(sample_weights, dtype=torch.double),
+            num_samples=len(sample_weights),
+            replacement=True,
+            generator=generator,
+        )
+    return DataLoader(
+        train_dataset,
+        batch_size=config["batch_size"],
+        shuffle=sampler is None,
+        sampler=sampler,
+        generator=None if sampler is not None else generator,
+    )
+
+
+def _save_training_checkpoint(
+    *,
+    path: Path,
+    model_state: dict[str, Any],
+    optimizer_state: dict[str, Any],
+    epoch_index: int,
+    batch_index: int,
+    best_test_loss: float | None,
+    config: dict[str, Any],
+    dataset_fingerprint_value: str,
+) -> None:
+    payload = {
+        "model_state": model_state,
+        "optimizer_state": optimizer_state,
+        "epoch_index": int(epoch_index),
+        "batch_index": int(batch_index),
+        "best_test_loss": best_test_loss,
+        "config": dict(config),
+        "dataset_fingerprint": dataset_fingerprint_value,
+    }
+    torch.save(payload, path)
+
+
 def _format_classifier_input(row: dict[str, Any]) -> str:
+    context = str(row.get("context", row.get("recent_context", "none")) or "none").strip()
+    question = str(row["question"]).strip()
     return (
-        "Classify G1 and G2 for child-safety gating.\n"
-        f"Recent context: {row.get('context', row.get('recent_context', 'none')) or 'none'}\n"
-        f"Question: {row['question']}"
+        "Classify the PRIMARY QUESTION for child-safety gating.\n"
+        "Use BACKGROUND CONTEXT only when it changes the meaning of the primary question.\n"
+        f"PRIMARY QUESTION: {question}\n"
+        f"BACKGROUND CONTEXT: {context if context else 'none'}"
     )
 
 
@@ -380,7 +404,13 @@ def _compute_class_weights(rows: list[dict[str, Any]], key: str, vocab: list[str
     return weights
 
 
-def _compute_list_multilabel_pos_weight(rows: list[dict[str, Any]], vocab: list[str], key: str) -> list[float]:
+def _compute_list_multilabel_pos_weight(
+    rows: list[dict[str, Any]],
+    vocab: list[str],
+    key: str,
+    *,
+    max_pos_weight: float | None = None,
+) -> list[float]:
     total = max(len(rows), 1)
     counts = {value: 0 for value in vocab}
     for row in rows:
@@ -396,7 +426,10 @@ def _compute_list_multilabel_pos_weight(rows: list[dict[str, Any]], vocab: list[
     for value in vocab:
         positives = max(counts[value], 1)
         negatives = max(total - positives, 1)
-        weights.append(negatives / positives)
+        weight = negatives / positives
+        if max_pos_weight is not None:
+            weight = min(weight, float(max_pos_weight))
+        weights.append(weight)
     return weights
 
 
@@ -426,7 +459,11 @@ class CanonicalSLMDataset(Dataset):  # pragma: no cover - exercised through trai
         self.tokenizer = tokenizer
         self.label_vocab = label_vocab
         self.max_length = max_length
+        self.g1_index = _index_map(label_vocab["g1"])
         self.g2_index = _index_map(label_vocab["g2"])
+        self.flag_vocab = list(label_vocab.get("flags", []))
+        self.intent_family_vocab = list(label_vocab.get("intent_families", []))
+        self.intent_family_index = _index_map(self.intent_family_vocab) if self.intent_family_vocab else {}
 
     def __len__(self) -> int:
         return len(self.rows)
@@ -443,7 +480,23 @@ class CanonicalSLMDataset(Dataset):  # pragma: no cover - exercised through trai
         return {
             "input_ids": encoded["input_ids"].squeeze(0),
             "attention_mask": encoded["attention_mask"].squeeze(0),
-            "labels": torch.tensor(self.g2_index[primary_g2_label(row.get("g2", []))], dtype=torch.long),
+            "g1_labels": torch.tensor(self.g1_index[str(row.get("g1", ""))], dtype=torch.long),
+            "g2_labels": torch.tensor(self.g2_index[primary_g2_label(row.get("g2", []))], dtype=torch.long),
+            "flag_labels": torch.tensor(
+                [1.0 if bool(row.get("flags", {}).get(flag, False)) else 0.0 for flag in self.flag_vocab],
+                dtype=torch.float32,
+            ),
+            "intent_family_labels": torch.tensor(
+                [
+                    1.0 if str(intent_family) in {str(item).strip() for item in row.get("intent_families", []) or []} else 0.0
+                    for intent_family in self.intent_family_vocab
+                ],
+                dtype=torch.float32,
+            ),
+            "intent_family_mask": torch.tensor(
+                1.0 if bool(row.get("intent_families_present", False)) and self.intent_family_vocab else 0.0,
+                dtype=torch.float32,
+            ),
             "sample_id": str(row.get("sample_id", "")),
             "question": str(row.get("question", "")),
             "context": str(row.get("context", "")),
@@ -453,8 +506,8 @@ class CanonicalSLMDataset(Dataset):  # pragma: no cover - exercised through trai
         }
 
 
-class SingleHeadSLMClassifier(nn.Module):  # pragma: no cover - exercised through training/inference path
-    def __init__(self, model_name: str, num_labels: int, *, local_files_only: bool = False) -> None:
+class MultiHeadSLMClassifier(nn.Module):  # pragma: no cover - exercised through training/inference path
+    def __init__(self, model_name: str, num_g1_labels: int, num_g2_labels: int, num_flags: int, num_intent_families: int, *, local_files_only: bool = False) -> None:
         super().__init__()
         self.backbone = AutoModel.from_pretrained(model_name, local_files_only=local_files_only)
         hidden_size = int(self.backbone.config.hidden_size)
@@ -464,7 +517,10 @@ class SingleHeadSLMClassifier(nn.Module):  # pragma: no cover - exercised throug
             or 0.1
         )
         self.dropout = nn.Dropout(dropout_prob)
-        self.classifier = nn.Linear(hidden_size, num_labels)
+        self.g1_classifier = nn.Linear(hidden_size, num_g1_labels)
+        self.g2_classifier = nn.Linear(hidden_size, num_g2_labels)
+        self.flag_classifier = nn.Linear(hidden_size, num_flags)
+        self.intent_family_classifier = nn.Linear(hidden_size, num_intent_families) if num_intent_families > 0 else None
         self.config = self.backbone.config
 
     def forward(
@@ -485,7 +541,14 @@ class SingleHeadSLMClassifier(nn.Module):  # pragma: no cover - exercised throug
         mask = attention_mask.unsqueeze(-1).to(hidden_state.dtype)
         pooled = (hidden_state * mask).sum(dim=1) / mask.sum(dim=1).clamp(min=1.0)
         pooled = self.dropout(pooled.float())
-        return {"logits": self.classifier(pooled)}
+        payload = {
+            "g1_logits": self.g1_classifier(pooled),
+            "g2_logits": self.g2_classifier(pooled),
+            "flag_logits": self.flag_classifier(pooled),
+        }
+        if self.intent_family_classifier is not None:
+            payload["intent_family_logits"] = self.intent_family_classifier(pooled)
+        return payload
 
 
 def _model_backbone(model: Any) -> Any:
@@ -561,29 +624,78 @@ def _load_rows_by_split(dataset_path: Path, split_name: str) -> list[dict[str, A
 def _compute_loss(
     outputs: dict[str, Any],
     batch: dict[str, Any],
+    g1_loss_fn: Any,
     g2_loss_fn: Any,
+    flag_loss_fn: Any,
+    intent_family_loss_fn: Any | None = None,
+    g1_loss_weight: float = 0.2,
     g2_loss_weight: float = 2.0,
+    flag_loss_weight: float = 0.45,
+    intent_family_loss_weight: float = 0.15,
 ) -> Any:
-    g2_loss = g2_loss_fn(outputs["logits"].float(), batch["labels"])
-    return float(g2_loss_weight) * g2_loss
+    g1_loss = g1_loss_fn(outputs["g1_logits"].float(), batch["g1_labels"])
+    g2_loss = g2_loss_fn(outputs["g2_logits"].float(), batch["g2_labels"])
+    flag_loss = flag_loss_fn(outputs["flag_logits"].float(), batch["flag_labels"])
+    total_loss = (
+        float(g1_loss_weight) * g1_loss
+        + float(g2_loss_weight) * g2_loss
+        + float(flag_loss_weight) * flag_loss
+    )
+    if intent_family_loss_fn is not None and "intent_family_logits" in outputs and batch["intent_family_labels"].numel():
+        intent_family_mask = batch["intent_family_mask"].float().view(-1, 1)
+        if float(intent_family_mask.sum().item()) > 0:
+            raw_loss = torch.nn.functional.binary_cross_entropy_with_logits(
+                outputs["intent_family_logits"].float(),
+                batch["intent_family_labels"],
+                pos_weight=getattr(intent_family_loss_fn, "pos_weight", None),
+                reduction="none",
+            )
+            valid_element_count = intent_family_mask.sum() * raw_loss.shape[1]
+            masked_loss = (raw_loss * intent_family_mask).sum() / valid_element_count.clamp(min=1.0)
+            total_loss = total_loss + float(intent_family_loss_weight) * masked_loss
+    return total_loss
 
 
 def _compute_loss_breakdown(
     outputs: dict[str, Any],
     batch: dict[str, Any],
+    g1_loss_fn: Any,
     g2_loss_fn: Any,
+    flag_loss_fn: Any,
+    intent_family_loss_fn: Any | None = None,
 ) -> dict[str, float]:
     payload = {
-        "g2_loss": float(g2_loss_fn(outputs["logits"].float(), batch["labels"]).item()),
+        "g1_loss": float(g1_loss_fn(outputs["g1_logits"].float(), batch["g1_labels"]).item()),
+        "g2_loss": float(g2_loss_fn(outputs["g2_logits"].float(), batch["g2_labels"]).item()),
+        "flag_loss": float(flag_loss_fn(outputs["flag_logits"].float(), batch["flag_labels"]).item()),
     }
+    if intent_family_loss_fn is not None and "intent_family_logits" in outputs and batch["intent_family_labels"].numel():
+        intent_family_mask = batch["intent_family_mask"].float().view(-1, 1)
+        if float(intent_family_mask.sum().item()) > 0:
+            raw_loss = torch.nn.functional.binary_cross_entropy_with_logits(
+                outputs["intent_family_logits"].float(),
+                batch["intent_family_labels"],
+                pos_weight=getattr(intent_family_loss_fn, "pos_weight", None),
+                reduction="none",
+            )
+            valid_element_count = intent_family_mask.sum() * raw_loss.shape[1]
+            payload["intent_family_loss"] = float(
+                ((raw_loss * intent_family_mask).sum() / valid_element_count.clamp(min=1.0)).item()
+            )
     return payload
 
 
 def _evaluate_loss(
     model: Any,
     loader: Any,
+    g1_loss_fn: Any,
     g2_loss_fn: Any,
+    flag_loss_fn: Any,
+    intent_family_loss_fn: Any | None = None,
+    g1_loss_weight: float = 0.2,
     g2_loss_weight: float = 2.0,
+    flag_loss_weight: float = 0.45,
+    intent_family_loss_weight: float = 0.15,
 ) -> float:
     model.eval()
     total_loss = 0.0
@@ -596,8 +708,14 @@ def _evaluate_loss(
             loss = _compute_loss(
                 outputs,
                 tensor_batch,
+                g1_loss_fn,
                 g2_loss_fn,
+                flag_loss_fn,
+                intent_family_loss_fn,
+                g1_loss_weight=g1_loss_weight,
                 g2_loss_weight=g2_loss_weight,
+                flag_loss_weight=flag_loss_weight,
+                intent_family_loss_weight=intent_family_loss_weight,
             )
             total_loss += float(loss.item())
             total_batches += 1
@@ -610,31 +728,60 @@ def _evaluate_gate_accuracy(model: Any, loader: Any, label_vocab: dict[str, list
     g2_correct = 0
     total = 0
     g1_predictions: Counter[str] = Counter()
+    g1_counts = {
+        label: {"tp": 0, "fp": 0, "fn": 0}
+        for label in label_vocab.get("g1", [])
+    }
     g2_predictions: Counter[str] = Counter()
     g2_counts = {
         label: {"tp": 0, "fp": 0, "fn": 0}
         for label in label_vocab.get("g2", [])
     }
+    flag_counts = {
+        label: {"tp": 0, "fp": 0, "fn": 0}
+        for label in label_vocab.get("flags", [])
+    }
+    intent_family_counts = {
+        label: {"tp": 0, "fp": 0, "fn": 0}
+        for label in label_vocab.get("intent_families", [])
+    }
+    flag_exact_match = 0
+    intent_family_exact_match = 0
+    intent_family_evaluated_total = 0
     with torch.no_grad():
         for batch in loader:
             device = _device(getattr(model.config, "_name_or_path", None))
             tensor_batch, meta_batch = _split_batch_for_training(batch)
             tensor_batch = {key: value.to(device) for key, value in tensor_batch.items()}
             outputs = model(input_ids=tensor_batch["input_ids"], attention_mask=tensor_batch["attention_mask"])
-            g2_pred = torch.argmax(outputs["logits"], dim=-1)
-            g2_correct += int((g2_pred == tensor_batch["labels"]).sum().item())
-            batch_size = int(tensor_batch["labels"].shape[0])
+            g1_pred = torch.argmax(outputs["g1_logits"], dim=-1)
+            g2_pred = torch.argmax(outputs["g2_logits"], dim=-1)
+            flag_pred = (torch.sigmoid(outputs["flag_logits"]) >= 0.5).to(dtype=tensor_batch["flag_labels"].dtype)
+            intent_family_pred = None
+            if "intent_family_logits" in outputs and "intent_family_labels" in tensor_batch and tensor_batch["intent_family_labels"].shape[-1] > 0:
+                intent_family_pred = (torch.sigmoid(outputs["intent_family_logits"]) >= 0.5).to(
+                    dtype=tensor_batch["intent_family_labels"].dtype
+                )
+            g1_correct += int((g1_pred == tensor_batch["g1_labels"]).sum().item())
+            g2_correct += int((g2_pred == tensor_batch["g2_labels"]).sum().item())
+            batch_size = int(tensor_batch["g2_labels"].shape[0])
             total += batch_size
-            predicted_g1_values = [
-                heuristic_classifier.classify_g1(heuristic_classifier.normalize(str(question)))
-                for question in meta_batch.get("question", [])
-            ]
+            predicted_g1_values = [label_vocab["g1"][int(idx)] for idx in g1_pred.cpu().tolist()]
             gold_g1_values = [str(value) for value in meta_batch.get("g1_text", [])]
-            g1_correct += sum(1 for pred, gold in zip(predicted_g1_values, gold_g1_values) if pred == gold)
             g2_pred_values = g2_pred.cpu().tolist()
-            g2_gold_values = tensor_batch["labels"].cpu().tolist()
+            g2_gold_values = tensor_batch["g2_labels"].cpu().tolist()
             for value in predicted_g1_values:
                 g1_predictions[str(value)] += 1
+            for pred_label, gold_label in zip(predicted_g1_values, gold_g1_values):
+                for label in g1_counts:
+                    gold = gold_label == label
+                    pred = pred_label == label
+                    if gold and pred:
+                        g1_counts[label]["tp"] += 1
+                    elif (not gold) and pred:
+                        g1_counts[label]["fp"] += 1
+                    elif gold and (not pred):
+                        g1_counts[label]["fn"] += 1
             for value in g2_pred_values:
                 g2_predictions[str(value)] += 1
             for pred_idx, gold_idx in zip(g2_pred_values, g2_gold_values):
@@ -649,25 +796,106 @@ def _evaluate_gate_accuracy(model: Any, loader: Any, label_vocab: dict[str, list
                         g2_counts[label]["fp"] += 1
                     elif gold and (not pred):
                         g2_counts[label]["fn"] += 1
-    g2_f1_values: list[float] = []
-    weighted_f1_numerator = 0.0
-    weighted_support = 0
-    for label, counts in g2_counts.items():
-        tp = counts["tp"]
-        fp = counts["fp"]
-        fn = counts["fn"]
-        precision = tp / (tp + fp) if (tp + fp) else 0.0
-        recall = tp / (tp + fn) if (tp + fn) else 0.0
-        f1 = (2 * precision * recall / (precision + recall)) if (precision + recall) else 0.0
-        support = tp + fn
-        g2_f1_values.append(f1)
-        weighted_f1_numerator += f1 * support
-        weighted_support += support
+            if flag_counts:
+                flag_gold = tensor_batch["flag_labels"].cpu().tolist()
+                flag_pred_values = flag_pred.cpu().tolist()
+                for pred_row, gold_row in zip(flag_pred_values, flag_gold):
+                    if pred_row == gold_row:
+                        flag_exact_match += 1
+                    for idx, label in enumerate(label_vocab["flags"]):
+                        gold = bool(gold_row[idx])
+                        pred = bool(pred_row[idx])
+                        if gold and pred:
+                            flag_counts[label]["tp"] += 1
+                        elif (not gold) and pred:
+                            flag_counts[label]["fp"] += 1
+                        elif gold and (not pred):
+                            flag_counts[label]["fn"] += 1
+            if intent_family_counts and intent_family_pred is not None:
+                intent_gold = tensor_batch["intent_family_labels"].cpu().tolist()
+                intent_pred_values = intent_family_pred.cpu().tolist()
+                intent_mask = tensor_batch["intent_family_mask"].cpu().tolist()
+                for pred_row, gold_row, mask_value in zip(intent_pred_values, intent_gold, intent_mask):
+                    if not bool(mask_value):
+                        continue
+                    intent_family_evaluated_total += 1
+                    if pred_row == gold_row:
+                        intent_family_exact_match += 1
+                    for idx, label in enumerate(label_vocab["intent_families"]):
+                        gold = bool(gold_row[idx])
+                        pred = bool(pred_row[idx])
+                        if gold and pred:
+                            intent_family_counts[label]["tp"] += 1
+                        elif (not gold) and pred:
+                            intent_family_counts[label]["fp"] += 1
+                        elif gold and (not pred):
+                            intent_family_counts[label]["fn"] += 1
+    def _multiclass_summary(counts_map: dict[str, dict[str, int]]) -> dict[str, float]:
+        f1_values: list[float] = []
+        weighted_f1_numerator = 0.0
+        weighted_support = 0
+        for counts in counts_map.values():
+            tp = counts["tp"]
+            fp = counts["fp"]
+            fn = counts["fn"]
+            precision = tp / (tp + fp) if (tp + fp) else 0.0
+            recall = tp / (tp + fn) if (tp + fn) else 0.0
+            f1 = (2 * precision * recall / (precision + recall)) if (precision + recall) else 0.0
+            support = tp + fn
+            f1_values.append(f1)
+            weighted_f1_numerator += f1 * support
+            weighted_support += support
+        return {
+            "macro_f1": (sum(f1_values) / len(f1_values)) if f1_values else 0.0,
+            "weighted_f1": (weighted_f1_numerator / weighted_support) if weighted_support else 0.0,
+        }
+    g2_summary = _multiclass_summary(g2_counts)
+    g1_summary = _multiclass_summary(g1_counts)
+    def _multilabel_summary(counts_map: dict[str, dict[str, int]], exact_match_count: int, evaluated_total: int) -> dict[str, float]:
+        if not counts_map:
+            return {
+                "exact_match_accuracy": 0.0,
+                "micro_precision": 0.0,
+                "micro_recall": 0.0,
+                "micro_f1": 0.0,
+                "macro_f1": 0.0,
+            }
+        macro_f1_values: list[float] = []
+        total_tp = 0
+        total_fp = 0
+        total_fn = 0
+        for counts in counts_map.values():
+            tp = counts["tp"]
+            fp = counts["fp"]
+            fn = counts["fn"]
+            total_tp += tp
+            total_fp += fp
+            total_fn += fn
+            precision = tp / (tp + fp) if (tp + fp) else 0.0
+            recall = tp / (tp + fn) if (tp + fn) else 0.0
+            macro_f1_values.append((2 * precision * recall / (precision + recall)) if (precision + recall) else 0.0)
+        micro_precision = total_tp / (total_tp + total_fp) if (total_tp + total_fp) else 0.0
+        micro_recall = total_tp / (total_tp + total_fn) if (total_tp + total_fn) else 0.0
+        micro_f1 = (
+            2 * micro_precision * micro_recall / (micro_precision + micro_recall)
+            if (micro_precision + micro_recall) else 0.0
+        )
+        return {
+            "exact_match_accuracy": (exact_match_count / evaluated_total) if evaluated_total else 0.0,
+            "micro_precision": micro_precision,
+            "micro_recall": micro_recall,
+            "micro_f1": micro_f1,
+            "macro_f1": (sum(macro_f1_values) / len(macro_f1_values)) if macro_f1_values else 0.0,
+        }
     return {
         "g1_accuracy": (g1_correct / total) if total else 0.0,
+        "g1_macro_f1": g1_summary["macro_f1"],
+        "g1_weighted_f1": g1_summary["weighted_f1"],
         "g2_accuracy": (g2_correct / total) if total else 0.0,
-        "g2_macro_f1": (sum(g2_f1_values) / len(g2_f1_values)) if g2_f1_values else 0.0,
-        "g2_weighted_f1": (weighted_f1_numerator / weighted_support) if weighted_support else 0.0,
+        "g2_macro_f1": g2_summary["macro_f1"],
+        "g2_weighted_f1": g2_summary["weighted_f1"],
+        "flags": _multilabel_summary(flag_counts, flag_exact_match, total),
+        "intent_families": _multilabel_summary(intent_family_counts, intent_family_exact_match, intent_family_evaluated_total),
         "total_rows": total,
         "g1_predicted_indices": dict(g1_predictions),
         "g2_predicted_indices": dict(g2_predictions),
@@ -728,9 +956,14 @@ def train_slm_classifier(
     freeze_backbone: bool | None = None,
     unfreeze_top_layers: int | None = None,
     learning_rate: float | None = None,
+    head_learning_rate: float | None = None,
     g1_loss_weight: float | None = None,
     g2_loss_weight: float | None = None,
     flag_loss_weight: float | None = None,
+    intent_family_loss_weight: float | None = None,
+    flag_max_pos_weight: float | None = None,
+    intent_family_max_pos_weight: float | None = None,
+    train_intent_heads: bool | None = None,
     resume_if_available: bool | None = None,
     train_on_all_data: bool = False,
     checkpoint_every_batches: int | None = None,
@@ -740,7 +973,7 @@ def train_slm_classifier(
     model_dir = model_dir or model_dir_for_core(resolved_core)
     rows: list[dict[str, Any]] = []
     train_rows: list[dict[str, Any]] = []
-    dev_rows: list[dict[str, Any]] = []
+    test_rows: list[dict[str, Any]] = []
     if not dataset_path.exists():
         try:
             from training.slm_classifier.source_normalizer import write_canonical_jsonl_with_metadata
@@ -755,20 +988,20 @@ def train_slm_classifier(
     if rows:
         if train_on_all_data:
             train_rows = list(rows)
-            dev_rows = []
+            test_rows = []
         else:
             splits = load_dataset_splits()
             train_rows = select_rows_for_split(rows, "train", splits)
-            dev_rows = select_rows_for_split(rows, "dev", splits)
+            test_rows = select_rows_for_split(rows, "test", splits)
             if not train_rows:
                 raise ValueError(
                     "No train rows were selected for training. Rebuild dataset splits or pass --train-on-all-data explicitly."
                 )
     elif enable_training:
         raise ValueError(f"No rows available for SLM training: {dataset_path}")
-    if enable_training and not train_on_all_data and not dev_rows:
+    if enable_training and not train_on_all_data and not test_rows:
         raise ValueError(
-            "No dev rows were selected for training. Rebuild dataset splits or pass --train-on-all-data explicitly."
+            "No test rows were selected for training. Rebuild dataset splits or pass --train-on-all-data explicitly."
         )
     model_dir.mkdir(parents=True, exist_ok=True)
     ensure_label_vocab(model_dir=model_dir, core=resolved_core)
@@ -787,12 +1020,22 @@ def train_slm_classifier(
         config["unfreeze_top_layers"] = max(int(unfreeze_top_layers), 0)
     if learning_rate is not None:
         config["learning_rate"] = float(learning_rate)
+    if head_learning_rate is not None:
+        config["head_learning_rate"] = float(head_learning_rate)
     if g1_loss_weight is not None:
         config["g1_loss_weight"] = float(g1_loss_weight)
     if g2_loss_weight is not None:
         config["g2_loss_weight"] = float(g2_loss_weight)
     if flag_loss_weight is not None:
         config["flag_loss_weight"] = float(flag_loss_weight)
+    if flag_max_pos_weight is not None:
+        config["flag_max_pos_weight"] = float(flag_max_pos_weight)
+    if intent_family_max_pos_weight is not None:
+        config["intent_family_max_pos_weight"] = float(intent_family_max_pos_weight)
+    if intent_family_loss_weight is not None:
+        config["intent_family_loss_weight"] = float(intent_family_loss_weight)
+    if train_intent_heads is not None:
+        config["train_intent_heads"] = bool(train_intent_heads)
     if resume_if_available is not None:
         config["resume_if_available"] = bool(resume_if_available)
     if checkpoint_every_batches is not None:
@@ -804,7 +1047,7 @@ def train_slm_classifier(
 
     trained = False
     training_backend = "metadata_only"
-    metadata = _build_training_metadata(rows, train_rows, dev_rows, trained=False, training_backend=training_backend, core=resolved_core)
+    metadata = _build_training_metadata(rows, train_rows, test_rows, trained=False, training_backend=training_backend, core=resolved_core)
 
     if enable_training:
         if not (AutoModel and AutoTokenizer and torch and nn and DataLoader):
@@ -822,34 +1065,28 @@ def train_slm_classifier(
             tokenizer.pad_token = tokenizer.eos_token
         dataset_start = time.perf_counter()
         print(f"{log_prefix} init: building_datasets")
-        train_dataset = CanonicalSLMDataset(train_rows, tokenizer, label_vocab, config["max_length"])
-        dev_dataset = CanonicalSLMDataset(dev_rows, tokenizer, label_vocab, config["max_length"])
+        test_dataset = CanonicalSLMDataset(test_rows, tokenizer, label_vocab, config["max_length"])
         batch_debug_path = paths["batch_debug"]
         if bool(config.get("write_batch_debug", True)):
             batch_debug_path.write_text("", encoding="utf-8")
-        sampler = None
         if bool(config.get("balanced_sampling", True)):
-            if WeightedRandomSampler is None:
-                raise RuntimeError("WeightedRandomSampler is not available for balanced SLM training.")
-            sample_weights = _compute_sample_weights(train_rows, label_vocab)
-            sampler = WeightedRandomSampler(
-                weights=torch.tensor(sample_weights, dtype=torch.double),
-                num_samples=len(sample_weights),
-                replacement=True,
-            )
-            print(f"{log_prefix} init: balanced_sampler_ready samples={len(sample_weights)}")
-        train_loader = DataLoader(train_dataset, batch_size=config["batch_size"], shuffle=sampler is None, sampler=sampler)
-        dev_loader = DataLoader(dev_dataset, batch_size=config["batch_size"], shuffle=False)
+            print(f"{log_prefix} init: balanced_sampler_ready samples={len(train_rows)}")
+        train_loader = _build_epoch_train_loader(train_rows, tokenizer, label_vocab, config, epoch_index=0)
+        test_loader = DataLoader(test_dataset, batch_size=config["batch_size"], shuffle=False)
         print(
             f"{log_prefix} init: dataloaders_ready train_batches={len(train_loader)} "
-            f"dev_batches={len(dev_loader)} elapsed={time.perf_counter() - dataset_start:.2f}s"
+            f"test_batches={len(test_loader)} elapsed={time.perf_counter() - dataset_start:.2f}s"
         )
         model_start = time.perf_counter()
         print(f"{log_prefix} init: loading_model model={config['model_name']}")
         print(f"{log_prefix} init: constructing_model_backbone")
-        model = SingleHeadSLMClassifier(
+        intent_head_enabled = bool(config.get("train_intent_heads", False))
+        model = MultiHeadSLMClassifier(
             config["model_name"],
-            num_labels=len(label_vocab["g2"]),
+            num_g1_labels=len(label_vocab["g1"]),
+            num_g2_labels=len(label_vocab["g2"]),
+            num_flags=len(label_vocab["flags"]),
+            num_intent_families=len(label_vocab.get("intent_families", [])) if intent_head_enabled else 0,
             local_files_only=False,
         )
         _apply_tokenizer_padding_to_model(model, tokenizer)
@@ -894,15 +1131,87 @@ def train_slm_classifier(
                 dtype=torch.float32,
                 device=device,
             )
+        g1_weights = None
+        if bool(config.get("use_class_weights", False)):
+            g1_weights = torch.tensor(
+                _compute_class_weights(train_rows, "g1", label_vocab["g1"]),
+                dtype=torch.float32,
+                device=device,
+            )
+        flag_weights = torch.tensor(
+            _compute_list_multilabel_pos_weight(
+                train_rows,
+                label_vocab["flags"],
+                "flags",
+                max_pos_weight=config.get("flag_max_pos_weight"),
+            ),
+            dtype=torch.float32,
+            device=device,
+        ) if label_vocab.get("flags") else None
+        g1_loss_fn = torch.nn.CrossEntropyLoss(weight=g1_weights)
         g2_loss_fn = torch.nn.CrossEntropyLoss(weight=g2_weights)
-        trainable_parameters = [parameter for parameter in model.parameters() if parameter.requires_grad]
-        optimizer = torch.optim.AdamW(trainable_parameters, lr=config["learning_rate"], weight_decay=config["weight_decay"])
+        flag_loss_fn = torch.nn.BCEWithLogitsLoss(pos_weight=flag_weights)
+        intent_family_weights = torch.tensor(
+            _compute_list_multilabel_pos_weight(
+                train_rows,
+                label_vocab.get("intent_families", []),
+                "intent_families",
+                max_pos_weight=config.get("intent_family_max_pos_weight"),
+            ),
+            dtype=torch.float32,
+            device=device,
+        ) if intent_head_enabled and label_vocab.get("intent_families") else None
+        intent_family_loss_fn = (
+            torch.nn.BCEWithLogitsLoss(pos_weight=intent_family_weights)
+            if intent_head_enabled and label_vocab.get("intent_families") else None
+        )
+        backbone_parameters = [
+            parameter for parameter in _model_backbone(model).parameters()
+            if parameter.requires_grad
+        ]
+        head_modules = [
+            model.g1_classifier,
+            model.g2_classifier,
+            model.flag_classifier,
+        ]
+        if getattr(model, "intent_family_classifier", None) is not None:
+            head_modules.append(model.intent_family_classifier)
+        head_parameters = [
+            parameter
+            for module in head_modules
+            for parameter in module.parameters()
+            if parameter.requires_grad
+        ]
+        optimizer_param_groups: list[dict[str, Any]] = []
+        if backbone_parameters:
+            optimizer_param_groups.append(
+                {
+                    "params": backbone_parameters,
+                    "lr": float(config["learning_rate"]),
+                }
+            )
+        if head_parameters:
+            optimizer_param_groups.append(
+                {
+                    "params": head_parameters,
+                    "lr": float(config.get("head_learning_rate", config["learning_rate"])),
+                }
+            )
+        optimizer = torch.optim.AdamW(
+            optimizer_param_groups,
+            weight_decay=config["weight_decay"],
+        )
+        trainable_parameters = backbone_parameters + head_parameters
 
         best_dev_loss = None
+        resume_epoch_index = 0
+        resume_batch_index = 0
         print(
             f"{log_prefix} training start: device={device.type} train_rows={len(train_rows)} "
-            f"dev_rows={len(dev_rows)} batch_size={config['batch_size']} "
+            f"test_rows={len(test_rows)} batch_size={config['batch_size']} "
             f"max_length={config['max_length']} requested_device={config.get('device', 'auto')} "
+            f"backbone_learning_rate={config['learning_rate']} "
+            f"head_learning_rate={config.get('head_learning_rate', config['learning_rate'])} "
             f"freeze_backbone={config.get('freeze_backbone', True)} "
             f"unfreeze_top_layers={config.get('unfreeze_top_layers', 0)} "
             f"resume_if_available={config.get('resume_if_available', True)} "
@@ -911,16 +1220,54 @@ def train_slm_classifier(
         )
         print(
             f"{log_prefix} dataset summary: total_rows={len(rows)} "
-            f"train_rows={len(train_rows)} dev_rows={len(dev_rows)} "
+            f"train_rows={len(train_rows)} test_rows={len(test_rows)} "
             f"dataset_fingerprint={metadata['dataset_fingerprint']}"
         )
+        if bool(config.get("resume_if_available", True)) and paths["checkpoint"].exists():
+            checkpoint_payload = torch.load(paths["checkpoint"], map_location=device)
+            if _checkpoint_payload_is_compatible(checkpoint_payload):
+                filtered_state_dict, skipped_state_keys = _filter_compatible_state_dict(model, checkpoint_payload["model_state"])
+                model.load_state_dict(filtered_state_dict, strict=False)
+                optimizer_state = checkpoint_payload.get("optimizer_state")
+                if isinstance(optimizer_state, dict):
+                    print(
+                        f"{log_prefix} init: skipped_optimizer_state_restore "
+                        "model weights were resumed, but optimizer state restore is disabled for compatibility."
+                    )
+                best_dev_loss = checkpoint_payload.get("best_test_loss")
+                checkpoint_dataset_fingerprint = str(checkpoint_payload.get("dataset_fingerprint", ""))
+                current_dataset_fingerprint = str(metadata["dataset_fingerprint"])
+                if checkpoint_dataset_fingerprint and checkpoint_dataset_fingerprint != current_dataset_fingerprint:
+                    resume_epoch_index = 0
+                    resume_batch_index = 0
+                    print(
+                        f"{log_prefix} init: checkpoint_dataset_changed "
+                        f"saved_fingerprint={checkpoint_dataset_fingerprint} "
+                        f"current_fingerprint={current_dataset_fingerprint} "
+                        "reusing model weights but resetting epoch/batch progress."
+                    )
+                else:
+                    resume_epoch_index = int(checkpoint_payload.get("epoch_index", 0))
+                    resume_batch_index = int(checkpoint_payload.get("batch_index", 0))
+                resumed_from_existing = True
+                print(
+                    f"{log_prefix} init: resumed_from_training_checkpoint path={paths['checkpoint']} "
+                    f"epoch={resume_epoch_index + 1} batch={resume_batch_index}"
+                )
+                if skipped_state_keys:
+                    print(f"{log_prefix} init: skipped_mismatched_checkpoint_keys count={len(skipped_state_keys)}")
+            else:
+                print(f"{log_prefix} init: skipped_resume_incompatible_training_checkpoint path={paths['checkpoint']}")
         print(f"{log_prefix} init: startup_complete elapsed={time.perf_counter() - startup_time:.2f}s")
-        for epoch_index in range(config["epochs"]):
+        for epoch_index in range(resume_epoch_index, config["epochs"]):
+            train_loader = _build_epoch_train_loader(train_rows, tokenizer, label_vocab, config, epoch_index=epoch_index)
             model.train()
             epoch_start = time.perf_counter()
             running_loss = 0.0
             print(f"{log_prefix} epoch {epoch_index + 1}/{config['epochs']} start")
             for batch_index, batch in enumerate(train_loader, start=1):
+                if epoch_index == resume_epoch_index and resume_batch_index and batch_index <= resume_batch_index:
+                    continue
                 batch_start = time.perf_counter()
                 tensor_batch, meta_batch = _split_batch_for_training(batch)
                 tensor_batch = {key: value.to(device) for key, value in tensor_batch.items()}
@@ -929,12 +1276,18 @@ def train_slm_classifier(
                 loss = _compute_loss(
                     outputs,
                     tensor_batch,
+                    g1_loss_fn,
                     g2_loss_fn,
+                    flag_loss_fn,
+                    intent_family_loss_fn,
+                    g1_loss_weight=float(config.get("g1_loss_weight", 0.2)),
                     g2_loss_weight=float(config.get("g2_loss_weight", 2.0)),
+                    flag_loss_weight=float(config.get("flag_loss_weight", 0.45)),
+                    intent_family_loss_weight=float(config.get("intent_family_loss_weight", 0.15)),
                 )
                 if not torch.isfinite(loss):
-                    logits = outputs["logits"].detach()
-                    labels = tensor_batch["labels"].detach()
+                    logits = outputs["g2_logits"].detach()
+                    labels = tensor_batch["g2_labels"].detach()
                     print(
                         f"{log_prefix} epoch {epoch_index + 1} batch {batch_index}/{len(train_loader)} "
                         f"non_finite_loss_detected loss={loss.item()}"
@@ -965,13 +1318,18 @@ def train_slm_classifier(
                         loss_breakdown = _compute_loss_breakdown(
                             outputs,
                             tensor_batch,
+                            g1_loss_fn,
                             g2_loss_fn,
+                            flag_loss_fn,
+                            intent_family_loss_fn,
                         )
                         row_count = len(meta_batch.get("sample_id", []))
-                        g2_logits = outputs["logits"].detach().cpu()
+                        g2_logits = outputs["g2_logits"].detach().cpu()
                         g2_probs = torch.softmax(g2_logits, dim=-1).tolist()
-                        g2_pred_indices = torch.argmax(outputs["logits"], dim=-1).detach().cpu().tolist()
-                        g2_gold_indices = tensor_batch["labels"].detach().cpu().tolist()
+                        g1_pred_indices = torch.argmax(outputs["g1_logits"], dim=-1).detach().cpu().tolist()
+                        flag_probs = torch.sigmoid(outputs["flag_logits"].detach().cpu()).tolist()
+                        g2_pred_indices = torch.argmax(outputs["g2_logits"], dim=-1).detach().cpu().tolist()
+                        g2_gold_indices = tensor_batch["g2_labels"].detach().cpu().tolist()
                         g2_confusion_counter: Counter[str] = Counter()
                         debug_rows: list[dict[str, Any]] = []
                         for idx in range(row_count):
@@ -993,11 +1351,22 @@ def train_slm_classifier(
                                     "question": str(meta_batch.get("question", [""])[idx]),
                                     "context": str(meta_batch.get("context", [""])[idx]),
                                     "gold_g1": str(meta_batch.get("g1_text", [""])[idx]),
-                                    "pred_g1": str(heuristic_classifier.classify_g1(heuristic_classifier.normalize(str(meta_batch.get("question", [""])[idx])))),
+                                    "pred_g1": str(label_vocab["g1"][g1_pred_indices[idx]]),
                                     "gold_g2": gold_g2,
                                     "pred_g2": pred_g2,
                                     "g2_top3": top3_scores,
                                     "gold_g2_probability": float(g2_probs[idx][g2_gold_indices[idx]]),
+                                    "flag_scores": {
+                                        str(flag): float(flag_probs[idx][flag_idx])
+                                        for flag_idx, flag in enumerate(label_vocab["flags"])
+                                    },
+                                    "intent_family_scores": {
+                                        str(intent_family): float(score)
+                                        for intent_family, score in zip(
+                                            label_vocab.get("intent_families", []),
+                                            torch.sigmoid(outputs["intent_family_logits"].detach().cpu())[idx].tolist(),
+                                        )
+                                    } if "intent_family_logits" in outputs else {},
                                     "flags": json.loads(str(meta_batch.get("flags_json", ["{}"])[idx])),
                                 }
                             )
@@ -1016,6 +1385,16 @@ def train_slm_classifier(
                         )
                 checkpoint_every_batches = int(config.get("checkpoint_every_batches", 0) or 0)
                 if checkpoint_every_batches > 0 and batch_index % checkpoint_every_batches == 0:
+                    _save_training_checkpoint(
+                        path=paths["checkpoint"],
+                        model_state=model.state_dict(),
+                        optimizer_state=optimizer.state_dict(),
+                        epoch_index=epoch_index,
+                        batch_index=batch_index,
+                        best_test_loss=best_dev_loss,
+                        config=config,
+                        dataset_fingerprint_value=metadata["dataset_fingerprint"],
+                    )
                     torch.save(model.state_dict(), paths["state"])
                     latest_path = model_dir / "pytorch_model.latest.bin"
                     torch.save(model.state_dict(), latest_path)
@@ -1023,44 +1402,64 @@ def train_slm_classifier(
                         f"{log_prefix} checkpoint saved: batch={batch_index}/{len(train_loader)} "
                         f"path={paths['state']} latest={latest_path}"
                     )
-            dev_loss = _evaluate_loss(
+            test_loss = _evaluate_loss(
                 model,
-                dev_loader,
+                test_loader,
+                g1_loss_fn,
                 g2_loss_fn,
+                flag_loss_fn,
+                intent_family_loss_fn,
+                g1_loss_weight=float(config.get("g1_loss_weight", 0.2)),
                 g2_loss_weight=float(config.get("g2_loss_weight", 2.0)),
-            ) if len(dev_rows) else 0.0
+                flag_loss_weight=float(config.get("flag_loss_weight", 0.45)),
+                intent_family_loss_weight=float(config.get("intent_family_loss_weight", 0.15)),
+            ) if len(test_rows) else 0.0
             print(
                 f"{log_prefix} epoch {epoch_index + 1} summary "
                 f"train_avg_loss={running_loss / max(len(train_loader), 1):.4f} "
-                f"dev_loss={dev_loss:.4f} elapsed={time.perf_counter() - epoch_start:.2f}s"
+                f"test_loss={test_loss:.4f} elapsed={time.perf_counter() - epoch_start:.2f}s"
             )
-            should_checkpoint = not len(dev_rows) or best_dev_loss is None or dev_loss < best_dev_loss
+            should_checkpoint = not len(test_rows) or best_dev_loss is None or test_loss < best_dev_loss
             if should_checkpoint:
-                best_dev_loss = dev_loss
+                best_dev_loss = test_loss
+                _save_training_checkpoint(
+                    path=paths["checkpoint"],
+                    model_state=model.state_dict(),
+                    optimizer_state=optimizer.state_dict(),
+                    epoch_index=epoch_index + 1,
+                    batch_index=0,
+                    best_test_loss=best_dev_loss,
+                    config=config,
+                    dataset_fingerprint_value=metadata["dataset_fingerprint"],
+                )
                 torch.save(model.state_dict(), paths["state"])
                 print(f"{log_prefix} checkpoint saved: {paths['state']}")
 
         tokenizer.save_pretrained(model_dir)
         trained = paths["state"].exists()
         training_backend = "transformers"
-        metadata = _build_training_metadata(rows, train_rows, dev_rows, trained=trained, training_backend=training_backend, core=resolved_core)
-        metadata["dev_loss"] = best_dev_loss
+        metadata = _build_training_metadata(rows, train_rows, test_rows, trained=trained, training_backend=training_backend, core=resolved_core)
+        metadata["test_loss"] = best_dev_loss
         metadata["device"] = device.type
         metadata["freeze_backbone"] = bool(config.get("freeze_backbone", True))
         metadata["unfreeze_top_layers"] = int(config.get("unfreeze_top_layers", 0) or 0)
         metadata["actual_unfrozen_top_layers"] = int(actual_unfrozen_top_layers)
         metadata["resume_if_available"] = bool(config.get("resume_if_available", True))
         metadata["balanced_sampling"] = bool(config.get("balanced_sampling", False))
-        metadata["train_intent_heads"] = False
+        metadata["train_intent_heads"] = bool(config.get("train_intent_heads", False))
         metadata["g1_loss_weight"] = float(config.get("g1_loss_weight", 1.0))
         metadata["g2_loss_weight"] = float(config.get("g2_loss_weight", 2.0))
         metadata["flag_loss_weight"] = float(config.get("flag_loss_weight", 0.45))
+        metadata["intent_family_loss_weight"] = float(config.get("intent_family_loss_weight", 0.15))
+        metadata["flag_max_pos_weight"] = float(config.get("flag_max_pos_weight", 10.0))
+        metadata["intent_family_max_pos_weight"] = float(config.get("intent_family_max_pos_weight", 10.0))
+        metadata["head_learning_rate"] = float(config.get("head_learning_rate", config["learning_rate"]))
         metadata["train_on_all_data"] = bool(config.get("train_on_all_data", False))
         metadata["resumed_from_existing"] = resumed_from_existing
         metadata["flags_trained"] = False
-        if len(dev_rows):
-            gate_eval = _evaluate_gate_accuracy(model, dev_loader, label_vocab)
-            metadata["dev_gate_metrics"] = gate_eval
+        if len(test_rows):
+            gate_eval = _evaluate_gate_accuracy(model, test_loader, label_vocab)
+            metadata["test_gate_metrics"] = gate_eval
             g2_predicted = gate_eval.get("g2_predicted_indices", {})
             dominant_g2_share = 0.0
             if gate_eval.get("total_rows", 0):
@@ -1137,9 +1536,12 @@ def _load_trained_model_on_device(model_dir: Path, package: LoadedSLMPackage, de
     previous_hf_offline = os.environ.get("HF_HUB_OFFLINE")
     os.environ["HF_HUB_OFFLINE"] = "1"
     try:
-        model = SingleHeadSLMClassifier(
+        model = MultiHeadSLMClassifier(
             package.training_config["model_name"],
-            num_labels=len(package.label_vocab["g2"]),
+            num_g1_labels=len(package.label_vocab["g1"]),
+            num_g2_labels=len(package.label_vocab["g2"]),
+            num_flags=len(package.label_vocab["flags"]),
+            num_intent_families=len(package.label_vocab.get("intent_families", [])),
             local_files_only=True,
         )
         _apply_tokenizer_padding_to_model(model, tokenizer)
@@ -1164,18 +1566,17 @@ def _decision_from_predictions(
     model_dir: Path,
     g1: str,
     primary_g2: str,
-    g2_values: list[str],
     intent_evidence: dict[str, Any],
     learned_intent: dict[str, Any],
     threshold: float,
 ) -> GuardrailDecision:
-    age_band = str(normalized.get("resolved_age_band") or normalized.get("child_profile", {}).get("age_group", "11-12"))
-    language = str(normalized.get("child_profile", {}).get("language", "en"))
+    age_band = "11-12"
+    language = str(normalized.get("language", "en"))
     question = str(normalized.get("text", "")).strip()
     topic = heuristic_classifier.classify_topic(heuristic_classifier.normalize(question))
     recent_context_items = [str(item) for item in normalized.get("recent_context", [])]
     recent_context = " ".join(item for item in recent_context_items if item.strip()) or "none"
-    g2_list = g2_values or ["GENERIC_INTENT"]
+    g2_list = [primary_g2 or "GENERIC_INTENT"]
     classifier_output = {
         "schema_version": "2.0.0",
         "question": question,
@@ -1208,7 +1609,7 @@ def _decision_from_predictions(
         g2_reasons=heuristic_classifier.build_g2_reasons(g1, g2_list, question, intent_evidence),
         gl_signals={},
         active_gls=[],
-        gates={"G1": g1, "G2": primary_g2, "G2_all": g2_list, "G3": g3, "G4": g4},
+        gates={"G1": g1, "G2": primary_g2, "G3": g3, "G4": g4},
         decision=decision_fields,
         policy_bucket="allowed" if decision_fields["allow_llm"] else "soft_block",
         safety_category=primary_g2,
@@ -1222,7 +1623,7 @@ def _decision_from_predictions(
         ),
         guideline_tags=[],
         signals={"topic": topic, "g2_labels": ";".join(g2_list)},
-        gate_values={"topic": topic, "G1": g1, "G2": primary_g2, "G2_all": g2_list, "G3": g3, "G4": g4},
+        gate_values={"topic": topic, "G1": g1, "G2": primary_g2, "G3": g3, "G4": g4},
         prompt_contract=contract,
         classifier_metadata={
             "backend": "slm",
@@ -1317,7 +1718,7 @@ def build_decision_from_slm(
     text = _format_classifier_input(
         {
             "question": str(normalized.get("text", "")).strip(),
-            "language": str(normalized.get("child_profile", {}).get("language", "en")),
+            "language": str(normalized.get("language", "en")),
             "recent_context": " ".join(str(item) for item in normalized.get("recent_context", [])) or "none",
         }
     )
@@ -1334,46 +1735,52 @@ def build_decision_from_slm(
     )
     encoded = {key: value.to(inference_device) for key, value in encoded.items()}
     outputs, inference_device = _run_model_with_device_fallback(model, encoded, resolved_dir, package)
-    g2_primary_probs = torch.softmax(outputs["logits"], dim=-1).squeeze(0).cpu().tolist()
-    primary_g2, g2_values = _decode_g2_predictions(
-        package.label_vocab,
-        g2_primary_probs,
-        threshold=threshold,
+    g1_probs = torch.softmax(outputs["g1_logits"], dim=-1).squeeze(0).cpu().tolist()
+    g2_primary_probs = torch.softmax(outputs["g2_logits"], dim=-1).squeeze(0).cpu().tolist()
+    flag_probs = torch.sigmoid(outputs["flag_logits"]).squeeze(0).cpu().tolist()
+    intent_family_probs = (
+        torch.sigmoid(outputs["intent_family_logits"]).squeeze(0).cpu().tolist()
+        if "intent_family_logits" in outputs else []
     )
+    primary_g2 = _decode_g2_predictions(package.label_vocab, g2_primary_probs)
     recent_context = " ".join(str(item) for item in normalized.get("recent_context", [])) or ""
     intent_evidence = runtime_contracts.match_intent_lexicon(
         str(normalized.get("text", "")).strip(),
         recent_context,
     )
-    heuristic_g2_values = heuristic_classifier.classify_g2(
-        heuristic_classifier.normalize(str(normalized.get("text", "")).strip()),
-        recent_context,
-    ) or ["GENERIC_INTENT"]
     flag_vocab = list(package.label_vocab.get("flags", []))
+    predicted_g1 = package.label_vocab["g1"][max(range(len(g1_probs)), key=lambda idx: float(g1_probs[idx]))]
+    active_flags = {
+        flag: float(flag_probs[idx])
+        for idx, flag in enumerate(flag_vocab)
+        if float(flag_probs[idx]) >= threshold
+    }
+    learned_intent_flags = {
+        "predicted_flags": [flag for flag in flag_vocab if float(active_flags.get(flag, 0.0)) >= threshold],
+        "flag_scores": {flag: float(flag_probs[idx]) for idx, flag in enumerate(flag_vocab)},
+        "predicted_intent_families": [
+            intent_family
+            for idx, intent_family in enumerate(package.label_vocab.get("intent_families", []))
+            if float(intent_family_probs[idx]) >= threshold
+        ],
+        "intent_family_scores": {
+            intent_family: float(intent_family_probs[idx])
+            for idx, intent_family in enumerate(package.label_vocab.get("intent_families", []))
+        },
+    }
     learned_intent = {
         "predicted_families": [],
         "predicted_phrases": [],
         "family_scores": {},
         "phrase_scores": {},
+        **learned_intent_flags,
     }
-    g2_values = _fuse_g2_predictions(
-        list(package.label_vocab.get("g2", [])),
-        g2_values,
-        primary_g2,
-        heuristic_g2_values,
-        list(intent_evidence.get("matched_lovs", [])),
-    )
-    predicted_g1 = heuristic_classifier.classify_g1(
-        heuristic_classifier.normalize(str(normalized.get("text", "")).strip())
-    )
-    primary_g2 = primary_g2_label(g2_values) or primary_g2
     decision = _decision_from_predictions(
         normalized=normalized,
         package=package,
         model_dir=resolved_dir,
         g1=predicted_g1,
         primary_g2=primary_g2,
-        g2_values=g2_values,
         intent_evidence=intent_evidence,
         learned_intent=learned_intent,
         threshold=threshold,
@@ -1385,13 +1792,13 @@ def build_decision_from_slm(
                 "inference_device": inference_device,
                 "head_confidences": {
                     **decision.classifier_metadata.get("head_confidences", {}),
-                    "flags": {},
-                    "G2_primary": {label: float(score) for label, score in zip(package.label_vocab["g2"], g2_primary_probs)},
-                    "G2_all": {
+                    "flags": {flag: float(flag_probs[idx]) for idx, flag in enumerate(flag_vocab)},
+                    "intent_families": {
                         label: float(score)
-                        for label, score in zip(package.label_vocab["g2"], g2_primary_probs)
-                        if label in g2_values
+                        for label, score in zip(package.label_vocab.get("intent_families", []), intent_family_probs)
                     },
+                    "G1": {label: float(score) for label, score in zip(package.label_vocab["g1"], g1_probs)},
+                    "G2_primary": {label: float(score) for label, score in zip(package.label_vocab["g2"], g2_primary_probs)},
                 },
             }
         }
@@ -1420,7 +1827,7 @@ def build_decision_from_slm_pure(
     text = _format_classifier_input(
         {
             "question": str(normalized.get("text", "")).strip(),
-            "language": str(normalized.get("child_profile", {}).get("language", "en")),
+            "language": str(normalized.get("language", "en")),
             "recent_context": " ".join(str(item) for item in normalized.get("recent_context", [])) or "none",
         }
     )
@@ -1441,18 +1848,23 @@ def build_decision_from_slm_pure(
     with torch.no_grad():
         outputs = model(**encoded)
 
-    g2_probs = torch.softmax(outputs["logits"], dim=-1).squeeze(0).cpu().tolist()
-    g2_idx = int(torch.argmax(outputs["logits"], dim=-1).item())
-    g1 = heuristic_classifier.classify_g1(
-        heuristic_classifier.normalize(str(normalized.get("text", "")).strip())
+    g1_probs = torch.softmax(outputs["g1_logits"], dim=-1).squeeze(0).cpu().tolist()
+    g2_probs = torch.softmax(outputs["g2_logits"], dim=-1).squeeze(0).cpu().tolist()
+    flag_probs = torch.sigmoid(outputs["flag_logits"]).squeeze(0).cpu().tolist()
+    intent_family_probs = (
+        torch.sigmoid(outputs["intent_family_logits"]).squeeze(0).cpu().tolist()
+        if "intent_family_logits" in outputs else []
     )
+    g1_idx = int(torch.argmax(outputs["g1_logits"], dim=-1).item())
+    g2_idx = int(torch.argmax(outputs["g2_logits"], dim=-1).item())
+    g1 = package.label_vocab["g1"][g1_idx]
     g2 = package.label_vocab["g2"][g2_idx]
 
     return GuardrailDecision(
         input={
             "question": str(normalized.get("text", "")).strip(),
-            "age_band": str(normalized.get("resolved_age_band", "")),
-            "language": str(normalized.get("child_profile", {}).get("language", "en")),
+            "age_band": "11-12",
+            "language": str(normalized.get("language", "en")),
             "recent_context": list(normalized.get("recent_context", [])),
         },
         gates={"G1": g1, "G2": g2},
@@ -1481,7 +1893,18 @@ def build_decision_from_slm_pure(
                     label: float(score)
                     for label, score in zip(package.label_vocab["g2"], g2_probs)
                 },
-                "flags": {},
+                "G1": {
+                    label: float(score)
+                    for label, score in zip(package.label_vocab["g1"], g1_probs)
+                },
+                "flags": {
+                    label: float(score)
+                    for label, score in zip(package.label_vocab["flags"], flag_probs)
+                },
+                "intent_families": {
+                    label: float(score)
+                    for label, score in zip(package.label_vocab.get("intent_families", []), intent_family_probs)
+                },
             },
         },
     )

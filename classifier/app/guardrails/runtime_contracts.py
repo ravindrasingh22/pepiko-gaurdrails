@@ -114,8 +114,7 @@ def classifier_output_from_decision(question: str, child_profile: ChildProfile, 
     gates = decision.gates or decision.gate_values
     topic = str(gates.get("topic") or decision.signals.get("topic") or "General Learning")
     g1_id = str(gates.get("G1", "GENERIC"))
-    raw_g2 = list(gates.get("G2_all", [gates.get("G2", "GENERIC_INTENT")]))
-    g2_ids = canonicalize_g2_ids(raw_g2)
+    g2_ids = canonicalize_g2_ids([str(gates.get("G2", "GENERIC_INTENT"))])
     age_band = child_profile.age_group
     context = str(decision.input.get("recent_context", "") or "")
     flags = build_applies_when_flags(question, g1_id, g2_ids)

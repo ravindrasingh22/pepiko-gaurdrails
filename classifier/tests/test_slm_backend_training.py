@@ -3,8 +3,9 @@ from pathlib import Path
 
 import pytest
 
+from training.slm_classifier.data_pipeline import write_label_vocab
 from training.slm_classifier.data_pipeline import DatasetSplitManifest
-from training.slm_classifier.slm_backend import _compute_list_multilabel_pos_weight, train_slm_classifier
+from training.slm_classifier.slm_backend import _checkpoint_is_compatible, _checkpoint_payload_is_compatible, _compute_list_multilabel_pos_weight, train_slm_classifier
 
 
 def test_compute_list_multilabel_pos_weight_counts_only_true_flag_values() -> None:
@@ -23,7 +24,31 @@ def test_compute_list_multilabel_pos_weight_counts_only_true_flag_values() -> No
     assert weights == [2.0, 2.0]
 
 
-def test_train_slm_classifier_requires_dev_rows_unless_train_on_all_data(tmp_path: Path, monkeypatch) -> None:
+def test_checkpoint_payload_requires_model_state() -> None:
+    assert _checkpoint_payload_is_compatible({"model_state": {"classifier.weight": object()}}) is True
+    assert _checkpoint_payload_is_compatible({"epoch_index": 1}) is False
+
+
+def test_checkpoint_compatibility_accepts_multihead_keys() -> None:
+    assert _checkpoint_is_compatible({"g1_classifier.weight": object()}) is True
+    assert _checkpoint_is_compatible({"g2_classifier.weight": object()}) is True
+    assert _checkpoint_is_compatible({"flag_classifier.weight": object()}) is True
+
+
+def test_write_label_vocab_includes_intent_families(tmp_path: Path) -> None:
+    target = tmp_path / "label_vocab.json"
+    write_label_vocab(
+        rows=[
+            {"intent_families": ["what_should_i_do", "threats_and_punishment"]},
+            {"intent_families": ["what_should_i_do"]},
+        ],
+        target_path=target,
+    )
+    payload = json.loads(target.read_text(encoding="utf-8"))
+    assert payload["intent_families"] == ["what_should_i_do", "threats_and_punishment"]
+
+
+def test_train_slm_classifier_requires_test_rows_unless_train_on_all_data(tmp_path: Path, monkeypatch) -> None:
     dataset_path = tmp_path / "dataset.jsonl"
     dataset_path.write_text(
         "\n".join(
@@ -49,10 +74,10 @@ def test_train_slm_classifier_requires_dev_rows_unless_train_on_all_data(tmp_pat
     )
     monkeypatch.setattr(
         "training.slm_classifier.slm_backend.load_dataset_splits",
-        lambda: DatasetSplitManifest(train_ids=[], dev_ids=[], test_ids=[], fingerprint="test"),
+        lambda: DatasetSplitManifest(train_ids=[], test_ids=[], fingerprint="test"),
     )
 
-    with pytest.raises(ValueError, match="No (train|dev) rows were selected"):
+    with pytest.raises(ValueError, match="No (train|test) rows were selected"):
         train_slm_classifier(
             dataset_path=dataset_path,
             model_dir=tmp_path / "model",
@@ -80,7 +105,7 @@ def test_train_slm_classifier_persists_balanced_sampling_config(tmp_path: Path, 
     )
     monkeypatch.setattr(
         "training.slm_classifier.slm_backend.load_dataset_splits",
-        lambda: DatasetSplitManifest(train_ids=["row-1"], dev_ids=[], test_ids=[], fingerprint="test"),
+        lambda: DatasetSplitManifest(train_ids=["row-1"], test_ids=[], fingerprint="test"),
     )
 
     train_slm_classifier(

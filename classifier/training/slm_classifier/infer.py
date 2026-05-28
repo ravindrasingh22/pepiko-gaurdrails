@@ -14,28 +14,13 @@ from training.slm_classifier.runtime_config import load_classifier_runtime_confi
 from training.slm_classifier.slm_backend import available_cores
 
 DEFAULT_THRESHOLD = 0.8
-AGE_LOOKUP = {
-    "5-6": 6,
-    "7-8": 8,
-    "9-10": 10,
-    "11-12": 12,
-    "13-14": 14,
-    "15-16": 16,
-    "17": 17,
-}
 
 
 def _normalize_input(question: str, age_band: str, language: str, context: str) -> dict[str, object]:
-    age = AGE_LOOKUP.get(age_band, 12)
     return {
         "text": question,
         "recent_context": [] if context == "none" else [context],
-        "child_profile": {
-            "age": age,
-            "age_group": age_band,
-            "language": language,
-        },
-        "resolved_age_band": age_band,
+        "language": language,
     }
 
 
@@ -71,58 +56,6 @@ def _sorted_scores(raw: object) -> dict[str, float]:
 
 def _flag_scores(raw: object) -> dict[str, float]:
     return _sorted_scores(raw)
-
-
-def _normalize_g2_values(raw: object) -> list[str]:
-    if isinstance(raw, list):
-        return [str(item) for item in raw if str(item).strip()]
-    if isinstance(raw, str):
-        return [item.strip() for item in raw.split(",") if item.strip()]
-    return []
-
-
-def _g2_selection_reasons(
-    *,
-    question: str,
-    context: str,
-    head_confidences: dict[str, object],
-    g2_all: list[str],
-    threshold: float,
-    g2_reasons: dict[str, str],
-) -> dict[str, list[str]]:
-    g2_primary_scores = _sorted_scores(head_confidences.get("G2_primary", {}))
-    if g2_primary_scores:
-        primary_label = max(g2_primary_scores, key=g2_primary_scores.get)
-    else:
-        primary_label = "GENERIC_INTENT"
-    model_threshold_labels = {
-        label for label, score in g2_primary_scores.items()
-        if float(score) >= threshold
-    }
-    normalized_question = slm_classifier.normalize(question)
-    normalized_context = slm_classifier.normalize("" if context == "none" else context)
-    heuristic_labels = set(slm_classifier.classify_g2(normalized_question, normalized_context))
-    lexicon = dict(head_confidences.get("intent_lexicon", {}))
-    lexicon_labels = {str(item) for item in lexicon.get("matched_lovs", []) if str(item).strip()}
-
-    selection_reasons: dict[str, list[str]] = {}
-    for label in g2_all:
-        reasons: list[str] = []
-        if label in model_threshold_labels:
-            reasons.append(f"source=model_threshold score={g2_primary_scores[label]:.3f} threshold={threshold:.3f}")
-        elif label == primary_label:
-            reasons.append(f"source=primary_fallback score={g2_primary_scores.get(label, 0.0):.3f} threshold={threshold:.3f}")
-        if label in heuristic_labels and label not in model_threshold_labels:
-            reasons.append("source=heuristic_fusion")
-        if label in lexicon_labels:
-            reasons.append("source=lexicon_fusion")
-        if not reasons:
-            reasons.append("source=final_g2_list")
-        explanation = str(g2_reasons.get(label, "")).strip()
-        if explanation:
-            reasons.append(explanation)
-        selection_reasons[label] = reasons
-    return selection_reasons
 
 
 def _parse_thresholds(thresholds: str | None) -> dict[str, float] | None:
@@ -198,12 +131,18 @@ def run_infer(
         classifier_metadata = dict(decision.classifier_metadata or {})
         head_confidences = dict(classifier_metadata.get("head_confidences", {}))
         flag_scores = _sorted_scores(head_confidences.get("flags", {}))
+        intent_family_scores = _sorted_scores(head_confidences.get("intent_families", {}))
         active_flags = [
             label for label, score in flag_scores.items()
             if float(score) >= effective_threshold
         ]
+        active_intent_families = [
+            label for label, score in intent_family_scores.items()
+            if float(score) >= effective_threshold
+        ]
         result = {
             "question": question,
+            "user_input": question,
             "context": context,
             "language": language,
             "backend": "slm_pure",
@@ -233,6 +172,12 @@ def run_infer(
                 "active": active_flags,
                 "scores": flag_scores,
             },
+            "intent_families": {
+                "active": active_intent_families,
+            },
+            "intent_phrases": {
+                "active": [],
+            },
         }
         if thresholds is not None:
             result["thresholds"] = thresholds
@@ -242,12 +187,11 @@ def run_infer(
     head_confidences = dict(classifier_metadata.get("head_confidences", {}))
     learned_intent = dict(head_confidences.get("intent_lexicon_learned", {}))
     g2_primary_scores = _sorted_scores(head_confidences.get("G2_primary", {}))
-    g2_all_scores = _sorted_scores(head_confidences.get("G2_all", {}))
     primary_g2 = str(gates.get("G2", "GENERIC_INTENT"))
-    g2_all = _normalize_g2_values(gates.get("G2_all", []))
     g2_reasons = dict(getattr(decision, "g2_reasons", {}) or {})
     result = {
         "question": question,
+        "user_input": question,
         "context": context,
         "language": language,
         "g1": {
@@ -259,25 +203,19 @@ def run_infer(
             "scores": g2_primary_scores,
             "reason": str(g2_reasons.get(primary_g2, "")),
         },
-        "g2_all": {
-            "ids": g2_all,
-            "scores": g2_all_scores,
-            "selection_reasons": _g2_selection_reasons(
-                question=question,
-                context=context,
-                head_confidences=head_confidences,
-                g2_all=g2_all,
-                threshold=effective_threshold,
-                g2_reasons=g2_reasons,
-            ),
-        },
         "backend": mode if mode != "auto" else _backend_for_auto_mode(),
         "core_model": str(classifier_metadata.get("core_model", core or "")),
         "trained": bool(classifier_metadata.get("trained", False)),
         "threshold": effective_threshold,
         "flags": _flag_scores(head_confidences.get("flags", {})),
-        "predicted_families": [str(item) for item in learned_intent.get("predicted_families", []) if str(item).strip()],
-        "predicted_phrases": [str(item) for item in learned_intent.get("predicted_phrases", []) if str(item).strip()],
+        "intent_families": {
+            "active": [str(item) for item in learned_intent.get("predicted_intent_families", []) if str(item).strip()],
+            # "scores": _sorted_scores(head_confidences.get("intent_families", {})),
+        },
+        "intent_phrases": {
+            "active": [str(item) for item in learned_intent.get("predicted_phrases", []) if str(item).strip()],
+            # "scores": _sorted_scores(learned_intent.get("phrase_scores", {})),
+        },
     }
     if thresholds is not None:
         result["thresholds"] = thresholds
@@ -288,18 +226,22 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Print pure classifier output.")
     parser.add_argument("--mode", choices=["auto", "heuristic", "artifact", "slm", "slm_pure"], default="auto")
     parser.add_argument("--core", choices=available_cores(), default=None)
-    parser.add_argument("--question", required=True)
+    parser.add_argument("--question", default=None)
+    parser.add_argument("--user-input", dest="user_input", default=None)
     parser.add_argument("--context", default="none")
     parser.add_argument("--age-band", default="9-10")
     parser.add_argument("--language", default="en")
     parser.add_argument("--threshold", type=float, default=None)
     parser.add_argument("--thresholds", default=None, help="JSON object of thresholds. Uses threshold/default/global when present.")
     args = parser.parse_args()
+    question = args.question or args.user_input
+    if not question:
+        parser.error("one of --question or --user-input is required")
     print(
         json.dumps(
             run_infer(
                 args.mode,
-                args.question,
+                question,
                 args.age_band,
                 args.language,
                 args.context,

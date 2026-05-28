@@ -71,7 +71,6 @@ class DatasetManifest:
 @dataclass
 class DatasetSplitManifest:
     train_ids: list[str]
-    dev_ids: list[str]
     test_ids: list[str]
     fingerprint: str
 
@@ -195,13 +194,31 @@ def validate_dataset_rows(rows: list[dict[str, object]]) -> None:
         invalid_flags = [key for key, value in flags.items() if not isinstance(value, bool)]
         if invalid_flags:
             raise ValueError(f"Non-boolean flags in row {row.get('sample_id')}: {sorted(invalid_flags)}")
+        intent_families = row.get("intent_families", [])
+        if intent_families is None:
+            continue
+        if not isinstance(intent_families, list):
+            raise ValueError(f"intent_families must be a list in row {row.get('sample_id')}")
+        invalid_intent_families = [item for item in intent_families if not str(item).strip()]
+        if invalid_intent_families:
+            raise ValueError(f"Blank intent_families entries in row {row.get('sample_id')}")
 
 
 def write_label_vocab(rows: list[dict[str, object]] | None = None, target_path: Path = LABEL_VOCAB_PATH) -> Path:
+    intent_family_vocab: list[str] = []
+    if rows:
+        seen: set[str] = set()
+        for row in rows:
+            for item in row.get("intent_families", []) or []:
+                normalized = str(item).strip()
+                if normalized and normalized not in seen:
+                    intent_family_vocab.append(normalized)
+                    seen.add(normalized)
     payload = {
         "g1": G1_VOCAB,
         "g2": G2_VOCAB,
         "flags": FLAG_VOCAB,
+        "intent_families": intent_family_vocab,
         "age_bands": list(CODEBOOK.age_bands.keys()),
     }
     target_path.parent.mkdir(parents=True, exist_ok=True)
@@ -213,22 +230,16 @@ def _partition_groups(group_ids: list[str]) -> DatasetSplitManifest:
     ordered = sorted(group_ids)
     total = len(ordered)
     if total == 0:
-        return DatasetSplitManifest(train_ids=[], dev_ids=[], test_ids=[], fingerprint="empty")
-    dev_count = max(1, total // 10) if total >= 3 else 1 if total >= 2 else 0
-    test_count = max(1, total // 10) if total >= 4 else 1 if total >= 3 else 0
-    train_count = max(total - dev_count - test_count, 1)
-    if train_count + dev_count + test_count > total:
-        overflow = train_count + dev_count + test_count - total
-        if dev_count >= overflow:
-            dev_count -= overflow
-        else:
-            test_count = max(test_count - (overflow - dev_count), 0)
-            dev_count = 0
+        return DatasetSplitManifest(train_ids=[], test_ids=[], fingerprint="empty")
+    test_count = max(1, total // 10) if total >= 3 else 1 if total >= 2 else 0
+    train_count = max(total - test_count, 1)
+    if train_count + test_count > total:
+        overflow = train_count + test_count - total
+        test_count = max(test_count - overflow, 0)
     train_ids = ordered[:train_count]
-    dev_ids = ordered[train_count:train_count + dev_count]
-    test_ids = ordered[train_count + dev_count:train_count + dev_count + test_count]
+    test_ids = ordered[train_count:train_count + test_count]
     fingerprint = hashlib.sha256("|".join(ordered).encode("utf-8")).hexdigest()[:16]
-    return DatasetSplitManifest(train_ids=train_ids, dev_ids=dev_ids, test_ids=test_ids, fingerprint=fingerprint)
+    return DatasetSplitManifest(train_ids=train_ids, test_ids=test_ids, fingerprint=fingerprint)
 
 
 def build_dataset_splits(rows: list[dict[str, object]]) -> DatasetSplitManifest:
@@ -247,7 +258,6 @@ def load_dataset_splits(path: Path = DATASET_SPLITS_PATH) -> DatasetSplitManifes
     payload = json.loads(path.read_text(encoding="utf-8"))
     return DatasetSplitManifest(
         train_ids=list(payload.get("train_ids", [])),
-        dev_ids=list(payload.get("dev_ids", [])),
         test_ids=list(payload.get("test_ids", [])),
         fingerprint=str(payload.get("fingerprint", "")),
     )
@@ -257,7 +267,6 @@ def select_rows_for_split(rows: list[dict[str, object]], split_name: str, split_
     manifest = split_manifest or load_dataset_splits()
     target_ids = {
         "train": set(manifest.train_ids),
-        "dev": set(manifest.dev_ids),
         "test": set(manifest.test_ids),
     }.get(split_name, set())
     return [row for row in rows if build_group_id(row) in target_ids]

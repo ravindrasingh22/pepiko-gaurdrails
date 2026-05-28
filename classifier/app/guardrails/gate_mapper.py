@@ -478,7 +478,7 @@ def build_guardrail_decision(
         "g2_reasons": build_g2_reasons(g1, g2_list, question, g2_primary),
         "gl_signals": gl_signals,
         "active_gls": sorted(gls),
-        "gates": {"G1": g1, "G2": g2_primary, "G2_all": g2_list, "G3": g3, "G4": g4},
+        "gates": {"G1": g1, "G2": g2_primary, "G3": g3, "G4": g4},
         "decision": build_decision_from_g4(g4, g3, g2_list),
         "prompt_contract": build_prompt_contract(g4, g3, g2_list, age_band, gls),
     }

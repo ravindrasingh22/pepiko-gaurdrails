@@ -38,9 +38,13 @@ def main() -> None:
     parser.add_argument("--freeze-backbone", type=_parse_bool_flag, default=None)
     parser.add_argument("--unfreeze-top-layers", type=int, default=None)
     parser.add_argument("--learning-rate", type=float, default=None)
+    parser.add_argument("--head-learning-rate", type=float, default=None)
     parser.add_argument("--g1-loss-weight", type=float, default=None)
     parser.add_argument("--g2-loss-weight", type=float, default=None)
     parser.add_argument("--flag-loss-weight", type=float, default=None)
+    parser.add_argument("--flag-max-pos-weight", type=float, default=None)
+    parser.add_argument("--intent-family-max-pos-weight", type=float, default=None)
+    parser.add_argument("--train-intent-heads", type=_parse_bool_flag, default=None)
     parser.add_argument(
         "--balanced-sampling",
         type=_parse_bool_flag,
@@ -91,9 +95,13 @@ def main() -> None:
         freeze_backbone=args.freeze_backbone,
         unfreeze_top_layers=args.unfreeze_top_layers,
         learning_rate=args.learning_rate,
+        head_learning_rate=args.head_learning_rate,
         g1_loss_weight=args.g1_loss_weight,
         g2_loss_weight=args.g2_loss_weight,
         flag_loss_weight=args.flag_loss_weight,
+        flag_max_pos_weight=args.flag_max_pos_weight,
+        intent_family_max_pos_weight=args.intent_family_max_pos_weight,
+        train_intent_heads=args.train_intent_heads,
         balanced_sampling=args.balanced_sampling,
         resume_if_available=resume_training,
         train_on_all_data=args.train_on_all_data,
@@ -114,11 +122,25 @@ def main() -> None:
     print(f"Checkpoint every batches: {args.checkpoint_every_batches}")
     print(f"SLM training backend: {slm_metadata['training_backend']}")
     print(f"SLM resumed from existing checkpoint: {slm_metadata.get('resumed_from_existing', False)}")
-    if "dev_gate_metrics" in slm_metadata:
-        print(f"Dev G1 accuracy: {slm_metadata['dev_gate_metrics'].get('g1_accuracy', 0.0):.4f}")
-        print(f"Dev G2 accuracy: {slm_metadata['dev_gate_metrics'].get('g2_accuracy', 0.0):.4f}")
-        print(f"Dev G2 macro F1: {slm_metadata['dev_gate_metrics'].get('g2_macro_f1', 0.0):.4f}")
-        print(f"Dev G2 weighted F1: {slm_metadata['dev_gate_metrics'].get('g2_weighted_f1', 0.0):.4f}")
+    if "test_gate_metrics" in slm_metadata:
+        print(f"Test G1 accuracy: {slm_metadata['test_gate_metrics'].get('g1_accuracy', 0.0):.4f}")
+        print(f"Test G1 macro F1: {slm_metadata['test_gate_metrics'].get('g1_macro_f1', 0.0):.4f}")
+        print(f"Test G1 weighted F1: {slm_metadata['test_gate_metrics'].get('g1_weighted_f1', 0.0):.4f}")
+        print(f"Test G2 accuracy: {slm_metadata['test_gate_metrics'].get('g2_accuracy', 0.0):.4f}")
+        print(f"Test G2 macro F1: {slm_metadata['test_gate_metrics'].get('g2_macro_f1', 0.0):.4f}")
+        print(f"Test G2 weighted F1: {slm_metadata['test_gate_metrics'].get('g2_weighted_f1', 0.0):.4f}")
+        flag_metrics = slm_metadata["test_gate_metrics"].get("flags", {})
+        print(f"Test flags exact-match accuracy: {flag_metrics.get('exact_match_accuracy', 0.0):.4f}")
+        print(f"Test flags micro precision: {flag_metrics.get('micro_precision', 0.0):.4f}")
+        print(f"Test flags micro recall: {flag_metrics.get('micro_recall', 0.0):.4f}")
+        print(f"Test flags micro F1: {flag_metrics.get('micro_f1', 0.0):.4f}")
+        print(f"Test flags macro F1: {flag_metrics.get('macro_f1', 0.0):.4f}")
+        intent_family_metrics = slm_metadata["test_gate_metrics"].get("intent_families", {})
+        print(f"Test intent-family exact-match accuracy: {intent_family_metrics.get('exact_match_accuracy', 0.0):.4f}")
+        print(f"Test intent-family micro precision: {intent_family_metrics.get('micro_precision', 0.0):.4f}")
+        print(f"Test intent-family micro recall: {intent_family_metrics.get('micro_recall', 0.0):.4f}")
+        print(f"Test intent-family micro F1: {intent_family_metrics.get('micro_f1', 0.0):.4f}")
+        print(f"Test intent-family macro F1: {intent_family_metrics.get('macro_f1', 0.0):.4f}")
         print(f"Dominant G2 share: {slm_metadata.get('dominant_g2_share', 0.0):.4f}")
     if slm_metadata.get("degenerate_head_warning"):
         print(f"WARNING: {slm_metadata['degenerate_head_warning']}")

@@ -37,6 +37,7 @@ G4_HEADER_CANDIDATES = ("g4", "g_4")
 CONTEXT_HEADER_CANDIDATES = ("context", "recent_context")
 GENERATED_PROMPT_HEADER_CANDIDATES = ("generated_prompt", "generatedprompt")
 FLAGS_HEADER_CANDIDATES = ("flags",)
+INTENT_FAMILIES_HEADER_CANDIDATES = ("intent_families", "intent_family", "intentfamily", "intentfamilies")
 CANONICAL_COLUMNS = [
     "sample_id",
     "question",
@@ -44,6 +45,8 @@ CANONICAL_COLUMNS = [
     "g1",
     "g2",
     "flags",
+    "intent_families",
+    "intent_families_present",
 ]
 
 ALWAYS_FLAGS_BY_G2 = {
@@ -81,6 +84,8 @@ class AuthoringRow:
     g1: str
     g2: list[str]
     flags: dict[str, bool]
+    intent_families: list[str]
+    intent_families_present: bool
 
 
 @dataclass
@@ -94,6 +99,7 @@ class SheetSchema:
     context_idx: int | None = None
     generated_prompt_idx: int | None = None
     flags_idx: int | None = None
+    intent_families_idx: int | None = None
     header_row_index: int = 0
 
 
@@ -213,6 +219,7 @@ def _detect_schema(path: Path) -> SheetSchema:
         context_idx = _find_header_index(row, CONTEXT_HEADER_CANDIDATES)
         prompt_idx = _find_header_index(row, GENERATED_PROMPT_HEADER_CANDIDATES)
         flags_idx = _find_header_index(row, FLAGS_HEADER_CANDIDATES)
+        intent_families_idx = _find_header_index(row, INTENT_FAMILIES_HEADER_CANDIDATES)
         if None not in {question_idx, g1_idx, g2_idx}:
             return SheetSchema(
                 question_idx=int(question_idx),
@@ -224,6 +231,7 @@ def _detect_schema(path: Path) -> SheetSchema:
                 context_idx=int(context_idx) if context_idx is not None else None,
                 generated_prompt_idx=int(prompt_idx) if prompt_idx is not None else None,
                 flags_idx=int(flags_idx) if flags_idx is not None else None,
+                intent_families_idx=int(intent_families_idx) if intent_families_idx is not None else None,
                 header_row_index=idx,
             )
     raise ValueError(f"Unsupported raw sheet format: {path}")
@@ -248,6 +256,25 @@ def _parse_jsonish_list(raw: str) -> list[str] | None:
 
 def _default_flags() -> dict[str, bool]:
     return {flag: False for flag in FLAG_VOCAB}
+
+
+def _resolve_intent_families(g2_values: list[str], raw_intent_families: list[str] | None) -> list[str]:
+    resolved: list[str] = []
+    seen: set[str] = set()
+    for g2_value in g2_values:
+        spec = CODEBOOK.intent_lexicon.get(str(g2_value).strip())
+        if spec:
+            for family in spec.families:
+                normalized = str(family).strip()
+                if normalized and normalized not in seen:
+                    resolved.append(normalized)
+                    seen.add(normalized)
+    for family in raw_intent_families or []:
+        normalized = str(family).strip()
+        if normalized and normalized not in seen:
+            resolved.append(normalized)
+            seen.add(normalized)
+    return resolved
 
 
 def _normalize_g2_and_flags(g2_values: list[str], flags: dict[str, bool]) -> tuple[list[str], dict[str, bool]]:
@@ -355,6 +382,14 @@ def _load_authoring_rows_with_rejections(path: Path = DEFAULT_SOURCE) -> Authori
                 raw_flags = row[schema.flags_idx] if schema.flags_idx is not None and len(row) > schema.flags_idx else ""
                 flags = _parse_flags(raw_flags)
                 g2, flags = _normalize_g2_and_flags(list(g2), flags)
+                raw_intent_families = (
+                    row[schema.intent_families_idx]
+                    if schema.intent_families_idx is not None and len(row) > schema.intent_families_idx
+                    else ""
+                )
+                parsed_intent_families = _parse_jsonish_list(raw_intent_families) or []
+                intent_families = _resolve_intent_families(g2, parsed_intent_families)
+                intent_families_present = bool(intent_families) or schema.intent_families_idx is not None
             except ValueError as exc:
                 rejected_rows.append(
                     RejectedAuthoringRow(
@@ -379,6 +414,8 @@ def _load_authoring_rows_with_rejections(path: Path = DEFAULT_SOURCE) -> Authori
                     g1=g1,
                     g2=g2,
                     flags=flags,
+                    intent_families=intent_families,
+                    intent_families_present=intent_families_present,
                 )
             )
     return AuthoringLoadResult(accepted_rows=rows, rejected_rows=rejected_rows)
@@ -436,6 +473,8 @@ def expand_authoring_rows(path: Path = DEFAULT_SOURCE) -> list[dict[str, object]
                 "g1": row.g1,
                 "g2": row.g2,
                 "flags": row.flags,
+                "intent_families": row.intent_families,
+                "intent_families_present": row.intent_families_present,
             }
         )
     return normalized

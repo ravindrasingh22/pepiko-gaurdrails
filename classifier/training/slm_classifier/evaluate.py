@@ -278,7 +278,7 @@ def main() -> None:
     parser.add_argument("--mode", choices=["slm", "heuristic", "artifact"], default="slm")
     parser.add_argument("--dataset", default=str(CANONICAL_DATASET))
     parser.add_argument("--max-rows", type=int, default=0)
-    parser.add_argument("--split", choices=["train", "dev", "test"], default="test")
+    parser.add_argument("--split", choices=["train", "test"], default="test")
     parser.add_argument("--core", choices=available_cores(), default="deberta")
     parser.add_argument("--print-rows", action="store_true", help="Print one TSV row per evaluated sample with a single header row.")
     parser.add_argument("--output-csv", default="", help="Write per-row evaluation results to this CSV path.")

@@ -2,127 +2,190 @@
 
 ## Documentation hierarchy
 
-Training must stay aligned with these documentation artifacts:
+Training should stay aligned with these design references:
 
-- [GL-codebook.csv](/Users/ravindrasingh/Documents/AI-Agents/PikuAI/pikuai-gaurdrails/docs/GL-codebook.csv): normative dictionary for `G1`, `G2`, `G3`, `G4`, guideline semantics, age policy, and prompt authoring constraints.
-- [Contracts.csv](/Users/ravindrasingh/Documents/AI-Agents/PikuAI/pikuai-gaurdrails/docs/Contracts.csv): stage-by-stage contract showing how classifier output flows into gate engine, SafetyEnvelope, prompt manager, and prompt checklist.
-- [gl-classifier-gate-engine-reference.md](/Users/ravindrasingh/Documents/AI-Agents/PikuAI/pikuai-gaurdrails/docs/gl-classifier-gate-engine-reference.md): prose interpretation of the two CSVs and the recommended runtime split of responsibilities.
+- `docs/GL-codebook.csv`
+- `docs/Contracts.csv`
+- `docs/gl-classifier-gate-engine-reference.md`
 
-These three docs should be treated as the primary design references for training labels and runtime contract expectations. If notebooks, scripts, or examples diverge from them, the docs should be reconciled first rather than letting training drift.
+If scripts, notebooks, or examples diverge from those sources, reconcile the docs and runtime contract first rather than letting training drift.
 
-## SLM GL classifier
+## Current SLM classifier
 
-- Objective: train the selected classifier backbone to detect `GL-01` through `GL-13` as a multi-label classifier.
-- Notebooks: `02_guardrail_dataset_builder.ipynb`, `03_slm_classifier_train_smolLM2_135M.ipynb`, `04_slm_classifier_eval_thresholds.ipynb`
-- Scripts: `training/slm_classifier/`
-- Canonical dataset target: `data/processed/piku_gl_classifier_train.jsonl`
-- Source discovery manifest: `data/processed/piku_gl_classifier_manifest.json`
-- Supported backbones:
-  - `smol` -> `HuggingFaceTB/SmolLM2-135M`
-  - `deberta` -> `microsoft/deberta-v3-small`
-- Model output targets:
-  - `models/piku-slm-guardrail-smollm2-135m/`
-  - `models/piku-slm-guardrail-deberta-v3-small/`
-- CLI examples:
-  - `python -m training.slm_classifier.train --core smol`
-  - `python -m training.slm_classifier.train --core deberta`
+The active classifier training path is:
 
-### Responsibility split
+- scripts: `classifier/training/slm_classifier/`
+- canonical dataset: `classifier/data/processed/piku_gl_classifier_train.jsonl`
+- split manifest: `classifier/data/processed/piku_gl_classifier_splits.json`
+- model artifact directory: `classifier/models/piku-slm-guardrail-deberta-v3-small/`
 
-The intended split is:
+The active core model is:
 
-- The classifier stage detects `GL-01` to `GL-13`.
-- The classifier stage also assigns `topic`.
-- The classifier stage also assigns `G1` and `G2`.
-- `G3` and `G4` are deterministic gate-engine outputs derived from `G2` definitions in `GL-codebook.csv`.
-- Age policy is runtime context only. It must not change classifier labels, `G3` severity, or `G4` action.
+- `deberta` -> `microsoft/deberta-v3-small`
 
-This means training should not treat age as a reason to alter safety category assignment. Age only changes downstream answer constraints such as `max_words`, `depth`, and style.
+Current training uses a shared-encoder multi-head classifier:
 
-### Canonical classifier row
+- `G1`: multiclass head
+- `G2`: multiclass head
+- `flags`: multilabel head
+- `intent_families`: multilabel head, only when `train_intent_heads=true`
+
+`G3` and `G4` are not trained. They are derived deterministically at runtime from primary `G2`.
+
+## Dataset contract
+
+The canonical row is normalized from raw CSV/XLSX sources and keeps the training targets the model actually learns:
 
 ```json
 {
-  "sample_id": "religion_001",
+  "sample_id": "belief_001",
   "topic": "Belief & Religion",
   "question": "Who is God?",
   "language": "en",
   "recent_context": "none",
-  "gl_01": 1,
-  "gl_02": 0,
-  "gl_03": 0,
-  "gl_04": 0,
-  "gl_05": 0,
-  "gl_06": 0,
-  "gl_07": 0,
-  "gl_08": 0,
-  "gl_09": 1,
-  "gl_10": 0,
-  "gl_11": 0,
-  "gl_12": 0,
-  "gl_13": 0,
   "g1": "BELIEF",
-  "g2": "NEUTRAL_FACT",
-  "g3": "SV0",
-  "g4": "ALLOW"
+  "g2": ["NEUTRAL_FACT"],
+  "flags": {
+    "direct_intent": false,
+    "has_personal_direction": false
+  },
+  "intent_families": [
+    "factual_definition",
+    "descriptive_what_why_how"
+  ],
+  "intent_families_present": true
 }
 ```
 
-### Source-of-truth rules
+Important rules:
 
-- Put candidate spreadsheets or exports in `data/staging/`.
-- Do not manually copy source files into `data/raw/`.
-- Only the readiness pipeline may promote files from `data/staging/` into `data/raw/`.
-- The readiness pipeline writes per-file checklists plus a report in `data/processed/` so blocked sources are visible before training.
-- Files in `data/raw/` are treated as training-ready sources that passed the checklist gate.
-- Do not use generated prompts or model answers as classifier inputs.
-- Authoring sheets may stay wide and human-friendly, but training ingestion must flatten them to:
-  `sample_id, topic, question, language, recent_context, gl_01..gl_13, g1, g2, g3, g4`
-- For `docs/Religion-politics-idealogy.csv`, create one training row per question.
-- Keep age-specific reference answers only as optional audit columns; they are not classifier inputs.
-- `GL-codebook.csv` is the canonical dictionary for allowed LOV ids, severity floors, modifier semantics, and age runtime settings.
-- `Contracts.csv` is the canonical contract for how classifier-stage outputs are consumed by the gate engine, SafetyEnvelope builder, prompt manager, and prompt checklist.
+- training uses only `train` and `test` splits
+- the `G2` model target is the primary `G2` only
+- `G2_all` is not a training target
+- `intent_families` are populated from Block J LOV lookup and may also merge authored values from raw data
+- context is an input feature, not a separate target
 
-### Training split of responsibility
+## Raw source rules
 
-- Model training learns or predicts `GL`, `G1`, and `G2`.
-- Model training learns or predicts `topic`, `GL`, `G1`, and `G2`.
-- `G1` and `G2` must remain consistent with the LOV dictionary and classifier notes in `GL-codebook.csv`.
-- `G3`, `G4`, response decisions, and prompt contracts are derived deterministically from configs and codebook-driven policy.
-- Prompt templates and checklist logic must not be folded into model training. They belong to prompt-management policy, not classifier learning.
+- put candidate spreadsheets or exports in `classifier/data/staging/`
+- promote only training-ready files into `classifier/data/raw/`
+- `--continuous` rebuilds the canonical dataset from `data/raw/`
+- training input discovery is intended to use `data/raw/`, not `data/staging/`
 
-### Normalization guidance
+## Input formatting
 
-Before any classifier inference or training feature extraction:
+The current classifier input format is question-first:
 
-- normalize whitespace and punctuation
-- preserve the canonical question text
-- preserve language hints
-- avoid age-conditioned preprocessing
-- avoid introducing prompt text, answer text, or other generation artifacts into classifier inputs
+```text
+Classify the PRIMARY QUESTION for child-safety gating.
+Use BACKGROUND CONTEXT only when it changes the meaning of the primary question.
+PRIMARY QUESTION: ...
+BACKGROUND CONTEXT: ...
+```
 
-The classifier must see the question as a classification problem, not as a response-generation problem.
+This is deliberate. The current question is the dominant field and context is secondary.
 
-### Readiness checklist
+## Training defaults
 
-Before a staged source may move into `data/raw/`, the program checks:
+Current defaults in code are approximately:
 
-- supported file extension
-- destination file does not already exist in `data/raw/`
-- authoring schema is detectable
-- at least one accepted row can be loaded
-- zero rejected rows are produced during source normalization
+- `epochs=4`
+- `batch_size=2`
+- `learning_rate=5e-6` for backbone
+- `head_learning_rate=5e-5` for classifier heads
+- `g1_loss_weight=0.2`
+- `g2_loss_weight=2.0`
+- `flag_loss_weight=0.3`
+- `intent_family_loss_weight=0.15`
+- `flag_max_pos_weight=10.0`
+- `intent_family_max_pos_weight=10.0`
+- `gradient_clip_norm=1.0`
+- `train_intent_heads=false`
 
-The checklist implementation lives in `training/slm_classifier/readiness.py`.
+The repo now supports asymmetric learning rates and separate multilabel `pos_weight` caps for flags vs. intent families.
 
-## Child-safe answer LLM
+## Resume behavior
 
-- Notebook ownership: `05`, `06`, `07`
-- Script ownership: `training/childsafe_llm/`
-- Output target: `models/piku-childsafe-llm-lora/`
+Resume behavior is split into two parts:
 
-## RAG safety tagger
+- model weights may be reused from existing artifacts
+- optimizer state restore is intentionally treated conservatively for compatibility
 
-- Notebook ownership: `08`
-- Script ownership: `training/rag_tagger/`
-- Output target: future chunk tagger model or metadata pipeline
+If `--continuous` rebuilds the dataset and the dataset fingerprint changes:
+
+- model weights may still be reused
+- epoch and batch progress reset to the start of training on the rebuilt dataset
+
+## CLI examples
+
+Fresh training:
+
+```bash
+cd classifier
+python -m training.slm_classifier.train --core deberta --device cpu
+```
+
+Rebuild from `data/raw/` and continue from latest compatible weights:
+
+```bash
+python -m training.slm_classifier.train \
+  --core deberta \
+  --continuous \
+  --device cpu
+```
+
+Two-stage training with asymmetric learning rates:
+
+```bash
+python -m training.slm_classifier.train \
+  --core deberta \
+  --continuous \
+  --device cpu \
+  --freeze-backbone true \
+  --batch-size 12 \
+  --learning-rate 1e-5 \
+  --head-learning-rate 5e-5 \
+  --epochs 4
+
+python -m training.slm_classifier.train \
+  --core deberta \
+  --device cpu \
+  --freeze-backbone false \
+  --unfreeze-top-layers 2 \
+  --batch-size 16 \
+  --learning-rate 5e-6 \
+  --head-learning-rate 2e-5 \
+  --epochs 4 \
+  --resume
+```
+
+Training without intent-family backprop:
+
+```bash
+python -m training.slm_classifier.train \
+  --core deberta \
+  --device cpu \
+  --train-intent-heads false
+```
+
+Training with intent-family head enabled and separate multilabel caps:
+
+```bash
+python -m training.slm_classifier.train \
+  --core deberta \
+  --device cpu \
+  --train-intent-heads true \
+  --flag-max-pos-weight 8 \
+  --intent-family-max-pos-weight 10
+```
+
+## Evaluation summary
+
+Training completion currently reports test metrics only:
+
+- `G1` accuracy, macro F1, weighted F1
+- `G2` accuracy, macro F1, weighted F1
+- flags exact-match accuracy, micro precision, micro recall, micro F1, macro F1
+- intent-family exact-match accuracy, micro precision, micro recall, micro F1, macro F1
+
+For the auxiliary heads, precision matters operationally because noisy flags or noisy intent families can pollute downstream tone or policy behavior.

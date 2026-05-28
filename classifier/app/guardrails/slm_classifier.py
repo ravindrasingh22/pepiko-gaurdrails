@@ -492,7 +492,7 @@ def _build_decision(normalized: dict[str, object]) -> GuardrailDecision:
         "risk_level": {"SV0": "low", "SV1": "low", "SV2": "medium", "SV3": "high"}.get(g3, "medium"),
         "parent_visible": g4 in {"BLOCK_ESCALATE", "BLOCK_HARD"},
     }
-    gates = {"topic": topic, "G1": g1, "G2": primary_g2, "G2_all": g2, "G3": g3, "G4": g4}
+    gates = {"topic": topic, "G1": g1, "G2": primary_g2, "G3": g3, "G4": g4}
 
     return GuardrailDecision(
         input={"question": message, "age_band": age_band, "language": language, "recent_context": recent_context},

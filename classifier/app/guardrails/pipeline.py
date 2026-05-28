@@ -43,12 +43,12 @@ def _terminal_answer(decision: GuardrailDecision) -> str:
 def _g2_score_payload(decision: GuardrailDecision) -> dict[str, object]:
     classifier_metadata = dict(decision.classifier_metadata or {})
     head_confidences = dict(classifier_metadata.get("head_confidences", {}))
-    raw_g2_scores = head_confidences.get("G2_all", {})
+    raw_g2_scores = head_confidences.get("G2_primary", {})
     if isinstance(raw_g2_scores, dict):
         g2_scores = {str(label): float(score) for label, score in raw_g2_scores.items()}
     else:
         g2_scores = {}
-    active_g2 = list((decision.gates or decision.gate_values).get("G2_all", []))
+    active_g2 = [str((decision.gates or decision.gate_values).get("G2", ""))]
     threshold = float(classifier_metadata.get("g2_threshold", 0.5))
     ranked = [
         {"id": label, "score": score, "active": label in active_g2}
@@ -99,7 +99,7 @@ def _decision_mismatches(primary: GuardrailDecision, shadow: GuardrailDecision) 
         mismatches.append("gl_mismatch")
     primary_gates = primary.gates or primary.gate_values
     shadow_gates = shadow.gates or shadow.gate_values
-    if primary_gates.get("G1") != shadow_gates.get("G1") or primary_gates.get("G2_all") != shadow_gates.get("G2_all"):
+    if primary_gates.get("G1") != shadow_gates.get("G1") or primary_gates.get("G2") != shadow_gates.get("G2"):
         mismatches.append("gate_mismatch")
     if primary_gates.get("G3") != shadow_gates.get("G3"):
         mismatches.append("severity_mismatch")

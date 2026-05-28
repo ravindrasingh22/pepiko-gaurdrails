@@ -153,7 +153,7 @@ def test_dataset_split_groups_keep_question_rows_stable(tmp_path: Path) -> None:
     rows = expand_authoring_rows(source_path)
 
     split_manifest = build_dataset_splits(rows)
-    all_groups = set(split_manifest.train_ids) | set(split_manifest.dev_ids) | set(split_manifest.test_ids)
+    all_groups = set(split_manifest.train_ids) | set(split_manifest.test_ids)
 
     question_groups = {}
     for row in rows:
