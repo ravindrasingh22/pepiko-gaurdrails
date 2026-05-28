@@ -30,3 +30,5 @@ slm-train.log
 slm-train-*.log
 deberta-train.log
 deberta-train-*.log
+
+DataSingh/curated/S-Eval/*.csv
