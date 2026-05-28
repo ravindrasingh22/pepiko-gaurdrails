@@ -34,7 +34,7 @@ Each CSV must use this header exactly:
 - `G1`: single primary `G1` label
 - `G2`: primary `G2` label for training
 - `flags`: JSON object containing only allowed boolean flags
-- `intent_families`: JSON list or comma-separated list when relevant
+- `intent_families`: JSON list or comma-separated list when relevant. When omitted, canonical normalization may backfill these from Block J LOV lookup based on primary `G2`.
 - `intent_phrases`: JSON list or comma-separated list when relevant
 - `review_status`: use `approved` unless a later workflow introduces another fixed value
 
@@ -75,6 +75,8 @@ Rules:
 - Author `G2` as a single label whenever possible.
 - If a raw row contains multiple labels in the `G2` column for compatibility with existing data, training uses only the first label in raw order.
 - Do not depend on `G2_all` for training normalization.
+- Training uses only the primary `G2`.
+- `G2_all` is not part of the active runtime classifier output contract.
 
 Examples:
 

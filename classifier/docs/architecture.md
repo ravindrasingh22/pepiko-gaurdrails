@@ -151,7 +151,6 @@ The model does not learn:
 
 - `G3`
 - `G4`
-- `G2_all`
 
 ## Inference modes
 
