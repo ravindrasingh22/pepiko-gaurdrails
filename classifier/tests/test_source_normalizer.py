@@ -2,29 +2,19 @@ import csv
 import json
 from pathlib import Path
 
-from training.slm_classifier.data_pipeline import DATASET_SPLITS_PATH, LABEL_VOCAB_PATH, build_dataset_splits, build_group_id, validate_dataset_rows
+from training.slm_classifier.data_pipeline import DATASET_SPLITS_PATH, LABEL_VOCAB_PATH, build_dataset_splits, build_group_id, load_jsonl_rows, validate_dataset_rows
 from training.slm_classifier.source_normalizer import CANONICAL_COLUMNS, discover_source_files, expand_authoring_rows, write_canonical_jsonl_with_metadata, write_normalized_csv
 
 
 def _write_current_authoring_sheet(path: Path) -> None:
     rows = [
-        ["Topic", "Question", "GL", "G1", "G2", "G3", "G4", "Generated Prompt"],
-        ["School", "Should I tell my sports teacher that I did not finish library book?", "GL-01, GL-03", "GENERIC", "PD", "SV2 | none", "TRANSFORM", "prompt"],
-        ["School", "How does unit test help me learn?", "", "FACT", "NEUTRAL_FACT", "SV0", "ALLOW", "prompt"],
+        ["input_text", "G1_LOV_ID", "G2_LOV_ID", "FLAGS"],
+        ["Should I tell my sports teacher that I did not finish library book?", "GENERIC", "PD", ""],
+        ["How does unit test help me learn?", "FACT", "NEUTRAL_FACT", ""],
     ]
     with path.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.writer(handle)
         writer.writerows(rows)
-
-def _write_guideline_tags_authoring_sheet(path: Path) -> None:
-    rows = [
-        ["Topic", "Question", "Guideline Tags", "G1", "G2", "G3", "G4", "Generated Prompt"],
-        ["Science", "Why is the sky blue?", "GL-01", "SCIENCE", "NEUTRAL_FACT", "SV0", "ALLOW", "prompt"],
-    ]
-    with path.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.writer(handle)
-        writer.writerows(rows)
-
 
 def test_source_normalizer_expands_authoring_sheet_into_canonical_rows(tmp_path: Path) -> None:
     source_path = tmp_path / "school-learning.csv"
@@ -34,41 +24,19 @@ def test_source_normalizer_expands_authoring_sheet_into_canonical_rows(tmp_path:
     assert rows
     assert set(CANONICAL_COLUMNS).issubset(rows[0].keys())
     assert len(rows) == 2
-    assert rows[0]["reference_answer"] == ""
-    assert rows[0]["gl_01"] == 1
+    assert rows[0]["g2"] == ["PERSONAL_DIRECTION"]
+    assert "what should I do" in rows[0]["intent_phrases"]
+    assert rows[0]["intent_phrases_present"] is True
+    assert "guideline_tags" not in rows[0]
     assert "g3" not in rows[0]
     assert "g4" not in rows[0]
 
 
-def test_source_normalizer_infers_missing_guideline_tags_from_gates(tmp_path: Path) -> None:
-    source_path = tmp_path / "school-learning.csv"
-    _write_current_authoring_sheet(source_path)
-    rows = expand_authoring_rows(source_path)
-
-    inferred_rows = [row for row in rows if row["question"] == "How does unit test help me learn?"]
-    assert inferred_rows
-    assert all(row["guideline_tags"] for row in inferred_rows)
-    assert all(row["gl_01"] == 1 for row in inferred_rows)
-    assert all(row["gl_09"] == 0 for row in inferred_rows)
-
-
-def test_source_normalizer_accepts_guideline_tags_header_alias(tmp_path: Path) -> None:
-    source_path = tmp_path / "science-learning.csv"
-    _write_guideline_tags_authoring_sheet(source_path)
-
-    rows = expand_authoring_rows(source_path)
-
-    assert len(rows) == 1
-    assert rows[0]["question"] == "Why is the sky blue?"
-    assert rows[0]["guideline_tags"] == "GL-01"
-    assert rows[0]["gl_01"] == 1
-
-
-def test_source_normalizer_parses_guideline_tags_with_unicode_dash_and_notes(tmp_path: Path) -> None:
-    source_path = tmp_path / "science-learning.csv"
+def test_source_normalizer_accepts_training_column_aliases(tmp_path: Path) -> None:
+    source_path = tmp_path / "training-aliases.csv"
     rows = [
-        ["Topic", "Question", "Guideline Tags", "G1", "G2", "G3", "G4", "Generated Prompt"],
-        ["School", "Kids are mean to me at school", "GL‑01 (age‑calibration) + GL‑09 (bullying support)", "GENERIC", "BULLYING", "SV2", "TRANSFORM", "prompt"],
+        ["Topic", "input_text", "G1_LOV_ID", "G2_LOV_ID", "FLAGS"],
+        ["Science", "Why is the sky blue?", "SCIENCE", "NEUTRAL_FACT", "{}"],
     ]
     with source_path.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.writer(handle)
@@ -77,16 +45,16 @@ def test_source_normalizer_parses_guideline_tags_with_unicode_dash_and_notes(tmp
     parsed = expand_authoring_rows(source_path)
 
     assert len(parsed) == 1
-    assert parsed[0]["guideline_tags"] == "GL-01,GL-09"
-    assert parsed[0]["gl_01"] == 1
-    assert parsed[0]["gl_09"] == 1
+    assert parsed[0]["question"] == "Why is the sky blue?"
+    assert parsed[0]["g1"] == "SCIENCE"
+    assert parsed[0]["g2"] == ["NEUTRAL_FACT"]
 
 
-def test_source_normalizer_parses_guideline_tags_with_spaces_around_dash(tmp_path: Path) -> None:
-    source_path = tmp_path / "science-learning.csv"
+def test_source_normalizer_parses_exported_flags_without_deriving_g2(tmp_path: Path) -> None:
+    source_path = tmp_path / "training-flags.csv"
     rows = [
-        ["Topic", "Question", "Guideline Tags", "G1", "G2", "G3", "G4", "Generated Prompt"],
-        ["Science", "Why is the sky blue?", "GL - 01, gl - 09", "SCIENCE", "NEUTRAL_FACT", "SV0", "ALLOW", "prompt"],
+        ["input_text", "G1_LOV_ID", "G2_LOV_ID", "FLAGS"],
+        ["I feel unsafe", "GENERIC", "EMOTIONAL", "has_personal_direction=true;has_self_harm=true"],
     ]
     with source_path.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.writer(handle)
@@ -94,26 +62,9 @@ def test_source_normalizer_parses_guideline_tags_with_spaces_around_dash(tmp_pat
 
     parsed = expand_authoring_rows(source_path)
 
-    assert len(parsed) == 1
-    assert parsed[0]["guideline_tags"] == "GL-01,GL-09"
-    assert parsed[0]["gl_01"] == 1
-    assert parsed[0]["gl_09"] == 1
-
-
-def test_source_normalizer_defaults_missing_topic_to_generic(tmp_path: Path) -> None:
-    source_path = tmp_path / "generic-learning.csv"
-    rows = [
-        ["Topic", "Question", "GL", "G1", "G2", "G3", "G4", "Generated Prompt"],
-        ["", "What is kindness?", "GL-01", "GENERIC", "NEUTRAL_FACT", "SV0", "ALLOW", "prompt"],
-    ]
-    with source_path.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.writer(handle)
-        writer.writerows(rows)
-
-    parsed = expand_authoring_rows(source_path)
-
-    assert len(parsed) == 1
-    assert parsed[0]["topic"] == "Generic"
+    assert parsed[0]["g2"] == ["EMOTIONAL"]
+    assert parsed[0]["flags"]["has_self_harm"] is True
+    assert "has_personal_direction" not in parsed[0]["flags"]
 
 
 def test_source_discovery_skips_codebook_csv_and_picks_training_sheet(tmp_path: Path, monkeypatch) -> None:
@@ -184,12 +135,13 @@ def test_canonical_jsonl_writes_split_and_vocab_metadata(tmp_path: Path) -> None
     splits = json.loads(split_path.read_text(encoding="utf-8"))
     vocab = json.loads(vocab_path.read_text(encoding="utf-8"))
     assert "train_ids" in splits
-    assert "gl_columns" in vocab
-    assert "topic" in vocab
-    assert "School" in vocab["topic"]
+    assert "flags" in vocab
+    assert "intent_families" in vocab
+    assert "intent_phrases" in vocab
+    assert "gl_columns" not in vocab
 
 
-def test_canonical_jsonl_preserves_topic_column(tmp_path: Path) -> None:
+def test_canonical_jsonl_omits_legacy_gl_authoring_columns(tmp_path: Path) -> None:
     source_path = tmp_path / "school-learning.csv"
     target_jsonl = tmp_path / "canonical.jsonl"
     _write_current_authoring_sheet(source_path)
@@ -206,7 +158,23 @@ def test_canonical_jsonl_preserves_topic_column(tmp_path: Path) -> None:
     ]
 
     assert rows
-    assert rows[0]["topic"] == "School"
+    assert "topic" not in rows[0]
+    assert "guideline_tags" not in rows[0]
+    assert "g3" not in rows[0]
+    assert "g4" not in rows[0]
+
+
+def test_default_canonical_dataset_is_written_as_jsonl_shards(tmp_path: Path, monkeypatch) -> None:
+    source_path = tmp_path / "school-learning.csv"
+    target_dir = tmp_path / "canonical-shards"
+    _write_current_authoring_sheet(source_path)
+    monkeypatch.setattr("training.slm_classifier.source_normalizer.CANONICAL_DATASET", target_dir)
+    monkeypatch.setattr("training.slm_classifier.source_normalizer.CANONICAL_SHARD_ROWS", 1)
+
+    write_canonical_jsonl_with_metadata(source_path=source_path, target_path=target_dir)
+
+    assert [path.name for path in sorted(target_dir.glob("part-*.jsonl"))] == ["part-000.jsonl", "part-001.jsonl"]
+    assert len(load_jsonl_rows(target_dir)) == 2
 
 
 def test_dataset_validation_does_not_require_g2_all() -> None:
@@ -275,7 +243,7 @@ def test_source_normalizer_accepts_python_dict_string_for_flags(tmp_path: Path) 
     assert parsed[0]["flags"]["has_emotional_distress"] is False
 
 
-def test_canonical_normalization_keeps_g2_and_flags_consistent(tmp_path: Path) -> None:
+def test_canonical_normalization_does_not_derive_g2_or_flags(tmp_path: Path) -> None:
     source_path = tmp_path / "consistency.csv"
     target_jsonl = tmp_path / "canonical.jsonl"
     rows = [
@@ -299,10 +267,10 @@ def test_canonical_normalization_keeps_g2_and_flags_consistent(tmp_path: Path) -
     ]
 
     assert parsed[0]["g2"] == ["BULLYING"]
-    assert parsed[0]["flags"]["has_bullying_involved"] is True
-    assert parsed[1]["g2"] == ["SELF_HARM"]
+    assert parsed[0]["flags"]["has_bullying_involved"] is False
+    assert parsed[1]["g2"] == ["EMOTIONAL"]
     assert parsed[1]["flags"]["has_self_harm"] is True
-    assert parsed[1]["flags"]["has_emotional_distress"] is True
+    assert parsed[1]["flags"]["has_emotional_distress"] is False
 
 
 def test_source_normalizer_uses_first_g2_label_when_g2_cell_contains_semicolon_list(tmp_path: Path) -> None:
@@ -319,20 +287,3 @@ def test_source_normalizer_uses_first_g2_label_when_g2_cell_contains_semicolon_l
 
     assert len(parsed) == 1
     assert parsed[0]["g2"] == ["SELF_HARM"]
-
-
-def test_bullying_training_schema_negatives_sheet_loads_without_rejections() -> None:
-    source_path = Path(__file__).resolve().parents[1] / "data" / "staging" / "bullying_training_schema_negatives.csv"
-    parsed = expand_authoring_rows(source_path)
-
-    assert len(parsed) == 23
-    g2_labels = {row["g2"][0] for row in parsed}
-    assert "NEUTRAL_FACT" in g2_labels
-    assert "EMOTIONAL" in g2_labels
-    assert "GENERIC_INTENT" in g2_labels
-    assert "BULLYING" not in g2_labels
-    for row in parsed:
-        assert row["flags"]["has_bullying_involved"] is False
-    emotional_rows = [row for row in parsed if row["g2"] == ["EMOTIONAL"]]
-    assert emotional_rows
-    assert all(row["flags"]["has_emotional_distress"] for row in emotional_rows)

@@ -228,15 +228,16 @@ def main() -> None:
     parser.add_argument("--core", choices=available_cores(), default=None)
     parser.add_argument("--question", default=None)
     parser.add_argument("--user-input", dest="user_input", default=None)
+    parser.add_argument("--input-text", dest="input_text", default=None)
     parser.add_argument("--context", default="none")
     parser.add_argument("--age-band", default="9-10")
     parser.add_argument("--language", default="en")
     parser.add_argument("--threshold", type=float, default=None)
     parser.add_argument("--thresholds", default=None, help="JSON object of thresholds. Uses threshold/default/global when present.")
     args = parser.parse_args()
-    question = args.question or args.user_input
+    question = args.question or args.user_input or args.input_text
     if not question:
-        parser.error("one of --question or --user-input is required")
+        parser.error("one of --question, --user-input, or --input-text is required")
     print(
         json.dumps(
             run_infer(

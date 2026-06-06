@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import hashlib
 import importlib.util
 import json
 import os
@@ -12,12 +11,13 @@ from typing import Any
 
 from app.guardrails import gate_mapper, runtime_contracts, slm_classifier as heuristic_classifier
 from app.models.guardrail_decision import GuardrailDecision
-from training.slm_classifier.codebook import DOC_CODEBOOK_PATH
+from training.slm_classifier.codebook import codebook_fingerprint
 from training.slm_classifier.data_pipeline import (
     CANONICAL_DATASET,
     LABEL_VOCAB_PATH,
     build_group_id,
     dataset_fingerprint,
+    load_jsonl_rows,
     load_dataset_splits,
     parse_g2_values,
     primary_g2_label,
@@ -25,6 +25,13 @@ from training.slm_classifier.data_pipeline import (
     write_label_vocab,
 )
 from training.slm_classifier.runtime_config import load_classifier_runtime_config
+
+# Keep Hugging Face fully local for this project. Transformers can start a
+# safetensors auto-conversion background thread during import/model loading, so
+# these flags need to exist before any AutoModel call.
+os.environ.setdefault("HF_HUB_OFFLINE", "1")
+os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
 
 try:
     import torch
@@ -130,6 +137,15 @@ def _load_tokenizer(model_name: str) -> Any:
     return tokenizer
 
 
+def _load_training_tokenizer(model_name: str, model_dir: Path) -> Any:
+    if (model_dir / "tokenizer.json").exists():
+        try:
+            return AutoTokenizer.from_pretrained(model_dir, use_fast=True, local_files_only=True)
+        except Exception as exc:
+            print(f"[SLM] local tokenizer failed for {model_dir}: {exc}")
+    return _load_tokenizer(model_name)
+
+
 def _apply_tokenizer_padding_to_model(model: Any, tokenizer: Any) -> None:
     pad_token_id = getattr(tokenizer, "pad_token_id", None)
     if pad_token_id is None:
@@ -141,21 +157,16 @@ def _apply_tokenizer_padding_to_model(model: Any, tokenizer: Any) -> None:
 
 
 def _codebook_fingerprint() -> str:
-    return hashlib.sha256(DOC_CODEBOOK_PATH.read_bytes()).hexdigest()[:16]
+    return codebook_fingerprint()
 
 
 def _iter_rows(path: Path = CANONICAL_DATASET) -> list[dict[str, Any]]:
-    rows: list[dict[str, Any]] = []
-    with path.open("r", encoding="utf-8") as handle:
-        for line in handle:
-            if line.strip():
-                rows.append(json.loads(line))
-    return rows
+    return [dict(row) for row in load_jsonl_rows(path)]
 
 
 def _load_label_vocab() -> dict[str, list[str]]:
     if not LABEL_VOCAB_PATH.exists():
-        write_label_vocab(LABEL_VOCAB_PATH)
+        write_label_vocab(target_path=LABEL_VOCAB_PATH)
     return json.loads(LABEL_VOCAB_PATH.read_text(encoding="utf-8"))
 
 
@@ -197,8 +208,13 @@ def _training_defaults(core: str | None = None) -> dict[str, Any]:
         "g2_loss_weight": 2.0,
         "flag_loss_weight": 0.3,
         "intent_family_loss_weight": 0.15,
-         "flag_max_pos_weight": 8.0,          # Stricter cap for lower-dimensional flags
-    "intent_family_max_pos_weight": 18.0, # Higher headroom for sparse child safety behaviors
+        "intent_phrase_loss_weight": 0.10,
+        "flag_max_pos_weight": 8.0,  # Stricter cap for lower-dimensional flags
+        "intent_family_max_pos_weight": 18.0,  # Higher headroom for sparse child safety behaviors
+        "intent_phrase_max_pos_weight": 18.0,
+        "g2_focal_gamma": 2.0,
+        "intent_family_focal_gamma": 2.0,
+        "intent_phrase_focal_gamma": 2.0,
         "train_split": "train",
         "eval_split": "test",
         "freeze_backbone": False,
@@ -206,10 +222,14 @@ def _training_defaults(core: str | None = None) -> dict[str, Any]:
         "log_every_batches": 25,
         "checkpoint_every_batches": 500,
         "resume_if_available": False,
+        "local_files_only": True,
         "balanced_sampling": False,
+        "balanced_sampling_max_epochs": 4,
+        "balanced_sampling_force_frozen_backbone": True,
         "gradient_clip_norm": 1.0,
         "use_class_weights": False,
-        "train_intent_heads": False,
+        "train_intent_heads": True,
+        "cross_feature_fusion_version": 3,
         "write_batch_debug": True,
         "batch_debug_loss_threshold": 9.0,
         "seed": 42,
@@ -280,7 +300,7 @@ def _build_training_metadata(
         "transformers_available": bool(AutoModel and AutoTokenizer and torch and nn),
         "trained": trained,
         "training_backend": training_backend,
-        "flags_trained": False,
+        "flags_trained": bool(trained),
     }
 
 
@@ -464,6 +484,7 @@ class CanonicalSLMDataset(Dataset):  # pragma: no cover - exercised through trai
         self.flag_vocab = list(label_vocab.get("flags", []))
         self.intent_family_vocab = list(label_vocab.get("intent_families", []))
         self.intent_family_index = _index_map(self.intent_family_vocab) if self.intent_family_vocab else {}
+        self.intent_phrase_vocab = list(label_vocab.get("intent_phrases", []))
 
     def __len__(self) -> int:
         return len(self.rows)
@@ -480,6 +501,22 @@ class CanonicalSLMDataset(Dataset):  # pragma: no cover - exercised through trai
         return {
             "input_ids": encoded["input_ids"].squeeze(0),
             "attention_mask": encoded["attention_mask"].squeeze(0),
+            "intent_rule_features": torch.tensor(
+                runtime_contracts.build_intent_family_rule_vector(
+                    str(row.get("question", "")),
+                    str(row.get("context", "")),
+                    self.intent_family_vocab,
+                ),
+                dtype=torch.float32,
+            ),
+            "phrase_trigger_features": torch.tensor(
+                runtime_contracts.build_g2_phrase_trigger_vector(
+                    str(row.get("question", "")),
+                    str(row.get("context", "")),
+                    list(self.label_vocab.get("g2", [])),
+                ),
+                dtype=torch.float32,
+            ),
             "g1_labels": torch.tensor(self.g1_index[str(row.get("g1", ""))], dtype=torch.long),
             "g2_labels": torch.tensor(self.g2_index[primary_g2_label(row.get("g2", []))], dtype=torch.long),
             "flag_labels": torch.tensor(
@@ -497,6 +534,17 @@ class CanonicalSLMDataset(Dataset):  # pragma: no cover - exercised through trai
                 1.0 if bool(row.get("intent_families_present", False)) and self.intent_family_vocab else 0.0,
                 dtype=torch.float32,
             ),
+            "intent_phrase_labels": torch.tensor(
+                [
+                    1.0 if str(intent_phrase) in {str(item).strip() for item in row.get("intent_phrases", []) or []} else 0.0
+                    for intent_phrase in self.intent_phrase_vocab
+                ],
+                dtype=torch.float32,
+            ),
+            "intent_phrase_mask": torch.tensor(
+                1.0 if bool(row.get("intent_phrases_present", False)) and self.intent_phrase_vocab else 0.0,
+                dtype=torch.float32,
+            ),
             "sample_id": str(row.get("sample_id", "")),
             "question": str(row.get("question", "")),
             "context": str(row.get("context", "")),
@@ -506,9 +554,44 @@ class CanonicalSLMDataset(Dataset):  # pragma: no cover - exercised through trai
         }
 
 
-class MultiHeadSLMClassifier(nn.Module):  # pragma: no cover - exercised through training/inference path
-    def __init__(self, model_name: str, num_g1_labels: int, num_g2_labels: int, num_flags: int, num_intent_families: int, *, local_files_only: bool = False) -> None:
+class CrossFeatureFusionHead(nn.Module):  # pragma: no cover - exercised through training/inference path
+    def __init__(self, hidden_size: int, num_intent_rules: int, num_phrase_triggers: int, num_g2_labels: int) -> None:
         super().__init__()
+        self.num_intent_rules = int(num_intent_rules)
+        self.num_phrase_triggers = int(num_phrase_triggers)
+        self.intent_rule_projection = nn.Linear(self.num_intent_rules, hidden_size) if self.num_intent_rules else None
+        self.phrase_trigger_projection = nn.Linear(self.num_phrase_triggers, hidden_size) if self.num_phrase_triggers else None
+        self.prior_attention = nn.MultiheadAttention(hidden_size, num_heads=1, batch_first=True)
+        self.glu_projection = nn.Linear(hidden_size * 2, hidden_size * 2)
+        self.fusion_norm = nn.LayerNorm(hidden_size)
+        self.classifier = nn.Linear(hidden_size, num_g2_labels)
+
+    def forward(self, pooled: Any, intent_rule_features: Any | None, phrase_trigger_features: Any | None) -> Any:
+        intent_signal = torch.zeros_like(pooled)
+        phrase_signal = torch.zeros_like(pooled)
+        if self.intent_rule_projection is not None and intent_rule_features is not None:
+            intent_signal = self.intent_rule_projection(intent_rule_features.to(dtype=pooled.dtype))
+        if self.phrase_trigger_projection is not None and phrase_trigger_features is not None:
+            phrase_signal = self.phrase_trigger_projection(phrase_trigger_features.to(dtype=pooled.dtype))
+        prior_tokens = torch.stack((intent_signal, phrase_signal), dim=1)
+        attended_prior, _ = self.prior_attention(
+            pooled.unsqueeze(1),
+            prior_tokens,
+            prior_tokens,
+            need_weights=False,
+        )
+        fusion_input = torch.cat((pooled, attended_prior.squeeze(1)), dim=-1)
+        candidate, gate = self.glu_projection(fusion_input).chunk(2, dim=-1)
+        fused = self.fusion_norm(pooled + candidate * torch.sigmoid(gate))
+        return self.classifier(fused)
+
+
+class MultiHeadSLMClassifier(nn.Module):  # pragma: no cover - exercised through training/inference path
+    def __init__(self, model_name: str, num_g1_labels: int, num_g2_labels: int, num_flags: int, num_intent_families: int, num_intent_phrases: int, num_intent_rules: int, num_phrase_triggers: int, *, local_files_only: bool = False) -> None:
+        super().__init__()
+        if local_files_only:
+            os.environ["HF_HUB_OFFLINE"] = "1"
+            os.environ["TRANSFORMERS_OFFLINE"] = "1"
         self.backbone = AutoModel.from_pretrained(model_name, local_files_only=local_files_only)
         hidden_size = int(self.backbone.config.hidden_size)
         dropout_prob = float(
@@ -518,9 +601,10 @@ class MultiHeadSLMClassifier(nn.Module):  # pragma: no cover - exercised through
         )
         self.dropout = nn.Dropout(dropout_prob)
         self.g1_classifier = nn.Linear(hidden_size, num_g1_labels)
-        self.g2_classifier = nn.Linear(hidden_size, num_g2_labels)
+        self.g2_classifier = CrossFeatureFusionHead(hidden_size, num_intent_rules, num_phrase_triggers, num_g2_labels)
         self.flag_classifier = nn.Linear(hidden_size, num_flags)
         self.intent_family_classifier = nn.Linear(hidden_size, num_intent_families) if num_intent_families > 0 else None
+        self.intent_phrase_classifier = nn.Linear(hidden_size, num_intent_phrases) if num_intent_phrases > 0 else None
         self.config = self.backbone.config
 
     def forward(
@@ -528,6 +612,8 @@ class MultiHeadSLMClassifier(nn.Module):  # pragma: no cover - exercised through
         input_ids: Any,
         attention_mask: Any,
         token_type_ids: Any | None = None,
+        intent_rule_features: Any | None = None,
+        phrase_trigger_features: Any | None = None,
         **_: Any,
     ) -> dict[str, Any]:
         backbone_kwargs = {
@@ -541,13 +627,24 @@ class MultiHeadSLMClassifier(nn.Module):  # pragma: no cover - exercised through
         mask = attention_mask.unsqueeze(-1).to(hidden_state.dtype)
         pooled = (hidden_state * mask).sum(dim=1) / mask.sum(dim=1).clamp(min=1.0)
         pooled = self.dropout(pooled.float())
+        intent_family_logits = self.intent_family_classifier(pooled) if self.intent_family_classifier is not None else None
+        fusion_intent_features = intent_rule_features
+        if intent_family_logits is not None:
+            learned_intent_features = torch.sigmoid(intent_family_logits)
+            fusion_intent_features = (
+                torch.maximum(learned_intent_features, intent_rule_features.to(dtype=pooled.dtype))
+                if intent_rule_features is not None
+                else learned_intent_features
+            )
         payload = {
             "g1_logits": self.g1_classifier(pooled),
-            "g2_logits": self.g2_classifier(pooled),
+            "g2_logits": self.g2_classifier(pooled, fusion_intent_features, phrase_trigger_features),
             "flag_logits": self.flag_classifier(pooled),
         }
         if self.intent_family_classifier is not None:
-            payload["intent_family_logits"] = self.intent_family_classifier(pooled)
+            payload["intent_family_logits"] = intent_family_logits
+        if self.intent_phrase_classifier is not None:
+            payload["intent_phrase_logits"] = self.intent_phrase_classifier(pooled)
         return payload
 
 
@@ -621,6 +718,56 @@ def _load_rows_by_split(dataset_path: Path, split_name: str) -> list[dict[str, A
     return select_rows_for_split(rows, split_name, load_dataset_splits())
 
 
+class MulticlassFocalLoss(nn.Module):
+    def __init__(self, gamma: float = 2.0, weight: Any | None = None) -> None:
+        super().__init__()
+        self.gamma = float(gamma)
+        if self.gamma < 0.0:
+            raise ValueError("Focal loss gamma must be non-negative.")
+        self.register_buffer("weight", weight)
+
+    def forward(self, logits: Any, targets: Any) -> Any:
+        log_probs = torch.nn.functional.log_softmax(logits.float(), dim=-1)
+        target_log_probs = log_probs.gather(1, targets.view(-1, 1)).squeeze(1)
+        target_probs = target_log_probs.exp().clamp(min=0.0, max=1.0)
+        focal_factor = (1.0 - target_probs).clamp(min=0.0, max=1.0).pow(self.gamma)
+        loss = -focal_factor * target_log_probs
+        if self.weight is not None:
+            loss = loss * self.weight.to(logits.device).gather(0, targets)
+        return loss.mean()
+
+
+class BinaryFocalLoss(nn.Module):
+    def __init__(self, gamma: float = 2.0, pos_weight: Any | None = None) -> None:
+        super().__init__()
+        self.gamma = float(gamma)
+        if self.gamma < 0.0:
+            raise ValueError("Focal loss gamma must be non-negative.")
+        self.register_buffer("pos_weight", pos_weight)
+
+    def forward(self, logits: Any, targets: Any) -> Any:
+        return _binary_focal_loss_elements(logits, targets, self).mean()
+
+
+def _binary_focal_loss_elements(logits: Any, targets: Any, loss_fn: Any) -> Any:
+    float_logits = logits.float()
+    float_targets = targets.float()
+    raw_loss = torch.nn.functional.binary_cross_entropy_with_logits(
+        float_logits,
+        float_targets,
+        pos_weight=getattr(loss_fn, "pos_weight", None),
+        reduction="none",
+    )
+    log_prob_true = (
+        float_targets * torch.nn.functional.logsigmoid(float_logits)
+        + (1.0 - float_targets) * torch.nn.functional.logsigmoid(-float_logits)
+    )
+    prob_true = log_prob_true.exp().clamp(min=0.0, max=1.0)
+    gamma = float(getattr(loss_fn, "gamma", 0.0))
+    focal_factor = (1.0 - prob_true).clamp(min=0.0, max=1.0).pow(gamma)
+    return raw_loss * focal_factor
+
+
 def _compute_loss(
     outputs: dict[str, Any],
     batch: dict[str, Any],
@@ -628,10 +775,12 @@ def _compute_loss(
     g2_loss_fn: Any,
     flag_loss_fn: Any,
     intent_family_loss_fn: Any | None = None,
+    intent_phrase_loss_fn: Any | None = None,
     g1_loss_weight: float = 0.2,
     g2_loss_weight: float = 2.0,
     flag_loss_weight: float = 0.45,
     intent_family_loss_weight: float = 0.15,
+    intent_phrase_loss_weight: float = 0.10,
 ) -> Any:
     g1_loss = g1_loss_fn(outputs["g1_logits"].float(), batch["g1_labels"])
     g2_loss = g2_loss_fn(outputs["g2_logits"].float(), batch["g2_labels"])
@@ -644,15 +793,25 @@ def _compute_loss(
     if intent_family_loss_fn is not None and "intent_family_logits" in outputs and batch["intent_family_labels"].numel():
         intent_family_mask = batch["intent_family_mask"].float().view(-1, 1)
         if float(intent_family_mask.sum().item()) > 0:
-            raw_loss = torch.nn.functional.binary_cross_entropy_with_logits(
+            raw_loss = _binary_focal_loss_elements(
                 outputs["intent_family_logits"].float(),
                 batch["intent_family_labels"],
-                pos_weight=getattr(intent_family_loss_fn, "pos_weight", None),
-                reduction="none",
+                intent_family_loss_fn,
             )
             valid_element_count = intent_family_mask.sum() * raw_loss.shape[1]
             masked_loss = (raw_loss * intent_family_mask).sum() / valid_element_count.clamp(min=1.0)
             total_loss = total_loss + float(intent_family_loss_weight) * masked_loss
+    if intent_phrase_loss_fn is not None and "intent_phrase_logits" in outputs and batch["intent_phrase_labels"].numel():
+        intent_phrase_mask = batch["intent_phrase_mask"].float().view(-1, 1)
+        if float(intent_phrase_mask.sum().item()) > 0:
+            raw_loss = _binary_focal_loss_elements(
+                outputs["intent_phrase_logits"].float(),
+                batch["intent_phrase_labels"],
+                intent_phrase_loss_fn,
+            )
+            valid_element_count = intent_phrase_mask.sum() * raw_loss.shape[1]
+            masked_loss = (raw_loss * intent_phrase_mask).sum() / valid_element_count.clamp(min=1.0)
+            total_loss = total_loss + float(intent_phrase_loss_weight) * masked_loss
     return total_loss
 
 
@@ -663,6 +822,7 @@ def _compute_loss_breakdown(
     g2_loss_fn: Any,
     flag_loss_fn: Any,
     intent_family_loss_fn: Any | None = None,
+    intent_phrase_loss_fn: Any | None = None,
 ) -> dict[str, float]:
     payload = {
         "g1_loss": float(g1_loss_fn(outputs["g1_logits"].float(), batch["g1_labels"]).item()),
@@ -672,15 +832,26 @@ def _compute_loss_breakdown(
     if intent_family_loss_fn is not None and "intent_family_logits" in outputs and batch["intent_family_labels"].numel():
         intent_family_mask = batch["intent_family_mask"].float().view(-1, 1)
         if float(intent_family_mask.sum().item()) > 0:
-            raw_loss = torch.nn.functional.binary_cross_entropy_with_logits(
+            raw_loss = _binary_focal_loss_elements(
                 outputs["intent_family_logits"].float(),
                 batch["intent_family_labels"],
-                pos_weight=getattr(intent_family_loss_fn, "pos_weight", None),
-                reduction="none",
+                intent_family_loss_fn,
             )
             valid_element_count = intent_family_mask.sum() * raw_loss.shape[1]
             payload["intent_family_loss"] = float(
                 ((raw_loss * intent_family_mask).sum() / valid_element_count.clamp(min=1.0)).item()
+            )
+    if intent_phrase_loss_fn is not None and "intent_phrase_logits" in outputs and batch["intent_phrase_labels"].numel():
+        intent_phrase_mask = batch["intent_phrase_mask"].float().view(-1, 1)
+        if float(intent_phrase_mask.sum().item()) > 0:
+            raw_loss = _binary_focal_loss_elements(
+                outputs["intent_phrase_logits"].float(),
+                batch["intent_phrase_labels"],
+                intent_phrase_loss_fn,
+            )
+            valid_element_count = intent_phrase_mask.sum() * raw_loss.shape[1]
+            payload["intent_phrase_loss"] = float(
+                ((raw_loss * intent_phrase_mask).sum() / valid_element_count.clamp(min=1.0)).item()
             )
     return payload
 
@@ -692,10 +863,12 @@ def _evaluate_loss(
     g2_loss_fn: Any,
     flag_loss_fn: Any,
     intent_family_loss_fn: Any | None = None,
+    intent_phrase_loss_fn: Any | None = None,
     g1_loss_weight: float = 0.2,
     g2_loss_weight: float = 2.0,
     flag_loss_weight: float = 0.45,
     intent_family_loss_weight: float = 0.15,
+    intent_phrase_loss_weight: float = 0.10,
 ) -> float:
     model.eval()
     total_loss = 0.0
@@ -704,7 +877,12 @@ def _evaluate_loss(
         for batch in loader:
             tensor_batch, _ = _split_batch_for_training(batch)
             tensor_batch = {key: value.to(_device(getattr(model.config, "_name_or_path", None))) for key, value in tensor_batch.items()}
-            outputs = model(input_ids=tensor_batch["input_ids"], attention_mask=tensor_batch["attention_mask"])
+            outputs = model(
+                input_ids=tensor_batch["input_ids"],
+                attention_mask=tensor_batch["attention_mask"],
+                intent_rule_features=tensor_batch["intent_rule_features"],
+                phrase_trigger_features=tensor_batch["phrase_trigger_features"],
+            )
             loss = _compute_loss(
                 outputs,
                 tensor_batch,
@@ -712,10 +890,12 @@ def _evaluate_loss(
                 g2_loss_fn,
                 flag_loss_fn,
                 intent_family_loss_fn,
+                intent_phrase_loss_fn,
                 g1_loss_weight=g1_loss_weight,
                 g2_loss_weight=g2_loss_weight,
                 flag_loss_weight=flag_loss_weight,
                 intent_family_loss_weight=intent_family_loss_weight,
+                intent_phrase_loss_weight=intent_phrase_loss_weight,
             )
             total_loss += float(loss.item())
             total_batches += 1
@@ -745,15 +925,26 @@ def _evaluate_gate_accuracy(model: Any, loader: Any, label_vocab: dict[str, list
         label: {"tp": 0, "fp": 0, "fn": 0}
         for label in label_vocab.get("intent_families", [])
     }
+    intent_phrase_counts = {
+        label: {"tp": 0, "fp": 0, "fn": 0}
+        for label in label_vocab.get("intent_phrases", [])
+    }
     flag_exact_match = 0
     intent_family_exact_match = 0
     intent_family_evaluated_total = 0
+    intent_phrase_exact_match = 0
+    intent_phrase_evaluated_total = 0
     with torch.no_grad():
         for batch in loader:
             device = _device(getattr(model.config, "_name_or_path", None))
             tensor_batch, meta_batch = _split_batch_for_training(batch)
             tensor_batch = {key: value.to(device) for key, value in tensor_batch.items()}
-            outputs = model(input_ids=tensor_batch["input_ids"], attention_mask=tensor_batch["attention_mask"])
+            outputs = model(
+                input_ids=tensor_batch["input_ids"],
+                attention_mask=tensor_batch["attention_mask"],
+                intent_rule_features=tensor_batch["intent_rule_features"],
+                phrase_trigger_features=tensor_batch["phrase_trigger_features"],
+            )
             g1_pred = torch.argmax(outputs["g1_logits"], dim=-1)
             g2_pred = torch.argmax(outputs["g2_logits"], dim=-1)
             flag_pred = (torch.sigmoid(outputs["flag_logits"]) >= 0.5).to(dtype=tensor_batch["flag_labels"].dtype)
@@ -761,6 +952,11 @@ def _evaluate_gate_accuracy(model: Any, loader: Any, label_vocab: dict[str, list
             if "intent_family_logits" in outputs and "intent_family_labels" in tensor_batch and tensor_batch["intent_family_labels"].shape[-1] > 0:
                 intent_family_pred = (torch.sigmoid(outputs["intent_family_logits"]) >= 0.5).to(
                     dtype=tensor_batch["intent_family_labels"].dtype
+                )
+            intent_phrase_pred = None
+            if "intent_phrase_logits" in outputs and "intent_phrase_labels" in tensor_batch and tensor_batch["intent_phrase_labels"].shape[-1] > 0:
+                intent_phrase_pred = (torch.sigmoid(outputs["intent_phrase_logits"]) >= 0.5).to(
+                    dtype=tensor_batch["intent_phrase_labels"].dtype
                 )
             g1_correct += int((g1_pred == tensor_batch["g1_labels"]).sum().item())
             g2_correct += int((g2_pred == tensor_batch["g2_labels"]).sum().item())
@@ -830,6 +1026,25 @@ def _evaluate_gate_accuracy(model: Any, loader: Any, label_vocab: dict[str, list
                             intent_family_counts[label]["fp"] += 1
                         elif gold and (not pred):
                             intent_family_counts[label]["fn"] += 1
+            if intent_phrase_counts and intent_phrase_pred is not None:
+                intent_gold = tensor_batch["intent_phrase_labels"].cpu().tolist()
+                intent_pred_values = intent_phrase_pred.cpu().tolist()
+                intent_mask = tensor_batch["intent_phrase_mask"].cpu().tolist()
+                for pred_row, gold_row, mask_value in zip(intent_pred_values, intent_gold, intent_mask):
+                    if not bool(mask_value):
+                        continue
+                    intent_phrase_evaluated_total += 1
+                    if pred_row == gold_row:
+                        intent_phrase_exact_match += 1
+                    for idx, label in enumerate(label_vocab["intent_phrases"]):
+                        gold = bool(gold_row[idx])
+                        pred = bool(pred_row[idx])
+                        if gold and pred:
+                            intent_phrase_counts[label]["tp"] += 1
+                        elif (not gold) and pred:
+                            intent_phrase_counts[label]["fp"] += 1
+                        elif gold and (not pred):
+                            intent_phrase_counts[label]["fn"] += 1
     def _multiclass_summary(counts_map: dict[str, dict[str, int]]) -> dict[str, float]:
         f1_values: list[float] = []
         weighted_f1_numerator = 0.0
@@ -896,6 +1111,7 @@ def _evaluate_gate_accuracy(model: Any, loader: Any, label_vocab: dict[str, list
         "g2_weighted_f1": g2_summary["weighted_f1"],
         "flags": _multilabel_summary(flag_counts, flag_exact_match, total),
         "intent_families": _multilabel_summary(intent_family_counts, intent_family_exact_match, intent_family_evaluated_total),
+        "intent_phrases": _multilabel_summary(intent_phrase_counts, intent_phrase_exact_match, intent_phrase_evaluated_total),
         "total_rows": total,
         "g1_predicted_indices": dict(g1_predictions),
         "g2_predicted_indices": dict(g2_predictions),
@@ -961,8 +1177,13 @@ def train_slm_classifier(
     g2_loss_weight: float | None = None,
     flag_loss_weight: float | None = None,
     intent_family_loss_weight: float | None = None,
+    intent_phrase_loss_weight: float | None = None,
+    g2_focal_gamma: float | None = None,
+    intent_family_focal_gamma: float | None = None,
+    intent_phrase_focal_gamma: float | None = None,
     flag_max_pos_weight: float | None = None,
     intent_family_max_pos_weight: float | None = None,
+    intent_phrase_max_pos_weight: float | None = None,
     train_intent_heads: bool | None = None,
     resume_if_available: bool | None = None,
     train_on_all_data: bool = False,
@@ -1034,6 +1255,16 @@ def train_slm_classifier(
         config["intent_family_max_pos_weight"] = float(intent_family_max_pos_weight)
     if intent_family_loss_weight is not None:
         config["intent_family_loss_weight"] = float(intent_family_loss_weight)
+    if intent_phrase_max_pos_weight is not None:
+        config["intent_phrase_max_pos_weight"] = float(intent_phrase_max_pos_weight)
+    if intent_phrase_loss_weight is not None:
+        config["intent_phrase_loss_weight"] = float(intent_phrase_loss_weight)
+    if g2_focal_gamma is not None:
+        config["g2_focal_gamma"] = float(g2_focal_gamma)
+    if intent_family_focal_gamma is not None:
+        config["intent_family_focal_gamma"] = float(intent_family_focal_gamma)
+    if intent_phrase_focal_gamma is not None:
+        config["intent_phrase_focal_gamma"] = float(intent_phrase_focal_gamma)
     if train_intent_heads is not None:
         config["train_intent_heads"] = bool(train_intent_heads)
     if resume_if_available is not None:
@@ -1042,6 +1273,23 @@ def train_slm_classifier(
         config["checkpoint_every_batches"] = int(checkpoint_every_batches)
     if balanced_sampling is not None:
         config["balanced_sampling"] = bool(balanced_sampling)
+    log_prefix = f"[SLM:{resolved_core}]"
+    if bool(config.get("balanced_sampling", False)):
+        max_balanced_epochs = int(config.get("balanced_sampling_max_epochs", 4) or 4)
+        if int(config["epochs"]) > max_balanced_epochs:
+            print(
+                f"{log_prefix} config: balanced_sampling_epoch_cap "
+                f"requested_epochs={config['epochs']} capped_epochs={max_balanced_epochs}"
+            )
+            config["epochs"] = max_balanced_epochs
+        if bool(config.get("balanced_sampling_force_frozen_backbone", True)):
+            if not bool(config.get("freeze_backbone", False)) or int(config.get("unfreeze_top_layers", 0) or 0) > 0:
+                print(
+                    f"{log_prefix} config: balanced_sampling_freeze_backbone "
+                    "forcing freeze_backbone=true unfreeze_top_layers=0"
+                )
+            config["freeze_backbone"] = True
+            config["unfreeze_top_layers"] = 0
     config["train_on_all_data"] = bool(train_on_all_data)
     paths["training_config"].write_text(json.dumps(config, indent=2), encoding="utf-8")
 
@@ -1054,12 +1302,11 @@ def train_slm_classifier(
             raise RuntimeError("Transformers/Torch dependencies are not available for SLM training.")
         startup_time = time.perf_counter()
         device = _device(config["model_name"], config.get("device", "auto"))
-        log_prefix = f"[SLM:{resolved_core}]"
         print(f"{log_prefix} init: selected_device={device.type} requested_device={config.get('device', 'auto')}")
         label_vocab = json.loads(paths["label_vocab"].read_text(encoding="utf-8"))
         tokenizer_start = time.perf_counter()
         print(f"{log_prefix} init: loading_tokenizer model={config['model_name']}")
-        tokenizer = _load_tokenizer(config["model_name"])
+        tokenizer = _load_training_tokenizer(config["model_name"], model_dir)
         print(f"{log_prefix} init: tokenizer_ready elapsed={time.perf_counter() - tokenizer_start:.2f}s")
         if tokenizer.pad_token is None:
             tokenizer.pad_token = tokenizer.eos_token
@@ -1087,7 +1334,10 @@ def train_slm_classifier(
             num_g2_labels=len(label_vocab["g2"]),
             num_flags=len(label_vocab["flags"]),
             num_intent_families=len(label_vocab.get("intent_families", [])) if intent_head_enabled else 0,
-            local_files_only=False,
+            num_intent_phrases=len(label_vocab.get("intent_phrases", [])) if intent_head_enabled else 0,
+            num_intent_rules=len(label_vocab.get("intent_families", [])),
+            num_phrase_triggers=len(label_vocab.get("g2", [])),
+            local_files_only=bool(config.get("local_files_only", True)),
         )
         _apply_tokenizer_padding_to_model(model, tokenizer)
         print(f"{log_prefix} init: backbone_ready elapsed={time.perf_counter() - model_start:.2f}s")
@@ -1149,7 +1399,7 @@ def train_slm_classifier(
             device=device,
         ) if label_vocab.get("flags") else None
         g1_loss_fn = torch.nn.CrossEntropyLoss(weight=g1_weights)
-        g2_loss_fn = torch.nn.CrossEntropyLoss(weight=g2_weights)
+        g2_loss_fn = MulticlassFocalLoss(gamma=float(config.get("g2_focal_gamma", 2.0)), weight=g2_weights)
         flag_loss_fn = torch.nn.BCEWithLogitsLoss(pos_weight=flag_weights)
         intent_family_weights = torch.tensor(
             _compute_list_multilabel_pos_weight(
@@ -1162,8 +1412,22 @@ def train_slm_classifier(
             device=device,
         ) if intent_head_enabled and label_vocab.get("intent_families") else None
         intent_family_loss_fn = (
-            torch.nn.BCEWithLogitsLoss(pos_weight=intent_family_weights)
+            BinaryFocalLoss(gamma=float(config.get("intent_family_focal_gamma", 2.0)), pos_weight=intent_family_weights)
             if intent_head_enabled and label_vocab.get("intent_families") else None
+        )
+        intent_phrase_weights = torch.tensor(
+            _compute_list_multilabel_pos_weight(
+                train_rows,
+                label_vocab.get("intent_phrases", []),
+                "intent_phrases",
+                max_pos_weight=config.get("intent_phrase_max_pos_weight"),
+            ),
+            dtype=torch.float32,
+            device=device,
+        ) if intent_head_enabled and label_vocab.get("intent_phrases") else None
+        intent_phrase_loss_fn = (
+            BinaryFocalLoss(gamma=float(config.get("intent_phrase_focal_gamma", 2.0)), pos_weight=intent_phrase_weights)
+            if intent_head_enabled and label_vocab.get("intent_phrases") else None
         )
         backbone_parameters = [
             parameter for parameter in _model_backbone(model).parameters()
@@ -1176,6 +1440,8 @@ def train_slm_classifier(
         ]
         if getattr(model, "intent_family_classifier", None) is not None:
             head_modules.append(model.intent_family_classifier)
+        if getattr(model, "intent_phrase_classifier", None) is not None:
+            head_modules.append(model.intent_phrase_classifier)
         head_parameters = [
             parameter
             for module in head_modules
@@ -1272,7 +1538,12 @@ def train_slm_classifier(
                 tensor_batch, meta_batch = _split_batch_for_training(batch)
                 tensor_batch = {key: value.to(device) for key, value in tensor_batch.items()}
                 optimizer.zero_grad()
-                outputs = model(input_ids=tensor_batch["input_ids"], attention_mask=tensor_batch["attention_mask"])
+                outputs = model(
+                    input_ids=tensor_batch["input_ids"],
+                    attention_mask=tensor_batch["attention_mask"],
+                    intent_rule_features=tensor_batch["intent_rule_features"],
+                    phrase_trigger_features=tensor_batch["phrase_trigger_features"],
+                )
                 loss = _compute_loss(
                     outputs,
                     tensor_batch,
@@ -1280,10 +1551,12 @@ def train_slm_classifier(
                     g2_loss_fn,
                     flag_loss_fn,
                     intent_family_loss_fn,
+                    intent_phrase_loss_fn,
                     g1_loss_weight=float(config.get("g1_loss_weight", 0.2)),
                     g2_loss_weight=float(config.get("g2_loss_weight", 2.0)),
                     flag_loss_weight=float(config.get("flag_loss_weight", 0.45)),
                     intent_family_loss_weight=float(config.get("intent_family_loss_weight", 0.15)),
+                    intent_phrase_loss_weight=float(config.get("intent_phrase_loss_weight", 0.10)),
                 )
                 if not torch.isfinite(loss):
                     logits = outputs["g2_logits"].detach()
@@ -1322,6 +1595,7 @@ def train_slm_classifier(
                             g2_loss_fn,
                             flag_loss_fn,
                             intent_family_loss_fn,
+                            intent_phrase_loss_fn,
                         )
                         row_count = len(meta_batch.get("sample_id", []))
                         g2_logits = outputs["g2_logits"].detach().cpu()
@@ -1409,10 +1683,12 @@ def train_slm_classifier(
                 g2_loss_fn,
                 flag_loss_fn,
                 intent_family_loss_fn,
+                intent_phrase_loss_fn,
                 g1_loss_weight=float(config.get("g1_loss_weight", 0.2)),
                 g2_loss_weight=float(config.get("g2_loss_weight", 2.0)),
                 flag_loss_weight=float(config.get("flag_loss_weight", 0.45)),
                 intent_family_loss_weight=float(config.get("intent_family_loss_weight", 0.15)),
+                intent_phrase_loss_weight=float(config.get("intent_phrase_loss_weight", 0.10)),
             ) if len(test_rows) else 0.0
             print(
                 f"{log_prefix} epoch {epoch_index + 1} summary "
@@ -1446,17 +1722,23 @@ def train_slm_classifier(
         metadata["actual_unfrozen_top_layers"] = int(actual_unfrozen_top_layers)
         metadata["resume_if_available"] = bool(config.get("resume_if_available", True))
         metadata["balanced_sampling"] = bool(config.get("balanced_sampling", False))
+        metadata["balanced_sampling_max_epochs"] = int(config.get("balanced_sampling_max_epochs", 4) or 4)
         metadata["train_intent_heads"] = bool(config.get("train_intent_heads", False))
+        metadata["cross_feature_fusion_version"] = int(config.get("cross_feature_fusion_version", 0))
         metadata["g1_loss_weight"] = float(config.get("g1_loss_weight", 1.0))
         metadata["g2_loss_weight"] = float(config.get("g2_loss_weight", 2.0))
         metadata["flag_loss_weight"] = float(config.get("flag_loss_weight", 0.45))
         metadata["intent_family_loss_weight"] = float(config.get("intent_family_loss_weight", 0.15))
+        metadata["intent_phrase_loss_weight"] = float(config.get("intent_phrase_loss_weight", 0.10))
         metadata["flag_max_pos_weight"] = float(config.get("flag_max_pos_weight", 10.0))
         metadata["intent_family_max_pos_weight"] = float(config.get("intent_family_max_pos_weight", 10.0))
+        metadata["intent_phrase_max_pos_weight"] = float(config.get("intent_phrase_max_pos_weight", 10.0))
+        metadata["g2_focal_gamma"] = float(config.get("g2_focal_gamma", 2.0))
+        metadata["intent_family_focal_gamma"] = float(config.get("intent_family_focal_gamma", 2.0))
+        metadata["intent_phrase_focal_gamma"] = float(config.get("intent_phrase_focal_gamma", 2.0))
         metadata["head_learning_rate"] = float(config.get("head_learning_rate", config["learning_rate"]))
         metadata["train_on_all_data"] = bool(config.get("train_on_all_data", False))
         metadata["resumed_from_existing"] = resumed_from_existing
-        metadata["flags_trained"] = False
         if len(test_rows):
             gate_eval = _evaluate_gate_accuracy(model, test_loader, label_vocab)
             metadata["test_gate_metrics"] = gate_eval
@@ -1508,7 +1790,7 @@ def _load_trained_model(model_dir: Path, package: LoadedSLMPackage) -> tuple[Any
 def _run_model_with_device_fallback(model: Any, encoded: dict[str, Any], model_dir: Path, package: LoadedSLMPackage) -> tuple[dict[str, Any], str]:
     try:
         with torch.no_grad():
-            return model(input_ids=encoded["input_ids"], attention_mask=encoded["attention_mask"]), str(encoded["input_ids"].device)
+            return model(**encoded), str(encoded["input_ids"].device)
     except RuntimeError as exc:
         message = str(exc)
         if "MPSNDArrayMatrixMultiplication" not in message and "Placeholder storage has not been allocated on MPS device" not in message:
@@ -1517,12 +1799,18 @@ def _run_model_with_device_fallback(model: Any, encoded: dict[str, Any], model_d
         tokenizer, cpu_model = _load_trained_model_on_device(model_dir, package, cpu_device)
         encoded_cpu = {key: value.to(cpu_device) for key, value in encoded.items()}
         with torch.no_grad():
-            return cpu_model(input_ids=encoded_cpu["input_ids"], attention_mask=encoded_cpu["attention_mask"]), "cpu_fallback"
+            return cpu_model(**encoded_cpu), "cpu_fallback"
 
 
 def _load_trained_model_on_device(model_dir: Path, package: LoadedSLMPackage, device: Any) -> tuple[Any, Any]:
     if not (AutoTokenizer and torch and AutoModel and nn):
         raise RuntimeError("Transformers/Torch dependencies are not available for SLM inference.")
+    artifact_fusion_version = min(
+        int(package.training_config.get("cross_feature_fusion_version", 0)),
+        int(package.metadata.get("cross_feature_fusion_version", 0)),
+    )
+    if artifact_fusion_version < 3:
+        raise RuntimeError("SLM artifact predates cross-attention GLU feature fusion and must be retrained.")
     cache_key = (str(model_dir.resolve()), str(device.type))
     cached = _TRAINED_MODEL_CACHE.get(cache_key)
     if cached is not None:
@@ -1533,23 +1821,20 @@ def _load_trained_model_on_device(model_dir: Path, package: LoadedSLMPackage, de
         tokenizer = _load_tokenizer(package.training_config["model_name"])
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
-    previous_hf_offline = os.environ.get("HF_HUB_OFFLINE")
     os.environ["HF_HUB_OFFLINE"] = "1"
-    try:
-        model = MultiHeadSLMClassifier(
-            package.training_config["model_name"],
-            num_g1_labels=len(package.label_vocab["g1"]),
-            num_g2_labels=len(package.label_vocab["g2"]),
-            num_flags=len(package.label_vocab["flags"]),
-            num_intent_families=len(package.label_vocab.get("intent_families", [])),
-            local_files_only=True,
-        )
-        _apply_tokenizer_padding_to_model(model, tokenizer)
-    finally:
-        if previous_hf_offline is None:
-            os.environ.pop("HF_HUB_OFFLINE", None)
-        else:
-            os.environ["HF_HUB_OFFLINE"] = previous_hf_offline
+    os.environ["TRANSFORMERS_OFFLINE"] = "1"
+    model = MultiHeadSLMClassifier(
+        package.training_config["model_name"],
+        num_g1_labels=len(package.label_vocab["g1"]),
+        num_g2_labels=len(package.label_vocab["g2"]),
+        num_flags=len(package.label_vocab["flags"]),
+        num_intent_families=len(package.label_vocab.get("intent_families", [])),
+        num_intent_phrases=len(package.label_vocab.get("intent_phrases", [])),
+        num_intent_rules=len(package.label_vocab.get("intent_families", [])),
+        num_phrase_triggers=len(package.label_vocab.get("g2", [])),
+        local_files_only=True,
+    )
+    _apply_tokenizer_padding_to_model(model, tokenizer)
     state_dict = torch.load(model_dir / "pytorch_model.bin", map_location=device)
     filtered_state_dict, _ = _filter_compatible_state_dict(model, state_dict)
     model.load_state_dict(filtered_state_dict, strict=False)
@@ -1570,7 +1855,8 @@ def _decision_from_predictions(
     learned_intent: dict[str, Any],
     threshold: float,
 ) -> GuardrailDecision:
-    age_band = "11-12"
+    child_profile = normalized.get("child_profile", {}) if isinstance(normalized.get("child_profile", {}), dict) else {}
+    age_band = str(child_profile.get("age_group") or normalized.get("resolved_age_band") or "11-12")
     language = str(normalized.get("language", "en"))
     question = str(normalized.get("text", "")).strip()
     topic = heuristic_classifier.classify_topic(heuristic_classifier.normalize(question))
@@ -1585,7 +1871,10 @@ def _decision_from_predictions(
         "applies_when_flags": runtime_contracts.build_applies_when_flags(question, g1, g2_list),
         "intent_lexicon": {
             **intent_evidence,
-            "learned": learned_intent,
+            "learned": {
+                "predicted_flags": [str(flag) for flag in learned_intent.get("predicted_flags", [])],
+                **learned_intent,
+            },
         },
         "topic": topic,
         "g1": {"id": g1, "reason": heuristic_classifier.build_g1_reason(g1, g2_list, [], question)},
@@ -1698,6 +1987,12 @@ def build_decision_from_slm(
     try:
         tokenizer, model = _load_trained_model(resolved_dir, package)
     except Exception as exc:
+        if bool(package.metadata.get("trained", False)):
+            message = str(exc)
+            if "must be retrained" in message or "cross-attention GLU feature fusion" in message:
+                raise RuntimeError(
+                    f"SLM artifact at {resolved_dir} is incompatible with the current model head: {message}"
+                ) from exc
         heuristic = heuristic_classifier.classify_heuristic(normalized)
         return heuristic.model_copy(
             update={
@@ -1729,6 +2024,27 @@ def build_decision_from_slm(
         max_length=int(package.training_config.get("max_length", 192)),
         return_tensors="pt",
     )
+    recent_context = " ".join(str(item) for item in normalized.get("recent_context", [])) or ""
+    encoded["intent_rule_features"] = torch.tensor(
+        [
+            runtime_contracts.build_intent_family_rule_vector(
+                str(normalized.get("text", "")).strip(),
+                recent_context,
+                list(package.label_vocab.get("intent_families", [])),
+            )
+        ],
+        dtype=torch.float32,
+    )
+    encoded["phrase_trigger_features"] = torch.tensor(
+        [
+            runtime_contracts.build_g2_phrase_trigger_vector(
+                str(normalized.get("text", "")).strip(),
+                recent_context,
+                list(package.label_vocab.get("g2", [])),
+            )
+        ],
+        dtype=torch.float32,
+    )
     inference_device = _device(
         package.training_config.get("model_name"),
         package.training_config.get("device", "auto"),
@@ -1742,8 +2058,11 @@ def build_decision_from_slm(
         torch.sigmoid(outputs["intent_family_logits"]).squeeze(0).cpu().tolist()
         if "intent_family_logits" in outputs else []
     )
+    intent_phrase_probs = (
+        torch.sigmoid(outputs["intent_phrase_logits"]).squeeze(0).cpu().tolist()
+        if "intent_phrase_logits" in outputs else []
+    )
     primary_g2 = _decode_g2_predictions(package.label_vocab, g2_primary_probs)
-    recent_context = " ".join(str(item) for item in normalized.get("recent_context", [])) or ""
     intent_evidence = runtime_contracts.match_intent_lexicon(
         str(normalized.get("text", "")).strip(),
         recent_context,
@@ -1767,12 +2086,19 @@ def build_decision_from_slm(
             intent_family: float(intent_family_probs[idx])
             for idx, intent_family in enumerate(package.label_vocab.get("intent_families", []))
         },
+        "predicted_phrases": [
+            intent_phrase
+            for idx, intent_phrase in enumerate(package.label_vocab.get("intent_phrases", []))
+            if float(intent_phrase_probs[idx]) >= threshold
+        ],
+        "phrase_scores": {
+            intent_phrase: float(intent_phrase_probs[idx])
+            for idx, intent_phrase in enumerate(package.label_vocab.get("intent_phrases", []))
+        },
     }
     learned_intent = {
         "predicted_families": [],
-        "predicted_phrases": [],
         "family_scores": {},
-        "phrase_scores": {},
         **learned_intent_flags,
     }
     decision = _decision_from_predictions(
@@ -1796,6 +2122,10 @@ def build_decision_from_slm(
                     "intent_families": {
                         label: float(score)
                         for label, score in zip(package.label_vocab.get("intent_families", []), intent_family_probs)
+                    },
+                    "intent_phrases": {
+                        label: float(score)
+                        for label, score in zip(package.label_vocab.get("intent_phrases", []), intent_phrase_probs)
                     },
                     "G1": {label: float(score) for label, score in zip(package.label_vocab["g1"], g1_probs)},
                     "G2_primary": {label: float(score) for label, score in zip(package.label_vocab["g2"], g2_primary_probs)},
@@ -1838,6 +2168,27 @@ def build_decision_from_slm_pure(
         max_length=int(package.training_config.get("max_length", 192)),
         return_tensors="pt",
     )
+    recent_context = " ".join(str(item) for item in normalized.get("recent_context", [])) or ""
+    encoded["intent_rule_features"] = torch.tensor(
+        [
+            runtime_contracts.build_intent_family_rule_vector(
+                str(normalized.get("text", "")).strip(),
+                recent_context,
+                list(package.label_vocab.get("intent_families", [])),
+            )
+        ],
+        dtype=torch.float32,
+    )
+    encoded["phrase_trigger_features"] = torch.tensor(
+        [
+            runtime_contracts.build_g2_phrase_trigger_vector(
+                str(normalized.get("text", "")).strip(),
+                recent_context,
+                list(package.label_vocab.get("g2", [])),
+            )
+        ],
+        dtype=torch.float32,
+    )
     inference_device = _device(
         package.training_config.get("model_name"),
         package.training_config.get("device", "auto"),
@@ -1854,6 +2205,10 @@ def build_decision_from_slm_pure(
     intent_family_probs = (
         torch.sigmoid(outputs["intent_family_logits"]).squeeze(0).cpu().tolist()
         if "intent_family_logits" in outputs else []
+    )
+    intent_phrase_probs = (
+        torch.sigmoid(outputs["intent_phrase_logits"]).squeeze(0).cpu().tolist()
+        if "intent_phrase_logits" in outputs else []
     )
     g1_idx = int(torch.argmax(outputs["g1_logits"], dim=-1).item())
     g2_idx = int(torch.argmax(outputs["g2_logits"], dim=-1).item())
@@ -1904,6 +2259,10 @@ def build_decision_from_slm_pure(
                 "intent_families": {
                     label: float(score)
                     for label, score in zip(package.label_vocab.get("intent_families", []), intent_family_probs)
+                },
+                "intent_phrases": {
+                    label: float(score)
+                    for label, score in zip(package.label_vocab.get("intent_phrases", []), intent_phrase_probs)
                 },
             },
         },

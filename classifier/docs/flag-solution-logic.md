@@ -1,13 +1,27 @@
 # Flag Solution Logic
 
-This document defines a flag-based solution that stays consistent with the current repository constraints.
+This document records flag-based promotion analysis. It is useful as design background, but it is not the active runtime inference contract.
+
+For the active contract, see:
+
+- `classifier/docs/inference.md`
+- `classifier/docs/architecture.md`
+
+Current active runtime notes:
+
+- primary `G2` is the classifier output consumed by the gate engine
+- `G2_all` is not part of the active runtime classifier or gate-engine contract
+- flags, intent families, and intent phrases are auxiliary evidence
+- the SLM G2 head uses cross-attention plus GLU feature fusion over mean-pooled DeBERTa, deterministic intent-rule priors, and deterministic phrase-trigger priors
+
+Historical constraints considered in this document:
 
 Constraints:
 
 - `G1` is trained as a single-label output.
 - primary `G2` is trained as a single-label output.
 - `G2_all` is not a training target.
-- `G2_all` is calculated only at inference.
+- older designs calculated `G2_all` at inference; the active runtime no longer exposes `G2_all`
 - only flags that already exist in the raw CSV files are allowed in this design.
 - promotion logic must remain grounded in the flag semantics already present in the raw training files.
 
@@ -19,7 +33,7 @@ The purpose of flags in this repo is:
 
 - improve separation between close `G2` classes
 - improve safety recall for high-risk classes
-- support calculated `G2_all`
+- support runtime explanation and boundary analysis
 - provide additional evidence for runtime fusion
 
 Flags do not replace:
@@ -298,16 +312,15 @@ Example:
 
 ## Inference Structure
 
-At inference, the model should output:
+At inference, the active model outputs:
 
-- `topic`
 - `G1`
 - primary `G2`
 - intent-family probabilities
 - intent-phrase probabilities
 - optional predicted flag probabilities
 
-Then runtime fusion should calculate `G2_all`.
+Auxiliary evidence supports explanation, boundary handling, and downstream policy checks. The active runtime does not calculate or expose `G2_all`.
 
 Recommended classifier-facing internal structure:
 
@@ -345,9 +358,9 @@ Recommended classifier-facing internal structure:
 }
 ```
 
-## How G2_all Should Be Calculated
+## Historical: How G2_all Was Considered
 
-Since `G2_all` is no longer in training, it should be calculated at inference from:
+Earlier designs considered calculating `G2_all` at inference from:
 
 1. per-label probabilities from the primary `G2` head
 2. predicted flags
@@ -364,7 +377,7 @@ G2_all =
   UNION labels supported by heuristics
 ```
 
-Primary `G2` must always be included in `G2_all`.
+This is not the active runtime contract. The active gate engine consumes primary `G2`.
 
 ## Existing Flag-to-G2 Rules Extracted from Raw CSV
 
@@ -891,10 +904,8 @@ The consistent design for this repo is:
 - do not train `G2_all`
 - retain and normalize only the flags that already exist in the raw sheets
 - optionally train those flags as auxiliary outputs
-- calculate `G2_all` at inference from:
-  - primary `G2` head scores
-  - existing raw-flag semantics
-  - intent lexicon
-  - heuristics
+- use flags, intent families, and intent phrases as auxiliary evidence
+- consume primary `G2` in the active gate engine
+- keep historical `G2_all` promotion rules as research notes only unless the runtime contract is explicitly reopened
 
 This keeps the implementation aligned with the raw training files and avoids schema drift.

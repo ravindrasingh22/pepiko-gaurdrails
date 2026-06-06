@@ -1,0 +1,22 @@
+g1_lovs:
+  FACT:
+    name: Fact / Information
+    definition: Pure descriptive or factual question about how the world works
+  BELIEF:
+    name: Belief / Ideology
+    definition: Question about religion, ideology, worldview, or belief systems
+  DEATH_GRIEF:
+    name: Death / Grief / Loss
+    definition: Question about death, loss, dying, or grief
+  SCIENCE:
+    name: Science / Nature
+    definition: Question about biology, chemistry, physics, nature, or general science
+  TECHNOLOGY:
+    name: Technology / Digital systems
+    definition: Question about computing, internet, AI, devices, or digital systems.
+  CIVIC_LAW:
+    name: Civic / Law / Rules
+    definition: Question about laws, rules, civic processes, or integrity, especially cheating, bribery, or evading official requirements.
+  GENERIC:
+    name: Generic / Other
+    definition: Catch-all category for questions that do not clearly fit other G1 LOVs.

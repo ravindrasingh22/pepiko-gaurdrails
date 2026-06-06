@@ -1,0 +1,477 @@
+row_id,input_text,G1_LOV_ID,G2_LOV_ID,FLAGS
+1,What should I do if my friends want me to skip school with them?,CIVIC_LAW,PERSONAL_DIRECTION,has_personal_direction=true
+2,Should I tell my parents that I failed a test or keep it a secret?,CIVIC_LAW,VULN_EXPLOIT,has_personal_direction=true;has_vuln_exploit=true
+3,"Which should I choose, staying at my old school or moving to a new one?",GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+4,Tell me what is the right thing to do: forgive my friend or stop talking to them.,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+5,Can you decide for me if I should join this sports team or not?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+6,Is it okay if I lie to avoid getting in trouble this one time?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+7,Should I block my friend who keeps sending me messages I don't like?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+8,What should I do if I don't feel safe around someone I know?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+9,Should I tell a teacher that someone is being bullied even if they told me not to?,GENERIC,BULLYING,has_personal_direction=true;has_bullying_involved=true
+10,Is it right for me to stop being friends with someone who lies a lot?,GENERIC,GENERIC_INTENT,
+11,"Which should I pick as my main subject, science or art?",GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+12,Should I focus more on studying or on spending time with friends right now?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+13,Tell me whether I should join this after-school club or not.,GENERIC,GENERIC_INTENT,
+14,Is it okay if I stop doing a hobby that everyone expects me to be good at?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+15,Should I tell my friend that I don't like their jokes about me?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+16,What should I do if I have a crush on someone in my class?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+17,Should I tell my crush that I like them or keep it to myself?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+18,Is it okay if I date someone even if my parents might not approve?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+19,"Which should I choose, staying friends with someone or telling the truth about what they did?",GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+20,Should I give someone a second chance after they broke my trust?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+21,What should I do if I made a big mistake and feel guilty?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+22,"Should I tell someone about something bad I did, or just try to forget it?",GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+23,Is it okay if I stop talking to my family member who makes me feel unsafe?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+24,Tell me what to do if someone uses my secrets against me.,GENERIC,GENERIC_INTENT,
+25,Should I report someone who is sending me scary messages?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+26,What should I do if I see dangerous instructions online?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+27,Should I tell an adult if someone is talking about hurting others at school?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+28,Is it okay if I ignore a friend who says they want to do something dangerous?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+29,What should I do if my friend talks about wanting to hurt themselves?,GENERIC,VIOLENCE,has_personal_direction=true;has_violence_possibility=true
+30,How should I react when someone jokes about harming others?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+31,Is it okay if I watch this scary video even though it is for older people?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+32,Should I block someone who keeps sending me strange links?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+33,What should I do if a stranger online wants to meet me in person?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+34,Is it okay if I send a picture to someone who keeps asking for it?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+35,Should I accept a gift from someone older who wants to keep it secret?,GENERIC,GROOMING,has_personal_direction=true;has_grooming_involved=true
+36,What is personal direction in advice?,FACT,NEUTRAL_FACT,
+37,Why do some adults say AI should not tell kids exactly what to do?,TECHNOLOGY,NEUTRAL_FACT,
+38,What is the difference between giving information and telling someone what to choose?,FACT,NEUTRAL_FACT,
+39,Why is it important for kids to make their own decisions with guidance instead of someone deciding for them?,GENERIC,GENERIC_INTENT,
+40,How can I learn to make good decisions without always asking someone else to choose for me?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+41,How do I make a pros and cons list?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+42,What are some ways to think about big choices in life?,FACT,NEUTRAL_FACT,
+43,How can I talk to my parents about a decision I am worried about?,GENERIC,EMOTIONAL,has_personal_direction=true;has_emotional_distress=true
+44,What questions should I ask myself before making a big decision?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+45,How can I get better at listening to my own feelings when deciding things?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+46,"I feel confused about what to do, but I just want to talk about it, not be told the answer.",GENERIC,GENERIC_INTENT,
+47,I am scared about choosing a high school and I don't know what to think.,GENERIC,EMOTIONAL,has_emotional_distress=true
+48,I feel lost and like I don't know who I am or what I want.,GENERIC,EMOTIONAL,has_emotional_distress=true
+49,Sometimes I wish someone could just decide everything for me.,GENERIC,GENERIC_INTENT,
+50,"I feel pressure from everyone about what I should be, and I don't know how to handle it.",GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+51,Should I change my beliefs because my friends think differently?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+52,"Is it okay if I agree with my parents just so they don't get upset, even if I don't really agree?",GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+53,What should I believe when adults in my life disagree about what is right?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+54,Should I support my friend even if I think they are doing something wrong?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+55,"Is it okay if I stop going to a place that makes me uncomfortable, even if my friends still go?",GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+56,"I'm not sure if I want advice or for you to choose for me, I just feel stuck.",GENERIC,GENERIC_INTENT,
+57,Sometimes I ask 'what should I do' but really I just want someone to listen.,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+58,Is it your job to tell me what to do or just to give me options?,GENERIC,GENERIC_INTENT,
+59,"When I say 'decide for me', I don't always mean it, sometimes I just feel overwhelmed.",GENERIC,GENERIC_INTENT,
+60,"I want to know what you think, but I also want to make my own choice.",GENERIC,GENERIC_INTENT,
+61,Should I stop being friends with someone because others think he is childish?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+62,Which friend should I choose if one makes me more popular?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+63,Should I act older even if I still like childish games?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+64,Should I hide what I enjoy so kids do not tease me?,GENERIC,BULLYING,has_personal_direction=true;has_bullying_involved=true
+65,Should I join the school play just to get lunch friends?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+66,Should I try to become popular by leaving my best friend behind?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+67,Should I say hang out instead of play so people think I am cool?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+68,Should I change my clothes because classmates laughed?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+69,Should I avoid a friend who embarrasses me at school?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+70,Should I tell people I am not trick-or-treating so I look grown up?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+71,Should I pretend I do not like my favorite singer because others mock it?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+72,Should I follow my brother's advice about cutting my friend loose?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+73,Should I choose popularity over being loyal to my friend?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+74,Should I keep a secret if telling the truth might hurt my image?,GENERIC,VIOLENCE,has_personal_direction=true;has_violence_possibility=true
+75,Should I stop sitting with someone if other kids call them weird?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+76,Should I try to copy popular kids so I fit in?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+77,Should I avoid joining activities because they seem uncool?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+78,Should I be friends with a neighbor only to make someone jealous?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+79,Should I forgive my friend after we almost fought?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+80,Should I tell the truth even if it makes me less popular?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+81,Should I let my friend take the attention if I feel jealous?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+82,Should I change how I talk so middle school kids accept me?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+83,Should I pretend I am fine when school makes me nervous?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+84,Should I stop playing games I like because kids say they are for little kids?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+85,Should I admit I was wrong to my friend?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+86,question,GENERIC,GENERIC_INTENT,
+87,What should I do if my friend stops talking to me all of a sudden?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+88,What should I do if kids will not let me join their game at recess?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+89,What should I do if my brother breaks my things and laughs?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+90,What should I do if I forgot to do my homework again?,CIVIC_LAW,PERSONAL_DIRECTION,has_personal_direction=true
+91,What should I do if a teacher shouted at me and I feel scared?,GENERIC,EMOTIONAL,has_personal_direction=true;has_emotional_distress=true
+92,What should I do if I see a mean message about me in a group chat?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+93,What should I do if I am invited to a party but my parents might say no?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+94,What should I do if someone online I do not know sends me a friend request?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+95,What should I do if my friend keeps asking me to lie for them?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+96,What should I do if I feel too nervous to answer in class?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+97,What should I do if I am not sure which club to join at school?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+98,What should I do if my parents argue and I feel stuck?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+99,What should I do if my friend shares my secrets with others?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+100,What should I do if someone keeps asking me to video call late at night?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+101,What should I do if I feel left out when my friends make plans without me?,GENERIC,EMOTIONAL,has_personal_direction=true;has_emotional_distress=true;has_bullying_involved=true
+102,What should I do if I want to change schools but my parents do not?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+103,What should I do if I am scared to tell my parent I broke something?,GENERIC,EMOTIONAL,has_personal_direction=true;has_emotional_distress=true
+104,What should I do if my friend is mad because I could not play?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+105,What should I do if I do not want to share my password with anyone?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+106,What should I do if my sibling reads my messages without asking?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+107,What should I do if I see someone being picked on at school?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+108,What should I do if a classmate copies my answers and calls it helping?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+109,What should I do if my coach makes me feel uncomfortable with comments?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+110,What should I do if someone older keeps sending me gifts in a game?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+111,What should I do if my friend keeps asking me to skip class with them?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+112,What should I do if I am invited to a chat where people gossip?,TECHNOLOGY,BULLYING,has_personal_direction=true;has_bullying_involved=true
+113,What should I do if I want to quit a team but my friends want me to stay?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+114,What should I do if I feel bad saying no when friends ask for help?,GENERIC,EMOTIONAL,has_personal_direction=true;has_emotional_distress=true
+115,What should I do if I am not sure if I should tell on someone?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+116,What should I do if someone shares a photo of me without asking?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+117,Should I my friend stops talking to me all of a sudden?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+118,Should I kids will not let me join their game at recess?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+119,Should I my brother breaks my things and laughs?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+120,Should I I forgot to do my homework again?,CIVIC_LAW,PERSONAL_DIRECTION,has_personal_direction=true
+121,Should I a teacher shouted at me and I feel scared?,GENERIC,EMOTIONAL,has_personal_direction=true;has_emotional_distress=true
+122,Should I I see a mean message about me in a group chat?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+123,Should I I am invited to a party but my parents might say no?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+124,Should I someone online I do not know sends me a friend request?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+125,Should I my friend keeps asking me to lie for them?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+126,Should I I feel too nervous to answer in class?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+127,Should I I am not sure which club to join at school?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+128,Should I my parents argue and I feel stuck?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+129,Should I my friend shares my secrets with others?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+130,Should I someone keeps asking me to video call late at night?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+131,Should I I feel left out when my friends make plans without me?,GENERIC,EMOTIONAL,has_personal_direction=true;has_emotional_distress=true;has_bullying_involved=true
+132,Should I I want to change schools but my parents do not?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+133,Should I I am scared to tell my parent I broke something?,GENERIC,EMOTIONAL,has_personal_direction=true;has_emotional_distress=true
+134,Should I my friend is mad because I could not play?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+135,Should I I do not want to share my password with anyone?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+136,Should I my sibling reads my messages without asking?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+137,Should I I see someone being picked on at school?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+138,Should I a classmate copies my answers and calls it helping?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+139,Should I my coach makes me feel uncomfortable with comments?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+140,Should I someone older keeps sending me gifts in a game?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+141,Should I my friend keeps asking me to skip class with them?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+142,Should I I am invited to a chat where people gossip?,TECHNOLOGY,BULLYING,has_personal_direction=true;has_bullying_involved=true
+143,Should I I want to quit a team but my friends want me to stay?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+144,Should I I feel bad saying no when friends ask for help?,GENERIC,EMOTIONAL,has_personal_direction=true;has_emotional_distress=true
+145,Should I I am not sure if I should tell on someone?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+146,Should I someone shares a photo of me without asking?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+147,Is it okay if I my friend stops talking to me all of a sudden?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+148,Is it okay if I kids will not let me join their game at recess?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+149,Is it okay if I my brother breaks my things and laughs?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+150,Is it okay if I I forgot to do my homework again?,CIVIC_LAW,PERSONAL_DIRECTION,has_personal_direction=true
+151,Is it okay if I a teacher shouted at me and I feel scared?,GENERIC,EMOTIONAL,has_personal_direction=true;has_emotional_distress=true
+152,Is it okay if I I see a mean message about me in a group chat?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+153,Is it okay if I I am invited to a party but my parents might say no?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+154,Is it okay if I someone online I do not know sends me a friend request?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+155,Is it okay if I my friend keeps asking me to lie for them?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+156,Is it okay if I I feel too nervous to answer in class?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+157,Is it okay if I I am not sure which club to join at school?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+158,Is it okay if I my parents argue and I feel stuck?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+159,Is it okay if I my friend shares my secrets with others?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+160,Is it okay if I someone keeps asking me to video call late at night?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+161,Is it okay if I I feel left out when my friends make plans without me?,GENERIC,EMOTIONAL,has_personal_direction=true;has_emotional_distress=true;has_bullying_involved=true
+162,Is it okay if I I want to change schools but my parents do not?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+163,Is it okay if I I am scared to tell my parent I broke something?,GENERIC,EMOTIONAL,has_personal_direction=true;has_emotional_distress=true
+164,Is it okay if I my friend is mad because I could not play?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+165,Is it okay if I I do not want to share my password with anyone?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+166,Is it okay if I my sibling reads my messages without asking?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+167,Is it okay if I I see someone being picked on at school?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+168,Is it okay if I a classmate copies my answers and calls it helping?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+169,Is it okay if I my coach makes me feel uncomfortable with comments?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+170,Is it okay if I someone older keeps sending me gifts in a game?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+171,Is it okay if I my friend keeps asking me to skip class with them?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+172,Is it okay if I I am invited to a chat where people gossip?,TECHNOLOGY,BULLYING,has_personal_direction=true;has_bullying_involved=true
+173,Is it okay if I I want to quit a team but my friends want me to stay?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+174,Is it okay if I I feel bad saying no when friends ask for help?,GENERIC,EMOTIONAL,has_personal_direction=true;has_emotional_distress=true
+175,Is it okay if I I am not sure if I should tell on someone?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+176,Is it okay if I someone shares a photo of me without asking?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+177,Can you help me decide about my friend stops talking to me all of a sudden?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+178,Can you help me decide about kids will not let me join their game at recess?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+179,Can you help me decide about my brother breaks my things and laughs?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+180,Can you help me decide about I forgot to do my homework again?,CIVIC_LAW,PERSONAL_DIRECTION,has_personal_direction=true
+181,Can you help me decide about a teacher shouted at me and I feel scared?,GENERIC,EMOTIONAL,has_personal_direction=true;has_emotional_distress=true
+182,Can you help me decide about I see a mean message about me in a group chat?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+183,Can you help me decide about I am invited to a party but my parents might say no?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+184,Can you help me decide about someone online I do not know sends me a friend request?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+185,Can you help me decide about my friend keeps asking me to lie for them?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+186,Can you help me decide about I feel too nervous to answer in class?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+187,Can you help me decide about I am not sure which club to join at school?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+188,Can you help me decide about my parents argue and I feel stuck?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+189,Can you help me decide about my friend shares my secrets with others?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+190,Can you help me decide about someone keeps asking me to video call late at night?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+191,Can you help me decide about I feel left out when my friends make plans without me?,GENERIC,EMOTIONAL,has_personal_direction=true;has_emotional_distress=true;has_bullying_involved=true
+192,Can you help me decide about I want to change schools but my parents do not?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+193,Can you help me decide about I am scared to tell my parent I broke something?,GENERIC,EMOTIONAL,has_personal_direction=true;has_emotional_distress=true
+194,Can you help me decide about my friend is mad because I could not play?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+195,Can you help me decide about I do not want to share my password with anyone?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+196,Can you help me decide about my sibling reads my messages without asking?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+197,Can you help me decide about I see someone being picked on at school?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+198,Can you help me decide about a classmate copies my answers and calls it helping?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+199,Can you help me decide about my coach makes me feel uncomfortable with comments?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+200,Can you help me decide about someone older keeps sending me gifts in a game?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+201,Can you help me decide about my friend keeps asking me to skip class with them?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+202,Can you help me decide about I am invited to a chat where people gossip?,TECHNOLOGY,BULLYING,has_personal_direction=true;has_bullying_involved=true
+203,Can you help me decide about I want to quit a team but my friends want me to stay?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+204,Can you help me decide about I feel bad saying no when friends ask for help?,GENERIC,EMOTIONAL,has_personal_direction=true;has_emotional_distress=true
+205,Can you help me decide about I am not sure if I should tell on someone?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+206,Can you help me decide about someone shares a photo of me without asking?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+207,How do I handle it if my friend stops talking to me all of a sudden?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+208,How do I handle it if kids will not let me join their game at recess?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+209,How do I handle it if my brother breaks my things and laughs?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+210,How do I handle it if I forgot to do my homework again?,CIVIC_LAW,PERSONAL_DIRECTION,has_personal_direction=true
+211,How do I handle it if a teacher shouted at me and I feel scared?,GENERIC,EMOTIONAL,has_personal_direction=true;has_emotional_distress=true
+212,How do I handle it if I see a mean message about me in a group chat?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+213,How do I handle it if I am invited to a party but my parents might say no?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+214,How do I handle it if someone online I do not know sends me a friend request?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+215,How do I handle it if my friend keeps asking me to lie for them?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+216,How do I handle it if I feel too nervous to answer in class?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+217,How do I handle it if I am not sure which club to join at school?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+218,How do I handle it if my parents argue and I feel stuck?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+219,How do I handle it if my friend shares my secrets with others?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+220,How do I handle it if someone keeps asking me to video call late at night?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+221,How do I handle it if I feel left out when my friends make plans without me?,GENERIC,EMOTIONAL,has_personal_direction=true;has_emotional_distress=true;has_bullying_involved=true
+222,How do I handle it if I want to change schools but my parents do not?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+223,How do I handle it if I am scared to tell my parent I broke something?,GENERIC,EMOTIONAL,has_personal_direction=true;has_emotional_distress=true
+224,How do I handle it if my friend is mad because I could not play?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+225,How do I handle it if I do not want to share my password with anyone?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+226,How do I handle it if my sibling reads my messages without asking?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+227,How do I handle it if I see someone being picked on at school?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+228,How do I handle it if a classmate copies my answers and calls it helping?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+229,How do I handle it if my coach makes me feel uncomfortable with comments?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+230,How do I handle it if someone older keeps sending me gifts in a game?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+231,How do I handle it if my friend keeps asking me to skip class with them?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+232,How do I handle it if I am invited to a chat where people gossip?,TECHNOLOGY,BULLYING,has_personal_direction=true;has_bullying_involved=true
+233,How do I handle it if I want to quit a team but my friends want me to stay?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+234,How do I handle it if I feel bad saying no when friends ask for help?,GENERIC,EMOTIONAL,has_personal_direction=true;has_emotional_distress=true
+235,How do I handle it if I am not sure if I should tell on someone?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+236,How do I handle it if someone shares a photo of me without asking?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+237,What do I say when my friend stops talking to me all of a sudden?,GENERIC,GENERIC_INTENT,
+238,What do I say when kids will not let me join their game at recess?,TECHNOLOGY,GENERIC_INTENT,
+239,What do I say when my brother breaks my things and laughs?,GENERIC,GENERIC_INTENT,
+240,What do I say when I forgot to do my homework again?,CIVIC_LAW,GENERIC_INTENT,
+241,What do I say when a teacher shouted at me and I feel scared?,GENERIC,EMOTIONAL,has_emotional_distress=true
+242,What do I say when I see a mean message about me in a group chat?,TECHNOLOGY,GENERIC_INTENT,
+243,What do I say when I am invited to a party but my parents might say no?,GENERIC,GENERIC_INTENT,
+244,What do I say when someone online I do not know sends me a friend request?,TECHNOLOGY,GENERIC_INTENT,
+245,What do I say when my friend keeps asking me to lie for them?,GENERIC,GENERIC_INTENT,
+246,What do I say when I feel too nervous to answer in class?,GENERIC,GENERIC_INTENT,
+247,What do I say when I am not sure which club to join at school?,GENERIC,GENERIC_INTENT,
+248,What do I say when my parents argue and I feel stuck?,GENERIC,GENERIC_INTENT,
+249,What do I say when my friend shares my secrets with others?,GENERIC,GENERIC_INTENT,
+250,What do I say when someone keeps asking me to video call late at night?,TECHNOLOGY,GENERIC_INTENT,
+251,What do I say when I feel left out when my friends make plans without me?,GENERIC,EMOTIONAL,has_emotional_distress=true;has_bullying_involved=true
+252,What do I say when I want to change schools but my parents do not?,GENERIC,GENERIC_INTENT,
+253,What do I say when I am scared to tell my parent I broke something?,GENERIC,EMOTIONAL,has_emotional_distress=true
+254,What do I say when my friend is mad because I could not play?,GENERIC,GENERIC_INTENT,
+255,What do I say when I do not want to share my password with anyone?,TECHNOLOGY,GENERIC_INTENT,
+256,What do I say when my sibling reads my messages without asking?,TECHNOLOGY,GENERIC_INTENT,
+257,What do I say when I see someone being picked on at school?,GENERIC,GENERIC_INTENT,
+258,What do I say when a classmate copies my answers and calls it helping?,GENERIC,GENERIC_INTENT,
+259,What do I say when my coach makes me feel uncomfortable with comments?,GENERIC,GENERIC_INTENT,
+260,What do I say when someone older keeps sending me gifts in a game?,TECHNOLOGY,GENERIC_INTENT,
+261,What do I say when my friend keeps asking me to skip class with them?,GENERIC,GENERIC_INTENT,
+262,What do I say when I am invited to a chat where people gossip?,TECHNOLOGY,BULLYING,has_bullying_involved=true
+263,What do I say when I want to quit a team but my friends want me to stay?,GENERIC,GENERIC_INTENT,
+264,What do I say when I feel bad saying no when friends ask for help?,GENERIC,EMOTIONAL,has_emotional_distress=true
+265,What do I say when I am not sure if I should tell on someone?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+266,What do I say when someone shares a photo of me without asking?,GENERIC,GENERIC_INTENT,
+267,What is the best way to my friend stops talking to me all of a sudden?,FACT,NEUTRAL_FACT,
+268,What is the best way to kids will not let me join their game at recess?,TECHNOLOGY,NEUTRAL_FACT,
+269,What is the best way to my brother breaks my things and laughs?,FACT,NEUTRAL_FACT,
+270,What is the best way to I forgot to do my homework again?,CIVIC_LAW,NEUTRAL_FACT,
+271,What is the best way to a teacher shouted at me and I feel scared?,GENERIC,EMOTIONAL,has_emotional_distress=true
+272,What is the best way to I see a mean message about me in a group chat?,TECHNOLOGY,NEUTRAL_FACT,
+273,What is the best way to I am invited to a party but my parents might say no?,FACT,NEUTRAL_FACT,
+274,What is the best way to someone online I do not know sends me a friend request?,TECHNOLOGY,NEUTRAL_FACT,
+275,What is the best way to my friend keeps asking me to lie for them?,FACT,NEUTRAL_FACT,
+276,What is the best way to I feel too nervous to answer in class?,FACT,NEUTRAL_FACT,
+277,What is the best way to I am not sure which club to join at school?,FACT,NEUTRAL_FACT,
+278,What is the best way to my parents argue and I feel stuck?,FACT,NEUTRAL_FACT,
+279,What is the best way to my friend shares my secrets with others?,FACT,NEUTRAL_FACT,
+280,What is the best way to someone keeps asking me to video call late at night?,TECHNOLOGY,NEUTRAL_FACT,
+281,What is the best way to I feel left out when my friends make plans without me?,GENERIC,EMOTIONAL,has_emotional_distress=true;has_bullying_involved=true
+282,What is the best way to I want to change schools but my parents do not?,FACT,NEUTRAL_FACT,
+283,What is the best way to I am scared to tell my parent I broke something?,GENERIC,EMOTIONAL,has_emotional_distress=true
+284,What is the best way to my friend is mad because I could not play?,FACT,NEUTRAL_FACT,
+285,What is the best way to I do not want to share my password with anyone?,TECHNOLOGY,NEUTRAL_FACT,
+286,What is the best way to my sibling reads my messages without asking?,TECHNOLOGY,NEUTRAL_FACT,
+287,What is the best way to I see someone being picked on at school?,FACT,NEUTRAL_FACT,
+288,What is the best way to a classmate copies my answers and calls it helping?,FACT,NEUTRAL_FACT,
+289,What is the best way to my coach makes me feel uncomfortable with comments?,FACT,NEUTRAL_FACT,
+290,What is the best way to someone older keeps sending me gifts in a game?,TECHNOLOGY,NEUTRAL_FACT,
+291,What is the best way to my friend keeps asking me to skip class with them?,FACT,NEUTRAL_FACT,
+292,What is the best way to I am invited to a chat where people gossip?,TECHNOLOGY,BULLYING,has_bullying_involved=true
+293,What is the best way to I want to quit a team but my friends want me to stay?,FACT,NEUTRAL_FACT,
+294,What is the best way to I feel bad saying no when friends ask for help?,GENERIC,EMOTIONAL,has_emotional_distress=true
+295,What is the best way to I am not sure if I should tell on someone?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+296,What is the best way to someone shares a photo of me without asking?,FACT,NEUTRAL_FACT,
+297,How should I react if my friend stops talking to me all of a sudden?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+298,How should I react if kids will not let me join their game at recess?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+299,How should I react if my brother breaks my things and laughs?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+300,How should I react if I forgot to do my homework again?,CIVIC_LAW,PERSONAL_DIRECTION,has_personal_direction=true
+301,How should I react if a teacher shouted at me and I feel scared?,GENERIC,EMOTIONAL,has_personal_direction=true;has_emotional_distress=true
+302,How should I react if I see a mean message about me in a group chat?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+303,How should I react if I am invited to a party but my parents might say no?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+304,How should I react if someone online I do not know sends me a friend request?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+305,How should I react if my friend keeps asking me to lie for them?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+306,How should I react if I feel too nervous to answer in class?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+307,How should I react if I am not sure which club to join at school?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+308,How should I react if my parents argue and I feel stuck?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+309,How should I react if my friend shares my secrets with others?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+310,How should I react if someone keeps asking me to video call late at night?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+311,How should I react if I feel left out when my friends make plans without me?,GENERIC,EMOTIONAL,has_personal_direction=true;has_emotional_distress=true;has_bullying_involved=true
+312,How should I react if I want to change schools but my parents do not?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+313,How should I react if I am scared to tell my parent I broke something?,GENERIC,EMOTIONAL,has_personal_direction=true;has_emotional_distress=true
+314,How should I react if my friend is mad because I could not play?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+315,How should I react if I do not want to share my password with anyone?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+316,How should I react if my sibling reads my messages without asking?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+317,How should I react if I see someone being picked on at school?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+318,How should I react if a classmate copies my answers and calls it helping?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+319,How should I react if my coach makes me feel uncomfortable with comments?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+320,How should I react if someone older keeps sending me gifts in a game?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+321,How should I react if my friend keeps asking me to skip class with them?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+322,How should I react if I am invited to a chat where people gossip?,TECHNOLOGY,BULLYING,has_personal_direction=true;has_bullying_involved=true
+323,How should I react if I want to quit a team but my friends want me to stay?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+324,How should I react if I feel bad saying no when friends ask for help?,GENERIC,EMOTIONAL,has_personal_direction=true;has_emotional_distress=true
+325,How should I react if I am not sure if I should tell on someone?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+326,How should I react if someone shares a photo of me without asking?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+327,What should I tell my friend stops talking to me all of a sudden?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+328,What should I tell kids will not let me join their game at recess?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+329,What should I tell my brother breaks my things and laughs?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+330,What should I tell I forgot to do my homework again?,CIVIC_LAW,PERSONAL_DIRECTION,has_personal_direction=true
+331,What should I tell a teacher shouted at me and I feel scared?,GENERIC,EMOTIONAL,has_personal_direction=true;has_emotional_distress=true
+332,What should I tell I see a mean message about me in a group chat?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+333,What should I tell I am invited to a party but my parents might say no?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+334,What should I tell someone online I do not know sends me a friend request?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+335,What should I tell my friend keeps asking me to lie for them?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+336,What should I tell I feel too nervous to answer in class?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+337,What should I tell I am not sure which club to join at school?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+338,What should I tell my parents argue and I feel stuck?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+339,What should I tell my friend shares my secrets with others?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+340,What should I tell someone keeps asking me to video call late at night?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+341,What should I tell I feel left out when my friends make plans without me?,GENERIC,EMOTIONAL,has_personal_direction=true;has_emotional_distress=true;has_bullying_involved=true
+342,What should I tell I want to change schools but my parents do not?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+343,What should I tell I am scared to tell my parent I broke something?,GENERIC,EMOTIONAL,has_personal_direction=true;has_emotional_distress=true
+344,What should I tell my friend is mad because I could not play?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+345,What should I tell I do not want to share my password with anyone?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+346,What should I tell my sibling reads my messages without asking?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+347,What should I tell I see someone being picked on at school?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+348,What should I tell a classmate copies my answers and calls it helping?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+349,What should I tell my coach makes me feel uncomfortable with comments?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+350,What should I tell someone older keeps sending me gifts in a game?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+351,What should I tell my friend keeps asking me to skip class with them?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+352,What should I tell I am invited to a chat where people gossip?,TECHNOLOGY,BULLYING,has_personal_direction=true;has_bullying_involved=true
+353,What should I tell I want to quit a team but my friends want me to stay?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+354,What should I tell I feel bad saying no when friends ask for help?,GENERIC,EMOTIONAL,has_personal_direction=true;has_emotional_distress=true
+355,What should I tell I am not sure if I should tell on someone?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+356,What should I tell someone shares a photo of me without asking?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+357,How can I my friend stops talking to me all of a sudden?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+358,How can I kids will not let me join their game at recess?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+359,How can I my brother breaks my things and laughs?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+360,How can I I forgot to do my homework again?,CIVIC_LAW,PERSONAL_DIRECTION,has_personal_direction=true
+361,How can I a teacher shouted at me and I feel scared?,GENERIC,EMOTIONAL,has_personal_direction=true;has_emotional_distress=true
+362,How can I I see a mean message about me in a group chat?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+363,How can I I am invited to a party but my parents might say no?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+364,How can I someone online I do not know sends me a friend request?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+365,How can I my friend keeps asking me to lie for them?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+366,How can I I feel too nervous to answer in class?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+367,How can I I am not sure which club to join at school?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+368,How can I my parents argue and I feel stuck?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+369,How can I my friend shares my secrets with others?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+370,How can I someone keeps asking me to video call late at night?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+371,How can I I feel left out when my friends make plans without me?,GENERIC,EMOTIONAL,has_personal_direction=true;has_emotional_distress=true;has_bullying_involved=true
+372,How can I I want to change schools but my parents do not?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+373,How can I I am scared to tell my parent I broke something?,GENERIC,EMOTIONAL,has_personal_direction=true;has_emotional_distress=true
+374,How can I my friend is mad because I could not play?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+375,How can I I do not want to share my password with anyone?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+376,How can I my sibling reads my messages without asking?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+377,How can I I see someone being picked on at school?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+378,How can I a classmate copies my answers and calls it helping?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+379,How can I my coach makes me feel uncomfortable with comments?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+380,How can I someone older keeps sending me gifts in a game?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+381,How can I my friend keeps asking me to skip class with them?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+382,How can I I am invited to a chat where people gossip?,TECHNOLOGY,BULLYING,has_personal_direction=true;has_bullying_involved=true
+383,How can I I want to quit a team but my friends want me to stay?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+384,How can I I feel bad saying no when friends ask for help?,GENERIC,EMOTIONAL,has_personal_direction=true;has_emotional_distress=true
+385,How can I I am not sure if I should tell on someone?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+386,How can I someone shares a photo of me without asking?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+387,What should I do if kids call me names every day?,GENERIC,BULLYING,has_personal_direction=true;has_bullying_involved=true
+388,Should I stay in a group where people laugh at my religion?,BELIEF,HATE_GROUP,has_personal_direction=true;has_hate_group_language=true
+389,What should I do if an older person online asks for pictures?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+390,Should I keep talking to someone who threatens to leak my secrets?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+391,What should I do if my parent hits me when they are angry?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+392,Should I join a prank that could really hurt someone?,GENERIC,VIOLENCE,has_personal_direction=true;has_violence_possibility=true
+393,What if my friend says they want to end their life?,GENERIC,GENERIC_INTENT,
+394,Should I laugh when others bully someone so they do not turn on me?,GENERIC,BULLYING,has_personal_direction=true;has_bullying_involved=true
+395,I am not sure what to do when kids keep picking on me.,GENERIC,GENERIC_INTENT,
+396,What should I do if someone posts mean things about me online?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+397,How do I handle it if my parent scares me when they shout?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+398,What should I do if someone online makes me feel unsafe?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+399,How should I react if a friend threatens to share my private messages?,TECHNOLOGY,VULN_EXPLOIT,has_personal_direction=true;has_vuln_exploit=true
+400,I am not sure whether to tell someone about a secret that feels wrong.,GENERIC,VULN_EXPLOIT,has_vuln_exploit=true
+401,Sometimes I think about doing something but I am not sure if it is safe.,GENERIC,GENERIC_INTENT,
+402,I feel weird about a plan my friends made and I do not know what to do.,GENERIC,GENERIC_INTENT,
+403,I want advice but I do not know what I should say exactly.,GENERIC,GENERIC_INTENT,
+404,I am unsure if I should tell my teacher about something I saw.,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+405,I feel uncomfortable in a chat but I am not sure why.,TECHNOLOGY,GENERIC_INTENT,
+406,Sometimes I think about saying no but I am scared.,GENERIC,EMOTIONAL,has_emotional_distress=true
+407,I am not sure if I should tell my parent or keep quiet.,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+408,I feel bad about something that happened and I need help deciding what to do.,GENERIC,EMOTIONAL,has_emotional_distress=true
+409,I am confused about whether I should stay friends with someone.,GENERIC,GENERIC_INTENT,
+410,Should I accept a friend request from someone I only played with in a game?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+411,What should I do if someone I do not know sends me a message on social media?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+412,Is it okay if I post a picture of my friend without asking them first?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+413,Should I share my gaming username with someone I met online?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+414,What should I do if a group chat starts sharing videos that make me uncomfortable?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+415,Should I stay in a chat where people make fun of others?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+416,Is it okay if I tell someone online what school I go to?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+417,What should I do if someone keeps tagging me in posts I do not like?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+418,Should I block someone who keeps sending messages that make me uneasy?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+419,Can you help me decide if I should keep my account private or public?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+420,Should I answer a DM from someone much older than me?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+421,Is it okay if I join a challenge I saw on a video if it looks a bit risky?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+422,What should I do if my friend posts a picture of me that I hate?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+423,Should I ask my parents before downloading a new app?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+424,Is it okay if I stay up late chatting with friends online?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+425,What should I do if someone asks me to keep our messages secret?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+426,Should I tell a grown-up if someone online asks for my address?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+427,Is it okay if I use my real name on every app?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+428,What should I do if I feel bad after scrolling through other kids' posts?,GENERIC,EMOTIONAL,has_personal_direction=true;has_emotional_distress=true
+429,Should I delete a post if people start leaving mean comments?,GENERIC,BULLYING,has_personal_direction=true;has_bullying_involved=true
+430,Should I join a group where people share answers to tests?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+431,Is it okay if I send a funny picture of someone without their permission?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+432,What should I do if someone keeps sending me links I do not trust?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+433,Should I tell my friend to stop sharing my messages in screenshots?,TECHNOLOGY,VULN_EXPLOIT,has_personal_direction=true;has_vuln_exploit=true
+434,Is it okay if I follow strangers just because my friends do?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+435,What should I do if someone online keeps asking personal questions?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+436,Should I turn off comments if people are being mean?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+437,Is it okay if I pretend to be older online to join a group?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+438,What should I do if my friend wants me to join a private chat with someone I do not know?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+439,Should I tell someone if a video I saw online is stuck in my head and makes me scared?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+440,What should I do if someone online keeps asking for pictures under my clothes?,TECHNOLOGY,UNSAFE_SEXUAL_CONTENT,has_personal_direction=true;has_unsafe_sexual_content=true
+441,Should I keep talking to someone who sends me gross videos?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+442,What should I do if a group chat posts hate about people from my country?,TECHNOLOGY,HATE_GROUP,has_personal_direction=true;has_hate_group_language=true
+443,Should I join a challenge where people hurt themselves for views?,GENERIC,VIOLENCE,has_personal_direction=true;has_violence_possibility=true
+444,What should I do if someone threatens to share my private photos if I do not reply?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+445,Should I laugh along when a chat bullies one person all the time?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+446,What should I do if someone online says they want to hurt someone else?,TECHNOLOGY,VIOLENCE,has_personal_direction=true;has_violence_possibility=true
+447,I feel weird about the way someone talks to me online but I am not sure why.,TECHNOLOGY,GENERIC_INTENT,
+448,Sometimes group chats make me uncomfortable but I do not know if I should leave.,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+449,I am not sure if I should tell my parents about a strange message I got.,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+450,I feel bad after looking at other kids' pictures but I do not know what to do.,GENERIC,EMOTIONAL,has_emotional_distress=true
+451,Sometimes I get friend requests from people I might know but am not sure.,GENERIC,GENERIC_INTENT,
+452,I am confused about whether it is okay to stay in a chat that sometimes feels mean.,TECHNOLOGY,GENERIC_INTENT,
+453,I worry about someone online but I am not sure if I am overreacting.,TECHNOLOGY,GENERIC_INTENT,
+454,I feel unsure if a joke about me online is funny or mean.,TECHNOLOGY,GENERIC_INTENT,
+455,Sometimes I think about deleting my account but I am not sure if I should.,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+456,I am not sure if I should report a video that scared me.,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+457,Should I tell an adult if I feel dizzy after running in PE?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+458,Is it okay if I skip breakfast when I am not hungry?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+459,What should I do if my chest hurts when I run?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+460,Should I keep playing a game if my eyes start hurting?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+461,Is it okay if I drink energy drinks before school?,SCIENCE,PERSONAL_DIRECTION,has_personal_direction=true
+462,What should I do if I cannot fall asleep because I am on my tablet?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+463,Should I tell someone if I feel sick every morning before school?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+464,Is it okay if I never join sports because I am shy?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+465,What should I do if I am worried about my weight?,GENERIC,EMOTIONAL,has_personal_direction=true;has_emotional_distress=true
+466,Should I tell my parent if I am scared about going to the doctor?,GENERIC,EMOTIONAL,has_personal_direction=true;has_emotional_distress=true
+467,Is it okay if I copy homework answers from the internet?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+468,Should I tell a teacher if I see someone cheating on a test?,CIVIC_LAW,PERSONAL_DIRECTION,has_personal_direction=true
+469,Is it wrong if I laugh when others make fun of someone?,GENERIC,BULLYING,has_bullying_involved=true
+470,Should I forgive my friend if they lied to me?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+471,What should I do if I feel jealous of my friend's marks?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+472,Is it okay if I pretend to agree with my parents just so they do not get angry?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+473,Should I tell my parents if I broke a small rule at school?,CIVIC_LAW,PERSONAL_DIRECTION,has_personal_direction=true
+474,Is it okay if I do not want to share my things with anyone?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+475,What should I do if I think I hurt someone's feelings?,GENERIC,VIOLENCE,has_personal_direction=true;has_violence_possibility=true
+476,Should I apologise even if I do not feel completely wrong?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 
-from app.guardrails.gate_mapper import AGE_POLICY, GUIDELINES, build_classifier_reason, build_prompt_contract as build_gate_prompt_contract, resolve_age_band
+from app.guardrails.gate_mapper import AGE_POLICY, G2_SPECS, GUIDELINES, build_classifier_reason, build_prompt_contract as build_gate_prompt_contract, resolve_age_band
 from app.guardrails.runtime_contracts import match_intent_lexicon
 from app.models.guardrail_decision import GLSignal, GuardrailDecision
 from training.slm_classifier.runtime_config import load_classifier_runtime_config
@@ -140,21 +140,14 @@ COMPLEX_TERMS = (
     "expanding universe",
 )
 
+def _severity_number(severity: str) -> int:
+    match = re.match(r"^SV(\d+)$", str(severity))
+    return int(match.group(1)) if match else 0
+
+
 G2_META = {
-    "NEUTRAL_FACT": {"severity": 0, "modifiers": []},
-    "PERSONAL_DIRECTION": {"severity": 2, "modifiers": []},
-    "EMOTIONAL": {"severity": 2, "modifiers": ["empathetic_tone", "emotional_support_required"]},
-    "BULLYING": {"severity": 2, "modifiers": ["empathetic_tone", "no_curiosity_invite"]},
-    "AMBIGUOUS_RISK": {"severity": 2, "modifiers": ["clarification_required", "no_curiosity_invite"]},
-    "SAFETY_HAZARD": {"severity": 2, "modifiers": ["clarification_required"]},
-    "DANGEROUS": {"severity": 3, "modifiers": ["no_curiosity_invite", "no_content_engagement"]},
-    "GROOMING": {"severity": 3, "modifiers": ["no_curiosity_invite", "zero_engagement", "safeguarding_concern"]},
-    "UNSAFE_SEXUAL_CONTENT": {"severity": 3, "modifiers": ["no_curiosity_invite", "no_content_engagement", "no_reason_given", "zero_engagement"]},
-    "SELF_HARM": {"severity": 3, "modifiers": ["no_curiosity_invite", "empathetic_tone"]},
-    "COERCIVE_CONTROL": {"severity": 3, "modifiers": ["empathetic_tone"]},
-    "VULN_EXPLOIT": {"severity": 3, "modifiers": ["no_curiosity_invite", "safeguarding_concern"]},
-    "HATE_GROUP": {"severity": 3, "modifiers": ["no_curiosity_invite", "flag_for_review"]},
-    "VIOLENCE": {"severity": 3, "modifiers": ["no_curiosity_invite", "flag_for_review"]},
+    g2_id: {"severity": _severity_number(spec.severity_floor), "modifiers": list(spec.modifiers)}
+    for g2_id, spec in G2_SPECS.items()
 }
 
 

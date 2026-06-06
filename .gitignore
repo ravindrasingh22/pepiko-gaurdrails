@@ -13,6 +13,10 @@ models/*
 !models/.gitkeep
 classifier/models/*
 !classifier/models/.gitkeep
+classifier/data/processed/*
+!classifier/data/processed/.gitkeep
+!classifier/data/processed/piku_gl_classifier_train/
+!classifier/data/processed/piku_gl_classifier_train/*.jsonl
 data/raw/*
 !data/raw/.gitkeep
 data/synthetic/*

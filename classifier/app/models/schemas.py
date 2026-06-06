@@ -29,8 +29,21 @@ class ClassificationTestRequest(BaseModel):
 
 
 class ClassificationTestResponse(BaseModel):
-    decision: GuardrailDecision
-    stage_outputs: dict[str, Any]
+    input: dict[str, Any]
+    classifier: dict[str, Any]
+    g1: dict[str, Any]
+    g2: dict[str, Any]
+    active_flags: list[dict[str, Any]] = Field(default_factory=list)
+    g3: dict[str, Any]
+    g4: dict[str, Any]
+    age_policy: dict[str, Any]
+    modifier_tags: dict[str, Any]
+
+
+class ClassificationPromptResponse(BaseModel):
+    prompts: list[dict[str, str]]
+    prompt_checklist: dict[str, Any]
+    classifier_output: dict[str, Any]
 
 
 class LLMTestRequest(BaseModel):

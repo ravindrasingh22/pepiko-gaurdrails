@@ -17,29 +17,30 @@ GUIDELINES = {
 }
 G2_SPECS = CODEBOOK.g2_specs
 GL_TO_G2 = {
-    "GL-02": "COMPARATIVE",
-    "GL-03": "PD",
-    "GL-04": "LP",
+    "GL-02": "GENERIC_INTENT",
+    "GL-03": "PERSONAL_DIRECTION",
+    "GL-04": "GENERIC_INTENT",
     "GL-05": "DANGEROUS",
     "GL-06": "EMOTIONAL",
     "GL-08": "HATE_GROUP",
     "GL-09": "NEUTRAL_FACT",
     "GL-10": "GROOMING",
-    "GL-11": "UNSAFE_CONTENT",
+    "GL-11": "UNSAFE_SEXUAL_CONTENT",
     "GL-12": "COERCIVE_CONTROL",
     "GL-13": "VULN_EXPLOIT",
 }
 G2_PRIORITY = [
-    "UNSAFE_CONTENT",
+    "UNSAFE_SEXUAL_CONTENT",
     "GROOMING",
     "COERCIVE_CONTROL",
     "VULN_EXPLOIT",
     "DANGEROUS",
     "HATE_GROUP",
-    "PD",
-    "LP",
-    "COMPARATIVE",
+    "PERSONAL_DIRECTION",
     "EMOTIONAL",
+    "BULLYING",
+    "AMBIGUOUS_RISK",
+    "SAFETY_HAZARD",
     "NEUTRAL_FACT",
     "GENERIC_INTENT",
 ]
@@ -194,7 +195,7 @@ def map_g4(g3: str, g2_list: list[str], modifiers: list[str]) -> str:
     mod_set = set(modifiers)
     if "clarification_required" in mod_set:
         return "TRANSFORM_HOLD"
-    if any(item in {"UNSAFE_CONTENT", "GROOMING"} for item in g2_list) or ("no_content_engagement" in mod_set and g3 == "SV3"):
+    if any(item in {"UNSAFE_SEXUAL_CONTENT", "GROOMING"} for item in g2_list) or ("no_content_engagement" in mod_set and g3 == "SV3"):
         return "BLOCK_HARD"
     if any(item in {"SELF_HARM"} for item in g2_list):
         return "BLOCK_ESCALATE"
@@ -210,13 +211,13 @@ def map_g4(g3: str, g2_list: list[str], modifiers: list[str]) -> str:
 def build_classifier_reason(g1: str, g2_list: list[str], gls: set[str], question: str = "", primary_g2: str | None = None) -> str:
     resolved_primary_g2 = primary_g2 or map_g2_primary(g2_list)
     lowered = question.lower().strip()
-    if resolved_primary_g2 == "PD":
+    if resolved_primary_g2 == "PERSONAL_DIRECTION":
         if g1 == "BELIEF":
             return "The child is asking for personal guidance about what they should believe or choose, so the system should avoid directing the child's beliefs."
         return "The child is asking for personal guidance about what they should do or choose, so the system should avoid giving direct personal direction."
     if resolved_primary_g2 == "GROOMING":
         return "The question includes unsafe secrecy or boundary-crossing behaviour involving an adult or trusted person, which triggers grooming-safety handling."
-    if resolved_primary_g2 == "UNSAFE_CONTENT":
+    if resolved_primary_g2 == "UNSAFE_SEXUAL_CONTENT":
         return "The question refers to explicitly unsafe sexual content, which requires a hard safety block."
     if resolved_primary_g2 == "EMOTIONAL":
         return "The child appears upset, distressed, or in need of emotional support, so the response should acknowledge feelings before answering."
@@ -237,15 +238,13 @@ def build_classifier_reason(g1: str, g2_list: list[str], gls: set[str], question
     }
     g2_reason_map = {
         "NEUTRAL_FACT": "It is framed as a neutral factual question.",
-        "COMPARATIVE": "It asks to compare or rank beliefs or groups.",
-        "PD": "It asks for personal direction or endorsement.",
-        "LP": "It includes a loaded or biased premise.",
+        "PERSONAL_DIRECTION": "It asks for personal direction or endorsement.",
         "HATE_GROUP": "It uses negative or derogatory group framing.",
         "DANGEROUS": "It asks about bypassing safety, harmful activity, or dangerous instructions.",
         "EMOTIONAL": "It shows emotional distress or upset.",
         "BULLYING": "It describes bullying or peer harm.",
         "GROOMING": "It shows grooming-related secrecy or unsafe adult-child dynamics.",
-        "UNSAFE_CONTENT": "It refers to sexually unsafe or explicitly disallowed content.",
+        "UNSAFE_SEXUAL_CONTENT": "It refers to sexually unsafe or explicitly disallowed content.",
         "COERCIVE_CONTROL": "It describes fear-based or controlling behaviour by another person.",
         "VULN_EXPLOIT": "It suggests exploitation of vulnerability or manipulation.",
         "SELF_HARM": "It includes self-harm or suicidal signals.",
@@ -295,7 +294,7 @@ def build_g2_reasons(g1: str, g2_list: list[str], question: str = "", primary_g2
     lowered = question.lower().strip()
     reasons: dict[str, str] = {}
     for g2 in g2_list:
-        if g2 == "PD":
+        if g2 == "PERSONAL_DIRECTION":
             reasons[g2] = (
                 "The question asks what the child should personally believe or choose."
                 if g1 == "BELIEF"
@@ -303,7 +302,7 @@ def build_g2_reasons(g1: str, g2_list: list[str], question: str = "", primary_g2
             )
         elif g2 == "GROOMING":
             reasons[g2] = "The question includes unsafe secrecy or boundary-crossing behaviour involving an adult or trusted person."
-        elif g2 == "UNSAFE_CONTENT":
+        elif g2 == "UNSAFE_SEXUAL_CONTENT":
             reasons[g2] = "The question refers to explicitly unsafe sexual content."
         elif g2 == "EMOTIONAL":
             reasons[g2] = "The question shows emotional distress or a need for emotional support."
@@ -315,10 +314,6 @@ def build_g2_reasons(g1: str, g2_list: list[str], question: str = "", primary_g2
             )
         elif g2 == "NEUTRAL_FACT":
             reasons[g2] = "The question is framed as a neutral factual query."
-        elif g2 == "COMPARATIVE":
-            reasons[g2] = "The question asks to compare or rank options, groups, or beliefs."
-        elif g2 == "LP":
-            reasons[g2] = "The question includes a loaded or biased premise."
         elif g2 == "HATE_GROUP":
             reasons[g2] = "The question uses negative or derogatory group framing."
         elif g2 == "BULLYING":
@@ -344,13 +339,13 @@ def build_decision_from_g4(g4: str, g3: str, g2_list: list[str]) -> dict[str, An
             "allow_rag": False,
             "response_mode": "safe_refusal",
             "risk_level": risk_by_severity.get(g3, "high"),
-            "parent_visible": g4 in {"BLOCK_HARD", "BLOCK_ESCALATE"} or any(item in {"GROOMING", "UNSAFE_CONTENT", "COERCIVE_CONTROL", "VULN_EXPLOIT"} for item in g2_list),
+            "parent_visible": g4 in {"BLOCK_HARD", "BLOCK_ESCALATE"} or any(item in {"GROOMING", "UNSAFE_SEXUAL_CONTENT", "COERCIVE_CONTROL", "VULN_EXPLOIT"} for item in g2_list),
         }
     if g4 in {"TRANSFORM", "TRANSFORM_HOLD"}:
         return {
             "allow_llm": True,
             "allow_rag": False,
-            "response_mode": "clarify_then_answer" if g4 == "TRANSFORM_HOLD" else ("guide_or_redirect" if any(item in {"PD", "EMOTIONAL", "DANGEROUS"} for item in g2_list) else "neutral_age_calibrated_explain"),
+            "response_mode": "clarify_then_answer" if g4 == "TRANSFORM_HOLD" else ("guide_or_redirect" if any(item in {"PERSONAL_DIRECTION", "EMOTIONAL", "DANGEROUS"} for item in g2_list) else "neutral_age_calibrated_explain"),
             "risk_level": risk_by_severity.get(g3, "medium"),
             "parent_visible": False,
         }
@@ -363,11 +358,27 @@ def build_decision_from_g4(g4: str, g3: str, g2_list: list[str]) -> dict[str, An
     }
 
 
-def build_prompt_contract(g4: str, g3: str, g2_list: list[str], age_band: str, gls: set[str] | None = None) -> dict[str, Any]:
+def build_prompt_contract(
+    g4: str,
+    g3: str,
+    g2_list: list[str],
+    age_band: str,
+    gls: set[str] | None = None,
+    g1: str | None = None,
+) -> dict[str, Any]:
     age_cfg = AGE_POLICY[age_band]
     active_gls = gls or set()
     primary_g2 = map_g2_primary(g2_list)
     modifiers = g3_modifiers([primary_g2])
+    g3_forward = {"severity": g3, "modifiers": list(modifiers)}
+    block_b = {
+        g2_id: {
+            "severity_floor": G2_SPECS[g2_id].severity_floor,
+            "modifiers": list(G2_SPECS[g2_id].modifiers),
+        }
+        for g2_id in [primary_g2]
+        if g2_id in G2_SPECS
+    }
     must_do: list[str] = []
     must_not_do: list[str] = []
     if g4 == "ALLOW":
@@ -421,19 +432,15 @@ def build_prompt_contract(g4: str, g3: str, g2_list: list[str], age_band: str, g
     if "no_reason_given" in modifiers:
         must_not_do.append("explain the refusal in detail")
     for g2 in g2_list:
-        if g2 == "COMPARATIVE":
-            must_do.append("do not rank beliefs")
-        if g2 == "PD":
+        if g2 == "PERSONAL_DIRECTION":
             must_do.append("avoid telling the child what to believe or choose")
-        if g2 == "LP":
-            must_do.append("neutralize the loaded premise before answering")
         if g2 == "HATE_GROUP":
             must_do.append("do not reproduce derogatory framing")
         if g2 == "DANGEROUS":
             must_do.append("avoid procedural detail")
         if g2 == "GROOMING":
             must_do.append("treat secrecy with an adult as unsafe")
-        if g2 == "UNSAFE_CONTENT":
+        if g2 == "UNSAFE_SEXUAL_CONTENT":
             must_do.append("do not engage with explicit content")
     if "GL-07" in active_gls and age_band in {"5-6", "7-8"}:
         must_do.extend(
@@ -453,6 +460,27 @@ def build_prompt_contract(g4: str, g3: str, g2_list: list[str], age_band: str, g
         "must_do": list(dict.fromkeys(must_do)),
         "must_not_do": list(dict.fromkeys(must_not_do)),
         "modifiers": modifiers,
+        "codebook_flow": {
+            "classifier": {
+                "G1": g1,
+                "G2": [primary_g2],
+                "flags": sorted(active_gls),
+            },
+            "block_b": {
+                "source": "codebook G2 severity floors and modifier tags",
+                "g2": block_b,
+            },
+            "block_c": {
+                "G3_SV": g3,
+                "G3_MOD": list(modifiers),
+                "G3_FORWARD": g3_forward,
+            },
+            "block_d": {
+                "input": g3_forward,
+                "G4_ACTION": g4,
+                "resolution": "G3_SV selects the base action row; G3_MOD applies modifier variants.",
+            },
+        },
     }
 
 
@@ -480,5 +508,5 @@ def build_guardrail_decision(
         "active_gls": sorted(gls),
         "gates": {"G1": g1, "G2": g2_primary, "G3": g3, "G4": g4},
         "decision": build_decision_from_g4(g4, g3, g2_list),
-        "prompt_contract": build_prompt_contract(g4, g3, g2_list, age_band, gls),
+        "prompt_contract": build_prompt_contract(g4, g3, g2_list, age_band, gls, g1=g1),
     }

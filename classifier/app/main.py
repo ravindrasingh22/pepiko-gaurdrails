@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from app.api.chat_routes import router as guardrail_router
+from app.api.classifier_routes import router as guardrail_router
 
 
 def create_app() -> FastAPI:

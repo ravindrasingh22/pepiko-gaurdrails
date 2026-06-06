@@ -10,48 +10,19 @@ from typing import Any
 
 from training.slm_classifier.data_pipeline import RAW_DIR, READINESS_REPORT_PATH, STAGING_DIR, SUPPORTED_EXTENSIONS, primary_g2_label
 from training.slm_classifier.source_normalizer import (
+    FLAGS_HEADER_CANDIDATES,
+    G1_HEADER_CANDIDATES,
+    G2_HEADER_CANDIDATES,
+    QUESTION_HEADER_CANDIDATES,
     _clean_g2_values,
     _default_flags,
     _detect_schema,
     _find_header_index,
     _load_authoring_rows_with_rejections,
+    _normalize_g2_and_flags,
     _parse_flags,
     _slugify,
 )
-
-
-QUESTION_HEADER_CANDIDATES = ("question", "questions", "prompt", "query")
-G1_HEADER_CANDIDATES = ("g1", "g_1")
-G2_HEADER_CANDIDATES = ("g2", "g_2")
-FLAGS_HEADER_CANDIDATES = ("flags",)
-
-ALWAYS_FLAGS_BY_G2 = {
-    "AMBIGUOUS_RISK": {"has_ambiguous_risk"},
-    "BULLYING": {"has_bullying_involved"},
-    "COERCIVE_CONTROL": {"has_coercive_control"},
-    "DANGEROUS": {"has_dangerous_context"},
-    "GROOMING": {"has_grooming_involved"},
-    "HATE_GROUP": {"has_hate_group_language"},
-    "PERSONAL_DIRECTION": {"has_personal_direction"},
-    "SAFETY_HAZARD": {"has_dangerous_context", "has_safety_hazard"},
-    "SELF_HARM": {"has_emotional_distress", "has_self_harm"},
-    "UNSAFE_SEXUAL_CONTENT": {"has_unsafe_sexual_content"},
-    "VIOLENCE": {"has_violence_possibility"},
-    "VULN_EXPLOIT": {"has_vuln_exploit"},
-}
-
-FLAG_TO_G2 = {
-    "has_ambiguous_risk": "AMBIGUOUS_RISK",
-    "has_bullying_involved": "BULLYING",
-    "has_coercive_control": "COERCIVE_CONTROL",
-    "has_grooming_involved": "GROOMING",
-    "has_hate_group_language": "HATE_GROUP",
-    "has_personal_direction": "PERSONAL_DIRECTION",
-    "has_self_harm": "SELF_HARM",
-    "has_unsafe_sexual_content": "UNSAFE_SEXUAL_CONTENT",
-    "has_violence_possibility": "VIOLENCE",
-    "has_vuln_exploit": "VULN_EXPLOIT",
-}
 
 
 @dataclass
@@ -106,38 +77,7 @@ def _json_all_flags(flags: dict[str, bool]) -> str:
 
 
 def _normalize_row_flags(g2_values: list[str], flags: dict[str, bool]) -> tuple[list[str], dict[str, bool]]:
-    normalized_flags = _default_flags()
-    for key, value in flags.items():
-        if key in normalized_flags and value is True:
-            normalized_flags[key] = True
-
-    for g2 in g2_values:
-        for flag_name in ALWAYS_FLAGS_BY_G2.get(g2, set()):
-            normalized_flags[flag_name] = True
-
-    for flag_name, g2 in FLAG_TO_G2.items():
-        if normalized_flags.get(flag_name, False) and g2 not in g2_values:
-            g2_values.append(g2)
-
-    if normalized_flags.get("has_safety_hazard", False) and normalized_flags.get("has_dangerous_context", False):
-        if "SAFETY_HAZARD" not in g2_values:
-            g2_values.append("SAFETY_HAZARD")
-    if normalized_flags.get("has_emotional_distress", False) and normalized_flags.get("has_self_harm", False):
-        if "SELF_HARM" not in g2_values:
-            g2_values.append("SELF_HARM")
-
-    for g2 in g2_values:
-        for flag_name in ALWAYS_FLAGS_BY_G2.get(g2, set()):
-            normalized_flags[flag_name] = True
-
-    deduped_g2: list[str] = []
-    seen: set[str] = set()
-    for value in g2_values:
-        if value and value not in seen:
-            deduped_g2.append(value)
-            seen.add(value)
-    primary = primary_g2_label(deduped_g2)
-    return ([primary] if primary else []), normalized_flags
+    return _normalize_g2_and_flags(g2_values, flags)
 
 
 def _rewrite_source_rows(source_path: Path) -> tuple[bool, list[str], list[dict[str, str]]]:

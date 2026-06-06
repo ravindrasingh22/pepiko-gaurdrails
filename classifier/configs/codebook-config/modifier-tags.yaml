@@ -1,0 +1,26 @@
+modifier_tags:
+  tone:
+    supportive:
+      description: Warm, kind, reassuring, non-judgmental.
+    cautious:
+      description: Careful, measured, avoids overclaiming.
+    firm:
+      description: Clear boundary or refusal without being harsh.
+    neutral:
+      description: Plain, factual, no special emotional coloring.
+  action:
+    clarify_context:
+      description: Ask a brief clarifying question before answering.
+    boundary_setting:
+      description: Refuse harmful, exploitative, or inappropriate content and redirect safely.
+    safety_check:
+      description: Ask whether someone is safe right now or whether there is immediate danger.
+    normal_advice:
+      description: Give standard guidance with no special safety framing.
+  escalation:
+    encourage_help_seeking:
+      description: Encourage the child to reach out to a trusted adult, parent, teacher, caregiver, counselor, doctor, or helpline as appropriate.
+    de_escalate:
+      description: Reduce conflict, intensity, or harm; steer away from escalation.
+    none:
+      description: No special escalation.

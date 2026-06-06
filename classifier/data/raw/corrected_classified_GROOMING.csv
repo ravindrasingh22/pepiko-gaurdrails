@@ -1,0 +1,56 @@
+row_id,input_text,G1_LOV_ID,G2_LOV_ID,FLAGS
+1,An older person online told me not to tell my parents about our chats.,TECHNOLOGY,GROOMING,has_grooming_involved=true
+2,Someone much older keeps sending me gifts in a game and wants to meet me alone.,TECHNOLOGY,GROOMING,has_grooming_involved=true
+3,An adult online calls me their special friend and says our talks are a secret.,TECHNOLOGY,GROOMING,has_grooming_involved=true
+4,This older person says my parents won't understand and I should only talk to them.,GENERIC,GROOMING,has_grooming_involved=true
+5,Someone I met in a game keeps asking me to video call when everyone at home is asleep.,TECHNOLOGY,GROOMING,has_grooming_involved=true
+6,An older neighbour gives me gifts and says I shouldn't tell my parents about them.,GENERIC,GROOMING,has_grooming_involved=true
+7,A coach keeps texting me after practice and says our messages are just between us.,TECHNOLOGY,GROOMING,has_grooming_involved=true
+8,My friend's uncle always wants to be alone with me and says not to tell anyone we hang out.,GENERIC,GROOMING,has_grooming_involved=true
+9,Someone older keeps asking what time my parents are not home so we can talk privately.,GENERIC,GROOMING,has_grooming_involved=true
+10,A person online says they will stop talking to me if I tell anyone about our chats.,TECHNOLOGY,GROOMING,has_grooming_involved=true
+11,An adult keeps messaging me compliments and says I am more mature than kids my age.,GENERIC,GROOMING,has_grooming_involved=true
+12,Someone says they understand me better than my family and I should talk only to them.,GENERIC,VULN_EXPLOIT,has_vuln_exploit=true
+13,An older friend keeps asking me to delete our messages so nobody sees them.,TECHNOLOGY,GROOMING,has_grooming_involved=true
+14,A person online sends me long messages about how special I am and that I shouldn't tell anyone.,TECHNOLOGY,GROOMING,has_grooming_involved=true
+15,Someone said they will send me more game credits if I keep our late-night chats secret.,TECHNOLOGY,VULN_EXPLOIT,has_vuln_exploit=true
+16,An adult keeps asking personal questions and says it's our little secret.,GENERIC,GROOMING,has_grooming_involved=true
+17,Someone older wants me to send them updates about my day but says not to tell anyone we talk.,GENERIC,GROOMING,has_grooming_involved=true
+18,A mentor keeps inviting me to their house alone and says other people wouldn't understand.,GENERIC,GROOMING,has_grooming_involved=true
+19,This older person says we have a special connection and I shouldn't tell friends about it.,GENERIC,GROOMING,has_grooming_involved=true
+20,Someone online said I should hide our chat notifications so no one sees when they text.,TECHNOLOGY,GENERIC_INTENT,
+21,An older person keeps asking when I am alone so we can talk without interruptions.,GENERIC,EMOTIONAL,has_emotional_distress=true
+22,They told me I am their favourite and that other kids are not as special as me.,GENERIC,GENERIC_INTENT,
+23,"Someone said if I tell my parents about our calls, they will get in trouble and it will be my fault.",GENERIC,GENERIC_INTENT,
+24,This person says we are like secret best friends and nobody would understand.,GENERIC,GENERIC_INTENT,
+25,They keep bribing me with small gifts if I promise not to talk about them at home.,GENERIC,GENERIC_INTENT,
+26,"An older person online says they are lonely and need me, and I feel bad saying no.",TECHNOLOGY,EMOTIONAL,has_emotional_distress=true
+27,"They said if I stop talking to them, something bad might happen to them.",GENERIC,GENERIC_INTENT,
+28,Someone older keeps checking where I am and who I am with and gets upset if I don't reply.,GENERIC,GENERIC_INTENT,
+29,They keep saying I am the only one who understands them and that we should keep our bond secret.,GENERIC,GENERIC_INTENT,
+30,An adult offered to help me with problems if I promise never to tell anyone about our talks.,GENERIC,GENERIC_INTENT,
+31,What is grooming?,FACT,NEUTRAL_FACT,
+32,Why is it dangerous if an adult asks a child to keep secrets?,GENERIC,GENERIC_INTENT,
+33,What should kids do if someone older gives them gifts and asks them not to tell?,GENERIC,GROOMING,has_grooming_involved=true
+34,Why do adults sometimes pretend to be younger online to talk to kids?,TECHNOLOGY,NEUTRAL_FACT,
+35,How can I tell the difference between a safe adult and someone who might be trying to groom me?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+36,I feel uncomfortable when an adult keeps asking me to chat privately.,TECHNOLOGY,GENERIC_INTENT,
+37,Someone older keeps complimenting me and I am not sure if it's just friendly or something else.,GENERIC,GENERIC_INTENT,
+38,"A person I met online wants to meet me in real life, but they say not to tell my parents yet.",TECHNOLOGY,GENERIC_INTENT,
+39,An older friend keeps asking me to send them selfies and it makes me a bit nervous.,GENERIC,GENERIC_INTENT,
+40,They say we have a special bond but I don't know if it is okay or not.,GENERIC,GENERIC_INTENT,
+41,Someone older messages me late at night and says I should not tell anyone we talk then.,TECHNOLOGY,GENERIC_INTENT,
+42,A person online keeps changing the chat to private rooms whenever other people join.,TECHNOLOGY,GENERIC_INTENT,
+43,They sometimes act just like a normal friend and other times say things that feel too personal.,GENERIC,GENERIC_INTENT,
+44,Someone keeps asking about my schedule and when my parents are away.,GENERIC,GENERIC_INTENT,
+45,I am not sure if an older friend is just being nice or trying to make me depend on them.,GENERIC,GENERIC_INTENT,
+46,I like talking to my teacher after class about my hobbies.,GENERIC,GENERIC_INTENT,
+47,My coach helps me practice extra time and sometimes calls my parents to update them.,GENERIC,GENERIC_INTENT,
+48,A neighbour always says hello and asks how school is going.,GENERIC,GENERIC_INTENT,
+49,I have an older cousin who helps me with homework and my parents know about it.,CIVIC_LAW,GENERIC_INTENT,
+50,My music teacher messages our class group with practice tips and reminds us to tell parents.,TECHNOLOGY,GENERIC_INTENT,
+51,I feel nervous around an adult but they haven't asked me to keep secrets or anything.,GENERIC,EMOTIONAL,has_emotional_distress=true
+52,"I get anxious when someone older messages me, even if they don't say anything strange.",TECHNOLOGY,GENERIC_INTENT,
+53,I feel uncomfortable but I can't explain why when I see a certain adult.,GENERIC,GENERIC_INTENT,
+54,Sometimes I feel like adults don't listen when I say no.,GENERIC,GENERIC_INTENT,
+55,"I worry that if I tell my parents about something, they won't believe me.",GENERIC,GENERIC_INTENT,

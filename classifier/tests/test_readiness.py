@@ -7,7 +7,6 @@ from training.slm_classifier.readiness import fix_staging_sources, promote_ready
 
 def _write_valid_sheet(path: Path) -> None:
     flags = {
-        "direct_intent": False,
         "has_ambiguous_risk": False,
         "has_bullying_involved": False,
         "has_coercive_control": False,
@@ -15,14 +14,11 @@ def _write_valid_sheet(path: Path) -> None:
         "has_emotional_distress": False,
         "has_grooming_involved": False,
         "has_hate_group_language": False,
-        "has_personal_direction": False,
         "has_safety_hazard": False,
         "has_self_harm": False,
         "has_unsafe_sexual_content": False,
         "has_violence_possibility": False,
         "has_vuln_exploit": False,
-        "indirect_intent": False,
-        "needs_clarification": False,
     }
     rows = [
         ["Topic", "Question", "G1", "G2", "G2_all", "Flags"],
@@ -54,6 +50,16 @@ def _write_fixable_sheet(path: Path) -> None:
         writer.writerows(rows)
 
 
+def _write_aliased_sheet(path: Path) -> None:
+    rows = [
+        ["Topic", "input_text", "G1_LOV_ID", "G2_LOV_ID", "FLAGS"],
+        ["Science", "Why is the sky blue?", "SCIENCE", "NEUTRAL_FACT", "{}"],
+    ]
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerows(rows)
+
+
 def test_scan_staging_sources_writes_ready_and_blocked_assessments(tmp_path: Path, monkeypatch) -> None:
     staging_dir = tmp_path / "staging"
     raw_dir = tmp_path / "raw"
@@ -77,6 +83,23 @@ def test_scan_staging_sources_writes_ready_and_blocked_assessments(tmp_path: Pat
     payload = json.loads((processed_dir / "readiness.json").read_text(encoding="utf-8"))
     assert payload["ready_count"] == 1
     assert payload["blocked_count"] == 1
+
+
+def test_fix_staging_sources_preserves_aliased_training_columns(tmp_path: Path) -> None:
+    staging_dir = tmp_path / "staging"
+    staging_dir.mkdir()
+    aliased = staging_dir / "aliased.csv"
+    _write_aliased_sheet(aliased)
+
+    fixed = fix_staging_sources(staging_dir=staging_dir)
+
+    assert [path.name for path in fixed] == ["aliased.csv"]
+    with aliased.open(encoding="utf-8", newline="") as handle:
+        reader = csv.DictReader(handle)
+        rows = list(reader)
+        assert reader.fieldnames == ["Topic", "input_text", "G1_LOV_ID", "G2_LOV_ID", "FLAGS"]
+    assert rows[0]["G2_LOV_ID"] == "NEUTRAL_FACT"
+    assert json.loads(rows[0]["FLAGS"])["has_bullying_involved"] is False
 
 
 def test_promote_ready_sources_moves_only_ready_files(tmp_path: Path, monkeypatch) -> None:
@@ -125,7 +148,6 @@ def test_fix_staging_sources_rewrites_flags_and_g2_columns_in_place(tmp_path: Pa
     first_flags = json.loads(rows[0]["Flags"])
     second_flags = json.loads(rows[1]["Flags"])
     assert set(first_flags.keys()) == {
-        "direct_intent",
         "has_ambiguous_risk",
         "has_bullying_involved",
         "has_coercive_control",
@@ -133,25 +155,21 @@ def test_fix_staging_sources_rewrites_flags_and_g2_columns_in_place(tmp_path: Pa
         "has_emotional_distress",
         "has_grooming_involved",
         "has_hate_group_language",
-        "has_personal_direction",
         "has_safety_hazard",
         "has_self_harm",
         "has_unsafe_sexual_content",
         "has_violence_possibility",
         "has_vuln_exploit",
-        "indirect_intent",
-        "needs_clarification",
     }
-    assert first_flags["has_ambiguous_risk"] is True
-    assert all(value is False for key, value in first_flags.items() if key != "has_ambiguous_risk")
-    assert rows[1]["G2"] == "SELF_HARM"
-    assert rows[1]["G2_all"] == '["EMOTIONAL", "SELF_HARM"]'
-    assert second_flags["has_emotional_distress"] is True
+    assert all(value is False for value in first_flags.values())
+    assert rows[1]["G2"] == "EMOTIONAL"
+    assert rows[1]["G2_all"] == '["EMOTIONAL"]'
+    assert second_flags["has_emotional_distress"] is False
     assert second_flags["has_self_harm"] is True
     assert all(
         value is False
         for key, value in second_flags.items()
-        if key not in {"has_emotional_distress", "has_self_harm"}
+        if key != "has_self_harm"
     )
 
     assessments_after = scan_staging_sources(staging_dir=staging_dir, raw_dir=raw_dir)

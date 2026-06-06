@@ -70,17 +70,20 @@ gates:
       - SV2
       - SV3
     modifiers:
-      - no_curiosity_invite
-      - flag_for_review
-      - no_content_engagement
-      - empathetic_tone
-      - emotional_support_required
-      - zero_engagement
-      - safeguarding_concern
-      - no_reason_given
-      - clarification_required
-      - redirect_preferred
-      - escalate
+      tone:
+        - supportive
+        - cautious
+        - firm
+        - neutral
+      action:
+        - clarify_context
+        - boundary_setting
+        - safety_check
+        - normal_advice
+      escalation:
+        - encourage_help_seeking
+        - de_escalate
+        - none
   G4:
     - ALLOW
     - TRANSFORM

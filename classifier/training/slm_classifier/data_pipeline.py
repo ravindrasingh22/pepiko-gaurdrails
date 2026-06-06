@@ -11,7 +11,8 @@ ROOT = Path(__file__).resolve().parents[2]
 RAW_DIR = ROOT / "data" / "raw"
 STAGING_DIR = ROOT / "data" / "staging"
 PROCESSED_DIR = ROOT / "data" / "processed"
-CANONICAL_DATASET = PROCESSED_DIR / "piku_gl_classifier_train.jsonl"
+CANONICAL_DATASET = PROCESSED_DIR / "piku_gl_classifier_train"
+CANONICAL_SHARD_ROWS = 25000
 MANIFEST_PATH = PROCESSED_DIR / "piku_gl_classifier_manifest.json"
 READINESS_REPORT_PATH = PROCESSED_DIR / "piku_gl_classifier_readiness.json"
 DATASET_SPLITS_PATH = PROCESSED_DIR / "piku_gl_classifier_splits.json"
@@ -37,26 +38,7 @@ G2_PRIORITY = [
     "NEUTRAL_FACT",
     "GENERIC_INTENT",
 ]
-G3_VOCAB = ["SV0", "SV1", "SV2", "SV3", "SV4"]
-G4_VOCAB = ["ALLOW", "TRANSFORM", "TRANSFORM_HOLD", "BLOCK", "BLOCK_HARD", "BLOCK_ESCALATE"]
-FLAG_VOCAB = [
-    "direct_intent",
-    "has_ambiguous_risk",
-    "has_bullying_involved",
-    "has_coercive_control",
-    "has_dangerous_context",
-    "has_emotional_distress",
-    "has_grooming_involved",
-    "has_hate_group_language",
-    "has_personal_direction",
-    "has_safety_hazard",
-    "has_self_harm",
-    "has_unsafe_sexual_content",
-    "has_violence_possibility",
-    "has_vuln_exploit",
-    "indirect_intent",
-    "needs_clarification",
-]
+FLAG_VOCAB = list(CODEBOOK.flag_mappings.keys())
 
 
 @dataclass
@@ -117,10 +99,26 @@ def write_manifest() -> DatasetManifest:
 
 def build_input_text(row: dict[str, str]) -> str:
     return (
-        "Classify the child-safety guideline signals.\n"
+        "Classify the child-safety G1, G2, and flag signals.\n"
         f"Recent context: {row.get('context', '') or 'none'}\n"
         f"Question: {row['question']}"
     )
+
+
+def iter_jsonl_paths(path: Path = CANONICAL_DATASET) -> list[Path]:
+    if path.is_dir():
+        return sorted(path.glob("part-*.jsonl"))
+    return [path] if path.exists() else []
+
+
+def load_jsonl_rows(path: Path = CANONICAL_DATASET) -> list[dict[str, object]]:
+    rows: list[dict[str, object]] = []
+    for jsonl_path in iter_jsonl_paths(path):
+        with jsonl_path.open("r", encoding="utf-8") as handle:
+            for line in handle:
+                if line.strip():
+                    rows.append(json.loads(line))
+    return rows
 
 
 def build_group_id(row: dict[str, object]) -> str:
@@ -182,6 +180,8 @@ def validate_dataset_rows(rows: list[dict[str, object]]) -> None:
         g2_values = parse_g2_values(row.get("g2", ""))
         if not g2_values:
             raise ValueError(f"Missing G2 labels in row {row.get('sample_id')}")
+        if len(g2_values) != 1:
+            raise ValueError(f"Expected one G2 label in row {row.get('sample_id')}: {g2_values}")
         unsupported = [value for value in g2_values if value not in G2_VOCAB]
         if unsupported:
             raise ValueError(f"Unsupported G2 labels in row {row.get('sample_id')}: {unsupported}")
@@ -202,23 +202,50 @@ def validate_dataset_rows(rows: list[dict[str, object]]) -> None:
         invalid_intent_families = [item for item in intent_families if not str(item).strip()]
         if invalid_intent_families:
             raise ValueError(f"Blank intent_families entries in row {row.get('sample_id')}")
+        intent_phrases = row.get("intent_phrases", [])
+        if intent_phrases is None:
+            continue
+        if not isinstance(intent_phrases, list):
+            raise ValueError(f"intent_phrases must be a list in row {row.get('sample_id')}")
+        invalid_intent_phrases = [item for item in intent_phrases if not str(item).strip()]
+        if invalid_intent_phrases:
+            raise ValueError(f"Blank intent_phrases entries in row {row.get('sample_id')}")
 
 
 def write_label_vocab(rows: list[dict[str, object]] | None = None, target_path: Path = LABEL_VOCAB_PATH) -> Path:
     intent_family_vocab: list[str] = []
+    intent_phrase_vocab: list[str] = []
+    seen_families: set[str] = set()
+    seen_phrases: set[str] = set()
+    for spec in CODEBOOK.intent_lexicon.values():
+        for item in spec.families:
+            normalized = str(item).strip()
+            if normalized and normalized not in seen_families:
+                intent_family_vocab.append(normalized)
+                seen_families.add(normalized)
+        for item in spec.phrases:
+            normalized = str(item).strip()
+            if normalized and normalized not in seen_phrases:
+                intent_phrase_vocab.append(normalized)
+                seen_phrases.add(normalized)
     if rows:
-        seen: set[str] = set()
         for row in rows:
             for item in row.get("intent_families", []) or []:
                 normalized = str(item).strip()
-                if normalized and normalized not in seen:
+                if normalized and normalized not in seen_families:
                     intent_family_vocab.append(normalized)
-                    seen.add(normalized)
+                    seen_families.add(normalized)
+            for item in row.get("intent_phrases", []) or []:
+                normalized = str(item).strip()
+                if normalized and normalized not in seen_phrases:
+                    intent_phrase_vocab.append(normalized)
+                    seen_phrases.add(normalized)
     payload = {
         "g1": G1_VOCAB,
         "g2": G2_VOCAB,
         "flags": FLAG_VOCAB,
         "intent_families": intent_family_vocab,
+        "intent_phrases": intent_phrase_vocab,
         "age_bands": list(CODEBOOK.age_bands.keys()),
     }
     target_path.parent.mkdir(parents=True, exist_ok=True)

@@ -10,12 +10,14 @@ from pathlib import Path
 from app.guardrails.runtime_contracts import G2_ALIAS_MAP
 from training.slm_classifier.data_pipeline import (
     CANONICAL_DATASET,
+    CANONICAL_SHARD_ROWS,
     DATASET_SPLITS_PATH,
     G2_VOCAB,
     FLAG_VOCAB,
     LABEL_VOCAB_PATH,
     CODEBOOK,
     primary_g2_label,
+    iter_jsonl_paths,
     validate_dataset_rows,
     write_dataset_splits,
     write_label_vocab,
@@ -29,15 +31,13 @@ NORMALIZED_RAW_DIR = RAW_DIR / "normalized"
 NORMALIZED_CSV = NORMALIZED_RAW_DIR / "slm_training_normalized.csv"
 MERGED_NORMALIZED_CSV = NORMALIZED_RAW_DIR / "slm_training_merged.csv"
 REJECTED_ROWS_CSV = NORMALIZED_RAW_DIR / "slm_training_rejected_rows.csv"
-QUESTION_HEADER_CANDIDATES = ("question", "questions", "prompt", "query")
-G1_HEADER_CANDIDATES = ("g1", "g_1")
-G2_HEADER_CANDIDATES = ("g2", "g_2")
-G3_HEADER_CANDIDATES = ("g3", "g_3")
-G4_HEADER_CANDIDATES = ("g4", "g_4")
+QUESTION_HEADER_CANDIDATES = ("question", "questions", "prompt", "query", "user_input", "input_text")
+G1_HEADER_CANDIDATES = ("g1", "g_1", "g1_lov_id")
+G2_HEADER_CANDIDATES = ("g2", "g_2", "g2_lov_id")
 CONTEXT_HEADER_CANDIDATES = ("context", "recent_context")
-GENERATED_PROMPT_HEADER_CANDIDATES = ("generated_prompt", "generatedprompt")
 FLAGS_HEADER_CANDIDATES = ("flags",)
 INTENT_FAMILIES_HEADER_CANDIDATES = ("intent_families", "intent_family", "intentfamily", "intentfamilies")
+INTENT_PHRASES_HEADER_CANDIDATES = ("intent_phrases", "intent_phrase", "intentphrase", "intentphrases")
 CANONICAL_COLUMNS = [
     "sample_id",
     "question",
@@ -47,35 +47,11 @@ CANONICAL_COLUMNS = [
     "flags",
     "intent_families",
     "intent_families_present",
+    "intent_phrases",
+    "intent_phrases_present",
 ]
 
-ALWAYS_FLAGS_BY_G2 = {
-    "AMBIGUOUS_RISK": {"has_ambiguous_risk"},
-    "BULLYING": {"has_bullying_involved"},
-    "COERCIVE_CONTROL": {"has_coercive_control"},
-    "DANGEROUS": {"has_dangerous_context"},
-    "GROOMING": {"has_grooming_involved"},
-    "HATE_GROUP": {"has_hate_group_language"},
-    "PERSONAL_DIRECTION": {"has_personal_direction"},
-    "SAFETY_HAZARD": {"has_dangerous_context", "has_safety_hazard"},
-    "SELF_HARM": {"has_emotional_distress", "has_self_harm"},
-    "UNSAFE_SEXUAL_CONTENT": {"has_unsafe_sexual_content"},
-    "VIOLENCE": {"has_violence_possibility"},
-    "VULN_EXPLOIT": {"has_vuln_exploit"},
-}
-
-FLAG_TO_G2 = {
-    "has_ambiguous_risk": "AMBIGUOUS_RISK",
-    "has_bullying_involved": "BULLYING",
-    "has_coercive_control": "COERCIVE_CONTROL",
-    "has_grooming_involved": "GROOMING",
-    "has_hate_group_language": "HATE_GROUP",
-    "has_personal_direction": "PERSONAL_DIRECTION",
-    "has_self_harm": "SELF_HARM",
-    "has_unsafe_sexual_content": "UNSAFE_SEXUAL_CONTENT",
-    "has_violence_possibility": "VIOLENCE",
-    "has_vuln_exploit": "VULN_EXPLOIT",
-}
+IGNORED_LEGACY_SOURCE_FLAGS = {"has_personal_direction"}
 
 @dataclass
 class AuthoringRow:
@@ -86,20 +62,19 @@ class AuthoringRow:
     flags: dict[str, bool]
     intent_families: list[str]
     intent_families_present: bool
+    intent_phrases: list[str]
+    intent_phrases_present: bool
 
 
 @dataclass
 class SheetSchema:
     question_idx: int
-    guideline_tags_idx: int | None
     g1_idx: int
     g2_idx: int
-    g3_idx: int | None
-    g4_idx: int | None
     context_idx: int | None = None
-    generated_prompt_idx: int | None = None
     flags_idx: int | None = None
     intent_families_idx: int | None = None
+    intent_phrases_idx: int | None = None
     header_row_index: int = 0
 
 
@@ -108,11 +83,8 @@ class RejectedAuthoringRow:
     source_file: str
     source_row: int
     question: str
-    gl: str
     g1: str
     g2: str
-    g3: str
-    g4: str
     rejection_reason: str
 
 
@@ -211,27 +183,21 @@ def _detect_schema(path: Path) -> SheetSchema:
 
     for idx, row in enumerate(rows[:5]):
         question_idx = _find_header_index(row, QUESTION_HEADER_CANDIDATES)
-        gl_idx = _find_header_index(row, ("gl", "guideline_tags", "guidelines", "gl_tags"))
         g1_idx = _find_header_index(row, G1_HEADER_CANDIDATES)
         g2_idx = _find_header_index(row, G2_HEADER_CANDIDATES)
-        g3_idx = _find_header_index(row, G3_HEADER_CANDIDATES)
-        g4_idx = _find_header_index(row, G4_HEADER_CANDIDATES)
         context_idx = _find_header_index(row, CONTEXT_HEADER_CANDIDATES)
-        prompt_idx = _find_header_index(row, GENERATED_PROMPT_HEADER_CANDIDATES)
         flags_idx = _find_header_index(row, FLAGS_HEADER_CANDIDATES)
         intent_families_idx = _find_header_index(row, INTENT_FAMILIES_HEADER_CANDIDATES)
+        intent_phrases_idx = _find_header_index(row, INTENT_PHRASES_HEADER_CANDIDATES)
         if None not in {question_idx, g1_idx, g2_idx}:
             return SheetSchema(
                 question_idx=int(question_idx),
-                guideline_tags_idx=int(gl_idx) if gl_idx is not None else None,
                 g1_idx=int(g1_idx),
                 g2_idx=int(g2_idx),
-                g3_idx=int(g3_idx) if g3_idx is not None else None,
-                g4_idx=int(g4_idx) if g4_idx is not None else None,
                 context_idx=int(context_idx) if context_idx is not None else None,
-                generated_prompt_idx=int(prompt_idx) if prompt_idx is not None else None,
                 flags_idx=int(flags_idx) if flags_idx is not None else None,
                 intent_families_idx=int(intent_families_idx) if intent_families_idx is not None else None,
+                intent_phrases_idx=int(intent_phrases_idx) if intent_phrases_idx is not None else None,
                 header_row_index=idx,
             )
     raise ValueError(f"Unsupported raw sheet format: {path}")
@@ -277,38 +243,31 @@ def _resolve_intent_families(g2_values: list[str], raw_intent_families: list[str
     return resolved
 
 
-def _normalize_g2_and_flags(g2_values: list[str], flags: dict[str, bool]) -> tuple[list[str], dict[str, bool]]:
-    normalized_flags = _default_flags()
-    for key, value in flags.items():
-        if key in normalized_flags and value is True:
-            normalized_flags[key] = True
-
-    for g2 in g2_values:
-        for flag_name in ALWAYS_FLAGS_BY_G2.get(g2, set()):
-            normalized_flags[flag_name] = True
-
-    for flag_name, mapped_g2 in FLAG_TO_G2.items():
-        if normalized_flags.get(flag_name, False) and mapped_g2 not in g2_values:
-            g2_values.append(mapped_g2)
-
-    if normalized_flags.get("has_safety_hazard", False) and normalized_flags.get("has_dangerous_context", False):
-        if "SAFETY_HAZARD" not in g2_values:
-            g2_values.append("SAFETY_HAZARD")
-    if normalized_flags.get("has_emotional_distress", False) and normalized_flags.get("has_self_harm", False):
-        if "SELF_HARM" not in g2_values:
-            g2_values.append("SELF_HARM")
-
-    for g2 in g2_values:
-        for flag_name in ALWAYS_FLAGS_BY_G2.get(g2, set()):
-            normalized_flags[flag_name] = True
-
-    deduped_g2: list[str] = []
+def _resolve_intent_phrases(g2_values: list[str], raw_intent_phrases: list[str] | None) -> list[str]:
+    resolved: list[str] = []
     seen: set[str] = set()
-    for value in g2_values:
-        if value and value not in seen:
-            deduped_g2.append(value)
-            seen.add(value)
-    primary = primary_g2_label(deduped_g2)
+    for g2_value in g2_values:
+        spec = CODEBOOK.intent_lexicon.get(str(g2_value).strip())
+        if spec:
+            for phrase in spec.phrases:
+                normalized = str(phrase).strip()
+                if normalized and normalized not in seen:
+                    resolved.append(normalized)
+                    seen.add(normalized)
+    for phrase in raw_intent_phrases or []:
+        normalized = str(phrase).strip()
+        if normalized and normalized not in seen:
+            resolved.append(normalized)
+            seen.add(normalized)
+    return resolved
+
+
+def _normalize_g2_and_flags(g2_values: list[str], flags: dict[str, bool]) -> tuple[list[str], dict[str, bool]]:
+    normalized_flags = {
+        flag: bool(flags.get(flag, False))
+        for flag in FLAG_VOCAB
+    }
+    primary = primary_g2_label(g2_values)
     return ([primary] if primary else []), normalized_flags
 
 
@@ -332,23 +291,32 @@ def _parse_flags(raw: str) -> dict[str, bool]:
     text = (raw or "").strip()
     if not text:
         return _default_flags()
-    try:
-        payload = json.loads(text)
-    except json.JSONDecodeError as exc:
+    if "=" in text:
+        payload = {}
+        for item in text.split(";"):
+            key, separator, raw_value = item.partition("=")
+            if not separator or raw_value.strip().lower() not in {"true", "false"}:
+                raise ValueError(f"Invalid flags key/value item: {item}")
+            payload[key.strip()] = raw_value.strip().lower() == "true"
+    else:
         try:
-            payload = ast.literal_eval(text)
-        except (ValueError, SyntaxError) as fallback_exc:
-            raise ValueError(f"Invalid flags JSON: {exc}") from fallback_exc
+            payload = json.loads(text)
+        except json.JSONDecodeError as exc:
+            try:
+                payload = ast.literal_eval(text)
+            except (ValueError, SyntaxError) as fallback_exc:
+                raise ValueError(f"Invalid flags JSON: {exc}") from fallback_exc
     if not isinstance(payload, dict):
         raise ValueError("Flags must be a JSON object.")
-    unknown = [str(key) for key in payload if str(key) not in FLAG_VOCAB]
+    unknown = [str(key) for key in payload if str(key) not in FLAG_VOCAB and str(key) not in IGNORED_LEGACY_SOURCE_FLAGS]
     if unknown:
         raise ValueError(f"Unknown flags in source data: {', '.join(sorted(dict.fromkeys(unknown)))}")
     normalized = _default_flags()
     for key, value in payload.items():
         if not isinstance(value, bool):
             raise ValueError(f"Flag '{key}' must be boolean.")
-        normalized[str(key)] = value
+        if str(key) in normalized:
+            normalized[str(key)] = value
     return normalized
 
 
@@ -365,18 +333,7 @@ def _load_authoring_rows_with_rejections(path: Path = DEFAULT_SOURCE) -> Authori
             if not question:
                 continue
             g1 = _clean_gate_value(row[schema.g1_idx] if len(row) > schema.g1_idx else "")
-            raw_gl = (
-                row[schema.guideline_tags_idx]
-                if schema.guideline_tags_idx is not None and len(row) > schema.guideline_tags_idx
-                else ""
-            )
             raw_g2 = row[schema.g2_idx] if len(row) > schema.g2_idx else ""
-            g3 = _clean_gate_value(
-                row[schema.g3_idx] if schema.g3_idx is not None and len(row) > schema.g3_idx else ""
-            )
-            g4 = _clean_gate_value(
-                row[schema.g4_idx] if schema.g4_idx is not None and len(row) > schema.g4_idx else ""
-            )
             try:
                 g2 = _clean_g2_values(raw_g2, first_only=True)
                 raw_flags = row[schema.flags_idx] if schema.flags_idx is not None and len(row) > schema.flags_idx else ""
@@ -390,22 +347,27 @@ def _load_authoring_rows_with_rejections(path: Path = DEFAULT_SOURCE) -> Authori
                 parsed_intent_families = _parse_jsonish_list(raw_intent_families) or []
                 intent_families = _resolve_intent_families(g2, parsed_intent_families)
                 intent_families_present = bool(intent_families) or schema.intent_families_idx is not None
+                raw_intent_phrases = (
+                    row[schema.intent_phrases_idx]
+                    if schema.intent_phrases_idx is not None and len(row) > schema.intent_phrases_idx
+                    else ""
+                )
+                parsed_intent_phrases = _parse_jsonish_list(raw_intent_phrases) or []
+                intent_phrases = _resolve_intent_phrases(g2, parsed_intent_phrases)
+                intent_phrases_present = bool(intent_phrases) or schema.intent_phrases_idx is not None
             except ValueError as exc:
                 rejected_rows.append(
                     RejectedAuthoringRow(
                         source_file=path.name,
                         source_row=row_number,
                         question=question,
-                        gl=raw_gl,
                         g1=g1,
                         g2=raw_g2.strip(),
-                        g3=g3,
-                        g4=g4,
                         rejection_reason=str(exc),
                     )
                 )
                 continue
-            if not any((g1, g2, g3, g4)):
+            if not any((g1, g2)):
                 continue
             rows.append(
                 AuthoringRow(
@@ -416,6 +378,8 @@ def _load_authoring_rows_with_rejections(path: Path = DEFAULT_SOURCE) -> Authori
                     flags=flags,
                     intent_families=intent_families,
                     intent_families_present=intent_families_present,
+                    intent_phrases=intent_phrases,
+                    intent_phrases_present=intent_phrases_present,
                 )
             )
     return AuthoringLoadResult(accepted_rows=rows, rejected_rows=rejected_rows)
@@ -458,7 +422,7 @@ def expand_authoring_rows(path: Path = DEFAULT_SOURCE) -> list[dict[str, object]
     schema = _detect_schema(path)
     source_row_map = {row_number: row for row_number, row in enumerate(_read_csv_rows(path), start=1)}
     for item_index, row in enumerate(load_authoring_rows(path), start=1):
-        base_id = f"sample_{item_index:03d}_{_slugify(row.question)[:32]}"
+        base_id = f"{_slugify(path.stem)}_{row.source_row:06d}_{_slugify(row.question)[:32]}"
         question_normalized, _ = _normalize_training_question(row.question)
         context = ""
         source_row = source_row_map.get(row.source_row)
@@ -475,6 +439,8 @@ def expand_authoring_rows(path: Path = DEFAULT_SOURCE) -> list[dict[str, object]
                 "flags": row.flags,
                 "intent_families": row.intent_families,
                 "intent_families_present": row.intent_families_present,
+                "intent_phrases": row.intent_phrases,
+                "intent_phrases_present": row.intent_phrases_present,
             }
         )
     return normalized
@@ -511,11 +477,8 @@ def _validation_rejected_row(row: dict[str, object], reason: str) -> dict[str, o
     return {
         "TOPIC": str(row.get("source", "")),
         "Question": str(row.get("question", "")),
-        "GL": "",
         "G1": str(row.get("g1", "")),
         "G2": ",".join(str(item) for item in row.get("g2", [])) if isinstance(row.get("g2"), list) else str(row.get("g2", "")),
-        "G3": "",
-        "G4": "",
         "source_file": str(row.get("source_file", "")),
         "source_row": row.get("source_row", ""),
         "rejection_reason": reason,
@@ -544,11 +507,8 @@ def collect_rejected_rows(paths: list[Path] | None = None) -> list[dict[str, obj
                 {
                     "TOPIC": "",
                     "Question": row.question,
-                    "GL": row.gl,
                     "G1": row.g1,
                     "G2": row.g2,
-                    "G3": row.g3,
-                    "G4": row.g4,
                     "source_file": row.source_file,
                     "source_row": row.source_row,
                     "rejection_reason": row.rejection_reason,
@@ -584,7 +544,7 @@ def write_merged_normalized_csv(paths: list[Path] | None = None, target_path: Pa
 def write_rejected_rows_csv(paths: list[Path] | None = None, target_path: Path = REJECTED_ROWS_CSV) -> Path:
     rows = collect_rejected_rows(paths)
     target_path.parent.mkdir(parents=True, exist_ok=True)
-    fieldnames = ["TOPIC", "Question", "GL", "G1", "G2", "G3", "G4", "source_file", "source_row", "rejection_reason"]
+    fieldnames = ["TOPIC", "Question", "G1", "G2", "source_file", "source_row", "rejection_reason"]
     with target_path.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=fieldnames)
         writer.writeheader()
@@ -609,16 +569,29 @@ def write_canonical_jsonl_with_metadata(
     source_rejected = collect_rejected_rows(source_paths)
     all_rejected = [*source_rejected, *validation_rejected]
     REJECTED_ROWS_CSV.parent.mkdir(parents=True, exist_ok=True)
-    fieldnames = ["TOPIC", "Question", "GL", "G1", "G2", "G3", "G4", "source_file", "source_row", "rejection_reason"]
+    fieldnames = ["TOPIC", "Question", "G1", "G2", "source_file", "source_row", "rejection_reason"]
     with REJECTED_ROWS_CSV.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(_csv_safe_row(row) for row in all_rejected)
     target_path.parent.mkdir(parents=True, exist_ok=True)
-    with target_path.open("w", encoding="utf-8") as handle:
-        for row in valid_rows:
-            payload = {key: row[key] for key in CANONICAL_COLUMNS if key in row}
-            handle.write(json.dumps(payload, ensure_ascii=True) + "\n")
+    payloads = [
+        {key: row[key] for key in CANONICAL_COLUMNS if key in row}
+        for row in valid_rows
+    ]
+    if target_path == CANONICAL_DATASET:
+        target_path.mkdir(parents=True, exist_ok=True)
+        for shard_path in iter_jsonl_paths(target_path):
+            shard_path.unlink()
+        for shard_index, offset in enumerate(range(0, len(payloads), CANONICAL_SHARD_ROWS)):
+            shard_path = target_path / f"part-{shard_index:03d}.jsonl"
+            with shard_path.open("w", encoding="utf-8") as handle:
+                for payload in payloads[offset:offset + CANONICAL_SHARD_ROWS]:
+                    handle.write(json.dumps(payload, ensure_ascii=True) + "\n")
+    else:
+        with target_path.open("w", encoding="utf-8") as handle:
+            for payload in payloads:
+                handle.write(json.dumps(payload, ensure_ascii=True) + "\n")
     write_dataset_splits(valid_rows, target_path=split_target_path or DATASET_SPLITS_PATH)
     write_label_vocab(valid_rows, target_path=vocab_target_path or LABEL_VOCAB_PATH)
     print(

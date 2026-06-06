@@ -10,15 +10,14 @@ This repo keeps:
 - `training/` for repeatable scripts
 - `tests/` for safety regression coverage
 
-The runtime exposes one production guardrail entrypoint:
+The classifier service exposes one API entrypoint:
 
-- `POST /api/v1/guardrails/run`
+- `POST /api/v1/guardrail/classify`
 
-It also includes three scaffolded backend test endpoints:
+Separate scaffold services now exist at the repo root for future scaling:
 
-- `POST /api/v1/guardrails/test/classification`
-- `POST /api/v1/guardrails/test/llm-call`
-- `POST /api/v1/guardrails/test/validator`
+- `validator` -> `POST /api/v1/guardrail/validate`
+- `chat` -> `POST /api/v1/guardrail/chat`
 
 ## Run locally
 
@@ -38,9 +37,7 @@ docker compose up --build
 API:
 
 ```text
-http://localhost:4001/api/v1/guardrails/run
+http://localhost:4001/api/v1/guardrail/classify
 ```
-
-Backend test endpoints use the same base URL under `/api/v1/guardrails/test/...`.
 
 See [docs/architecture.md](/Users/ravindrasingh/Documents/AI-Agents/PikuAI/pikuai-gaurdrails/docs/architecture.md) for the target production design.

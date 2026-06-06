@@ -17,6 +17,7 @@ Before a release:
    - `G2` macro F1
    - flag precision / recall
    - intent-family precision / recall when enabled
+   - intent-phrase precision / recall when enabled
 4. Review classifier inference spot checks for prompt tone drift and flag overfiring.
 5. Re-run regression tests.
 
@@ -27,6 +28,9 @@ Before a release:
 - `--continuous` rebuilds data and reuses compatible model weights
 - if dataset fingerprint changes, epoch/batch resume progress resets
 - optimizer-state resume should be treated conservatively after architecture changes
+- production SLM artifacts must report `cross_feature_fusion_version >= 3`
+- version 3 means G2 uses cross-attention plus GLU feature fusion over mean-pooled DeBERTa, intent-rule priors, and phrase-trigger priors
+- cached model loading defaults to local/offline files for repeatable training and inference
 
 ## Logging
 
@@ -38,8 +42,14 @@ For classifier training, operationally useful fields include:
 - backbone LR
 - head LR
 - `train_intent_heads`
+- `cross_feature_fusion_version`
 - `flag_max_pos_weight`
 - `intent_family_max_pos_weight`
+- `intent_phrase_max_pos_weight`
+- `g2_focal_gamma`
+- `intent_family_focal_gamma`
+- `intent_phrase_focal_gamma`
+- `local_files_only`
 - final test metrics
 
 Later iterations can persist the same schema into PostgreSQL and forward operational logs to centralized logging.

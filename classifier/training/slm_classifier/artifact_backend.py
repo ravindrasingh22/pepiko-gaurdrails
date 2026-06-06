@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import hashlib
 import json
 import math
 import re
@@ -9,8 +8,8 @@ from pathlib import Path
 
 from app.guardrails.gate_mapper import GUIDELINES, build_guardrail_decision
 from app.models.guardrail_decision import GLSignal, GuardrailDecision
-from training.slm_classifier.codebook import DOC_CODEBOOK_PATH, parse_codebook
-from training.slm_classifier.data_pipeline import CANONICAL_DATASET, build_input_text
+from training.slm_classifier.codebook import codebook_fingerprint, parse_codebook
+from training.slm_classifier.data_pipeline import CANONICAL_DATASET, build_input_text, load_jsonl_rows
 from training.slm_classifier.source_normalizer import write_canonical_jsonl_with_metadata
 
 
@@ -24,7 +23,7 @@ GL_COLUMN_NAMES = [label.gl_id.lower().replace("-", "_") for label in parse_code
 
 
 def _codebook_fingerprint() -> str:
-    return hashlib.sha256(DOC_CODEBOOK_PATH.read_bytes()).hexdigest()[:16]
+    return codebook_fingerprint()
 
 
 def _tokenize(text: str) -> list[str]:
@@ -32,12 +31,7 @@ def _tokenize(text: str) -> list[str]:
 
 
 def _iter_rows(path: Path) -> list[dict[str, object]]:
-    rows: list[dict[str, object]] = []
-    with path.open("r", encoding="utf-8") as handle:
-        for line in handle:
-            if line.strip():
-                rows.append(json.loads(line))
-    return rows
+    return load_jsonl_rows(path)
 
 
 def _feature_score(pos_count: int, neg_count: int, pos_total: int, neg_total: int) -> float:

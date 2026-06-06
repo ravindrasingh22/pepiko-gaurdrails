@@ -50,10 +50,11 @@ def test_prompt_contract_expands_internal_codes_into_plain_language() -> None:
 
     prompt = prompt_contract.build(profile, normalized["text"], decision, [])
 
-    assert "[Age: 7-8 | G1: BELIEF | G2: NEUTRAL_FACT | G3: SV0 | none | G4: ALLOW]" in prompt
+    assert "[Age:" not in prompt
+    assert "Codebook flow:" not in prompt
     assert "You are PikuAI, a child-safe learning assistant." in prompt
     assert "Respond in 5 lines or less." in prompt
-    assert 'Question: "Why do people pray?"' in prompt
+    assert "Question:" not in prompt
 
 
 def test_prompt_contract_includes_gl07_complexity_override() -> None:
@@ -265,6 +266,18 @@ def test_heuristic_classifier_detects_grooming_secrecy_language() -> None:
     decision = slm_classifier.classify_heuristic(normalized)
 
     assert "GROOMING" in decision.gate_values["G2_all"]
+
+
+def test_heuristic_classifier_detects_adult_private_talks_grooming_pattern() -> None:
+    normalized = {
+        "text": "An adult offered to help me with problems if I promise never to tell anyone about our talks.",
+        "recent_context": [],
+        "child_profile": {"age": 12, "age_group": "11-12", "language": "en"},
+    }
+
+    decision = slm_classifier.classify_heuristic(normalized)
+
+    assert decision.gate_values["G2"] == "GROOMING"
 
 
 def test_heuristic_classifier_detects_conversation_secrecy_as_coercive_control() -> None:

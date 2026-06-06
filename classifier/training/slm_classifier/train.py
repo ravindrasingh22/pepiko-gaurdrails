@@ -1,6 +1,7 @@
 import argparse
 from pathlib import Path
 
+from training.slm_classifier.codebook import codebook_latest_mtime
 from training.slm_classifier.data_pipeline import CANONICAL_DATASET, LABEL_VOCAB_PATH, write_manifest
 from training.slm_classifier.slm_backend import available_cores, model_dir_for_core, resolve_core, train_slm_classifier
 from training.slm_classifier.source_normalizer import write_canonical_jsonl
@@ -20,6 +21,8 @@ def _dataset_is_stale(dataset_path: Path = CANONICAL_DATASET) -> bool:
         return True
     raw_dir = dataset_path.parents[1] / "raw"
     dataset_mtime = dataset_path.stat().st_mtime
+    if codebook_latest_mtime() > dataset_mtime:
+        return True
     for path in raw_dir.glob("*.csv"):
         if path.name.startswith(".") or path.name.lower() == "gl-codebook.csv":
             continue
@@ -44,6 +47,10 @@ def main() -> None:
     parser.add_argument("--flag-loss-weight", type=float, default=None)
     parser.add_argument("--flag-max-pos-weight", type=float, default=None)
     parser.add_argument("--intent-family-max-pos-weight", type=float, default=None)
+    parser.add_argument("--intent-phrase-max-pos-weight", type=float, default=None)
+    parser.add_argument("--g2-focal-gamma", type=float, default=None)
+    parser.add_argument("--intent-family-focal-gamma", type=float, default=None)
+    parser.add_argument("--intent-phrase-focal-gamma", type=float, default=None)
     parser.add_argument("--train-intent-heads", type=_parse_bool_flag, default=None)
     parser.add_argument(
         "--balanced-sampling",
@@ -101,6 +108,10 @@ def main() -> None:
         flag_loss_weight=args.flag_loss_weight,
         flag_max_pos_weight=args.flag_max_pos_weight,
         intent_family_max_pos_weight=args.intent_family_max_pos_weight,
+        intent_phrase_max_pos_weight=args.intent_phrase_max_pos_weight,
+        g2_focal_gamma=args.g2_focal_gamma,
+        intent_family_focal_gamma=args.intent_family_focal_gamma,
+        intent_phrase_focal_gamma=args.intent_phrase_focal_gamma,
         train_intent_heads=args.train_intent_heads,
         balanced_sampling=args.balanced_sampling,
         resume_if_available=resume_training,
@@ -117,7 +128,10 @@ def main() -> None:
     print(f"SLM model package: {model_dir}")
     print(f"Requested device: {args.device}")
     print(f"Train on all data: {args.train_on_all_data}")
-    print(f"Balanced sampling: {args.balanced_sampling}")
+    print(f"Balanced sampling: {slm_metadata.get('balanced_sampling', args.balanced_sampling)}")
+    print(f"Balanced sampling max epochs: {slm_metadata.get('balanced_sampling_max_epochs', 'n/a')}")
+    print(f"Freeze backbone: {slm_metadata.get('freeze_backbone', args.freeze_backbone)}")
+    print(f"Unfreeze top layers: {slm_metadata.get('unfreeze_top_layers', args.unfreeze_top_layers)}")
     print(f"Continuous training: {args.continuous}")
     print(f"Checkpoint every batches: {args.checkpoint_every_batches}")
     print(f"SLM training backend: {slm_metadata['training_backend']}")
@@ -141,6 +155,12 @@ def main() -> None:
         print(f"Test intent-family micro recall: {intent_family_metrics.get('micro_recall', 0.0):.4f}")
         print(f"Test intent-family micro F1: {intent_family_metrics.get('micro_f1', 0.0):.4f}")
         print(f"Test intent-family macro F1: {intent_family_metrics.get('macro_f1', 0.0):.4f}")
+        intent_phrase_metrics = slm_metadata["test_gate_metrics"].get("intent_phrases", {})
+        print(f"Test intent-phrase exact-match accuracy: {intent_phrase_metrics.get('exact_match_accuracy', 0.0):.4f}")
+        print(f"Test intent-phrase micro precision: {intent_phrase_metrics.get('micro_precision', 0.0):.4f}")
+        print(f"Test intent-phrase micro recall: {intent_phrase_metrics.get('micro_recall', 0.0):.4f}")
+        print(f"Test intent-phrase micro F1: {intent_phrase_metrics.get('micro_f1', 0.0):.4f}")
+        print(f"Test intent-phrase macro F1: {intent_phrase_metrics.get('macro_f1', 0.0):.4f}")
         print(f"Dominant G2 share: {slm_metadata.get('dominant_g2_share', 0.0):.4f}")
     if slm_metadata.get("degenerate_head_warning"):
         print(f"WARNING: {slm_metadata['degenerate_head_warning']}")

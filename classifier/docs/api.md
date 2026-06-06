@@ -1,18 +1,17 @@
 # API Job
 
-This service owns one orchestration entrypoint:
+This service owns one classifier entrypoint:
 
-- `POST /api/v1/guardrails/run`
+- `POST /api/v1/guardrail/classify`
 
 Detailed API specification:
 
 - [api-spec.md](/Users/ravindrasingh/Documents/AI-Agents/PikuAI/pikuai-gaurdrails/docs/api-spec.md)
 
-For testing and debugging, the scaffold also exposes stage-specific endpoints:
+Related scaffold services exist separately:
 
-- `POST /api/v1/guardrails/test/classification`
-- `POST /api/v1/guardrails/test/llm-call`
-- `POST /api/v1/guardrails/test/validator`
+- `validator` -> `POST /api/v1/guardrail/validate`
+- `chat` -> `POST /api/v1/guardrail/chat`
 
 Request body:
 
@@ -31,16 +30,7 @@ Request body:
 
 Response shape includes:
 
-- final policy decision
-- final answer
+- classification decision
 - stage outputs
-- audit log entries for every stage
 
-The app-facing integration should use only `POST /api/v1/guardrails/run`.
-That endpoint executes the full sequence internally and returns the complete stage trace in one response.
-
-The test endpoints are for backend verification only:
-
-- `classification`: returns guideline tags, signals, and `G1/G2/G3/G4` without calling the LLM.
-- `llm-call`: runs classification, routing, RAG, prompt build, and the LLM stage, then returns the generated prompt and raw answer.
-- `validator`: runs the same upstream sequence and validates either a provided `answer` or the scaffold-generated answer.
+The app-facing integration for this service should use only `POST /api/v1/guardrail/classify`.

@@ -17,7 +17,7 @@ https://<your-host>/api/v1
 
 ## Public endpoint
 
-- `POST /guardrails/run`
+- `POST /guardrail/classify`
 
 ## Request
 
@@ -120,6 +120,12 @@ For `infer.py --mode slm` and `--mode slm_pure`, the current classifier-oriented
   },
   "intent_phrases": {
     "active": []
+  },
+  "raw_scores": {
+    "G1": {},
+    "G2_primary": {},
+    "intent_families": {},
+    "intent_phrases": {}
   }
 }
 ```
@@ -128,7 +134,8 @@ Notes:
 
 - `user_input` is an alias of `question`
 - `g2_all` is no longer part of the active classifier response contract
-- `intent_family` scores and `intent_phrase` scores are intentionally omitted from the current CLI output
+- `intent_families.active` and `intent_phrases.active` are thresholded auxiliary evidence
+- full per-label score maps are internal/debug fields and should not be exposed publicly by default
 
 ## Public vs internal fields
 

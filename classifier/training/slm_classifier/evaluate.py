@@ -11,6 +11,7 @@ from training.slm_classifier.artifact_backend import build_decision_from_artifac
 from training.slm_classifier.data_pipeline import (
     CANONICAL_DATASET,
     G2_VOCAB,
+    load_jsonl_rows,
     load_dataset_splits,
     parse_g2_values,
     primary_g2_label,
@@ -26,12 +27,7 @@ def _iter_rows(path: Path) -> list[dict[str, object]]:
         with path.open("r", encoding="utf-8", newline="") as handle:
             reader = csv.DictReader(handle)
             return [{str(key): value for key, value in row.items()} for row in reader]
-    rows: list[dict[str, object]] = []
-    with path.open("r", encoding="utf-8") as handle:
-        for line in handle:
-            if line.strip():
-                rows.append(json.loads(line))
-    return rows
+    return load_jsonl_rows(path)
 
 
 def _expected_g1(row: dict[str, object]) -> str:

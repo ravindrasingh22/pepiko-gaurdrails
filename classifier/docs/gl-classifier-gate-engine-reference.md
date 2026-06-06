@@ -595,23 +595,27 @@ What the gate engine then computes:
 
 ### 11.2 Recommended inference order
 
-The most stable runtime order is:
+The active SLM runtime order is:
 
 1. receive the question text
-2. run semantic classification for `G1`
-3. run semantic multi-label classification for `G2`
-4. compute the `Applies_When` flag object for Block E and return it with classifier output
-5. pass question text, flag object, `G1`, and `G2` into the gate engine
-6. gate engine aggregates `G2` into `G3`
-7. gate engine derives `G4` from `G3`
-8. gate engine computes active `GL` rows using `Applies_When`, `Uses_G1_LOVs`, and `Uses_G2_LOVs`
-9. gate engine applies GL special rules as structured notes or overrides where the codebook requires them
-10. package the result into the SafetyEnvelope
+2. render the question-first classifier input with optional recent context
+3. run resilient Block J phrase and syntactic-pattern extraction for deterministic intent and G2 priors
+4. run DeBERTa inference with masked mean pooling
+5. run auxiliary heads for flags, learned `intent_families`, and learned `intent_phrases`
+6. run the G2 cross-attention GLU fusion head using the pooled text embedding as query and projected prior tokens as keys/values
+7. select primary `G1`, primary `G2`, thresholded flags, and thresholded auxiliary intent evidence
+8. pass question text, flag object, `G1`, and primary `G2` into the gate engine
+9. gate engine derives `G3` from primary `G2`
+10. gate engine derives `G4` from `G3`
+11. gate engine computes active `GL` rows using `Applies_When`, `Uses_G1_LOVs`, and `Uses_G2_LOVs`
+12. gate engine applies GL special rules as structured notes or overrides where the codebook requires them
+13. package the result into the SafetyEnvelope
 
 Why this order matters:
 
 - `G1` and `G2` are the core classifier outputs
-- `G3` must be computed from `G2`, not from raw text
+- `G2` is the primary G2 label, not `G2_all`
+- `G3` must be computed from primary `G2`, not from raw text
 - `G4` must be computed from `G3`, not directly from raw text
 - `GL` is computed inside the gate engine, not inside classifier inference
 
@@ -660,7 +664,7 @@ Important rule:
 
 ### 11.4 How G2 is computed during inference
 
-`G2` should be computed as multi-label semantic classification.
+`G2` is computed as primary semantic classification by the trained G2 head. The active SLM implementation uses cross-attention plus GLU feature fusion, not a separate runtime `G2_all` merger.
 
 Recommended inputs:
 
@@ -671,24 +675,22 @@ Recommended inputs:
 
 Block J runtime support should come from two sources:
 
-- direct phrase matching over `question` and `context`
+- resilient direct phrase and syntactic-pattern matching over `question` and `context`
 - learned auxiliary prediction from trained SLM heads for:
   - `intent_families`
   - `intent_phrases`
 
 Recommended decision pattern:
 
-1. produce candidate `G2` scores from the classifier
-2. use Block J evidence to support, explain, or disambiguate candidates
-3. apply class thresholds
-4. allow multi-label outputs where justified
-5. apply boundary-resolution rules for confusing pairs
+1. produce primary `G2` scores from the cross-attention GLU fusion head
+2. use Block J evidence to support, explain, or disambiguate the primary label
+3. apply thresholds to auxiliary flags, learned intent families, and learned intent phrases
+4. apply boundary-resolution rules for confusing pairs where runtime policy defines them
 
 Default runtime threshold rule:
 
-- unless explicitly overridden, classifier thresholds should default to `0.8`
+- unless explicitly overridden, auxiliary classifier thresholds should default to `0.8`
 - this default should be applied consistently to:
-  - `G2` multi-label activation
   - `Applies_When` boolean activation from score outputs
   - learned Block J `intent_families`
   - learned Block J `intent_phrases`
@@ -697,6 +699,7 @@ Important rule:
 
 - Block J evidence may support `G2`
 - Block J evidence must not replace the classifier's main `G2` resolution logic
+- `G2_all` is not part of the active runtime classifier or gate-engine contract
 
 Examples:
 
@@ -1123,22 +1126,22 @@ Block J should support:
 
 Recommended inference role:
 
-- semantic model predicts candidate `G1`, `G2`, and `Applies_When` flags
-- direct lexicon matches provide supporting evidence, ambiguity alerts, and rationale hooks
+- semantic model predicts primary `G1`, primary `G2`, and `Applies_When` flags
+- resilient lexicon and syntactic-pattern matches provide supporting evidence, ambiguity alerts, and rationale hooks
 - trained SLM Block J heads may predict likely `intent_families` and `intent_phrases` as additional support
-- final outputs are resolved with thresholds and multi-label logic
+- auxiliary outputs are resolved with thresholds; primary `G2` remains the active classifier label
 
 Recommended runtime order:
 
-1. run classifier inference for `topic`, `G1`, `G2`, and `Applies_When`
-2. run direct Block J phrase matching on `question` and `context`
+1. run resilient Block J phrase and syntactic-pattern matching on `question` and `context`
+2. run classifier inference for `G1`, primary `G2`, and `Applies_When`
 3. if a trained SLM backend is active, decode learned Block J outputs:
    - `predicted_families`
    - `predicted_phrases`
    - `family_scores`
    - `phrase_scores`
-4. combine semantic classifier evidence, direct Block J evidence, and learned Block J evidence
-5. finalize `G2`
+4. combine semantic classifier evidence, direct Block J evidence, and learned Block J evidence for explanation and boundary support
+5. finalize primary `G2`
 6. generate `reason`, `g1.reason`, and `g2[].reason`
 7. pass only classifier outputs plus flags into gate-engine computation
 

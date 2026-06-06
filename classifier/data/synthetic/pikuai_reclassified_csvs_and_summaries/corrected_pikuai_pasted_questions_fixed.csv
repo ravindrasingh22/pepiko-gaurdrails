@@ -1,0 +1,1001 @@
+row_id,input_text,G1_LOV_ID,G2_LOV_ID,FLAGS
+1,How plants know to grow up in the car and it's actually stressing me out?,SCIENCE,GENERIC_INTENT,
+2,"How plants know to grow up in the car, i don't wanna ask my grownup first?",SCIENCE,GENERIC_INTENT,
+3,What if i feel lonely even in a full house when my sibling is there?,GENERIC,EMOTIONAL,has_emotional_distress=true
+4,What if i feel lonely even in a full house when my sibling is there because i keep thinking about it?,GENERIC,EMOTIONAL,has_emotional_distress=true
+5,Why i get goosebumps after practice?,GENERIC,GENERIC_INTENT,
+6,Why i get goosebumps after practice because it makes me go ewww?,GENERIC,GENERIC_INTENT,
+7,"Why socks disappear in the wash like magic at my grandma's house, it's kinda gross?",GENERIC,GENERIC_INTENT,
+8,Why socks disappear in the wash like magic at my grandma's house?,GENERIC,GENERIC_INTENT,
+9,"What if i lied and now it's huge on vacation, my tummy feels funny?",GENERIC,GENERIC_INTENT,
+10,What if i lied and now it's huge on vacation and i don't wanna get judged?,GENERIC,GENERIC_INTENT,
+11,"What do i do when my brain won't stop worrying at night when i hear thunder, i don't wanna sound cringe?",SCIENCE,PERSONAL_DIRECTION,has_personal_direction=true
+12,What do i do when my brain won't stop worrying at night when i hear thunder or no? i'm not trying to be bad?,SCIENCE,PERSONAL_DIRECTION,has_personal_direction=true
+13,What if i don't feel safe at home right now after practice because i keep overthinking it?,GENERIC,GENERIC_INTENT,
+14,What if i don't feel safe at home right now after practice or no? it's kinda gross?,GENERIC,GENERIC_INTENT,
+15,"Why my feet smell gross at camp, i feel dumb asking?",GENERIC,GENERIC_INTENT,
+16,Why my feet smell gross at camp because i'm trying to handle it better?,GENERIC,GENERIC_INTENT,
+17,"If it's bad to hold my pee at the doctor's office, it's making my brain busy?",SCIENCE,GENERIC_INTENT,
+18,If it's bad to hold my pee at the doctor's office or no? my tummy feels funny?,GENERIC,GENERIC_INTENT,
+19,"Why tears come out when i'm mad too when i look in the mirror, i keep thinking about it?",GENERIC,GENERIC_INTENT,
+20,Why tears come out when i'm mad too when i look in the mirror?,GENERIC,GENERIC_INTENT,
+21,What if my grownup drinks and gets scary on vacation?,GENERIC,GENERIC_INTENT,
+22,What if my grownup drinks and gets scary on vacation because i keep thinking about it?,GENERIC,GENERIC_INTENT,
+23,What if someone online wants to meet me when i hear thunder or no? i'm not trying to be bad?,TECHNOLOGY,GENERIC_INTENT,
+24,What if someone online wants to meet me when i hear thunder and i don't wanna get judged?,TECHNOLOGY,GENERIC_INTENT,
+25,Why people hiccup during family stuff because i don't wanna ask my grownup first?,GENERIC,GENERIC_INTENT,
+26,Why people hiccup during family stuff and it's honestly stressing me out?,GENERIC,GENERIC_INTENT,
+27,What if i'm mad at my parent and also love them when my friend ignores me because i keep wondering?,GENERIC,GENERIC_INTENT,
+28,What if i'm mad at my parent and also love them when my friend ignores me because i keep thinking about it?,GENERIC,GENERIC_INTENT,
+29,Why rain sounds cozy but thunder sounds mad when my sibling is there because i feel dumb asking?,SCIENCE,GENERIC_INTENT,
+30,"Why rain sounds cozy but thunder sounds mad when my sibling is there, i don't like it?",SCIENCE,GENERIC_INTENT,
+31,Why i hate loud noises so much on my tablet?,GENERIC,GENERIC_INTENT,
+32,Why i hate loud noises so much on my tablet because i feel dumb asking?,GENERIC,GENERIC_INTENT,
+33,"What if i sent a pic and now i regret it when i'm trying to sleep, it's making my brain busy?",SCIENCE,GENERIC_INTENT,
+34,What if i sent a pic and now i regret it when i'm trying to sleep because i keep overthinking it?,GENERIC,GENERIC_INTENT,
+35,What if i miss my other house at the doctor's office?,GENERIC,GENERIC_INTENT,
+36,"What if i miss my other house at the doctor's office, it's making my brain busy?",SCIENCE,GENERIC_INTENT,
+37,If monsters are just confused shadows on vacation?,GENERIC,GENERIC_INTENT,
+38,If monsters are just confused shadows on vacation because it feels weird?,GENERIC,GENERIC_INTENT,
+39,What if i'm scared to go to the doctor when i'm alone or no? it's kinda gross?,GENERIC,GENERIC_INTENT,
+40,What if i'm scared to go to the doctor when i'm alone because i don't wanna sound cringe?,GENERIC,GENERIC_INTENT,
+41,What if i think i might like girls or boys or both or i don't know on weekends?,GENERIC,GENERIC_INTENT,
+42,"What if i think i might like girls or boys or both or i don't know on weekends, i feel stupid asking?",GENERIC,HATE_GROUP,has_hate_group_language=true
+43,"What if my parents keep yelling and i hate it after school, i'm not trying to be bad?",GENERIC,GENERIC_INTENT,
+44,What if my parents keep yelling and i hate it after school or no? my tummy feels funny?,GENERIC,GENERIC_INTENT,
+45,What if i got a bad grade and my parent gets mad when my phone buzzes?,TECHNOLOGY,GENERIC_INTENT,
+46,"What if i got a bad grade and my parent gets mad when my phone buzzes, my tummy feels funny?",TECHNOLOGY,GENERIC_INTENT,
+47,What if nobody likes me when my friend ignores me and i'm trying to handle it better?,GENERIC,EMOTIONAL,has_emotional_distress=true
+48,"What if nobody likes me when my friend ignores me, i feel dumb asking?",GENERIC,EMOTIONAL,has_emotional_distress=true
+49,What if nobody likes me when my parent says no?,GENERIC,EMOTIONAL,has_emotional_distress=true
+50,"What if nobody likes me when my parent says no, it's actually stressing me out?",GENERIC,EMOTIONAL,has_emotional_distress=true
+51,Why poop can look different when everyone is loud?,GENERIC,GENERIC_INTENT,
+52,"Why poop can look different when everyone is loud, i'm trying to handle it better?",GENERIC,GENERIC_INTENT,
+53,What if i think my body is ugly when everyone is loud?,SCIENCE,GENERIC_INTENT,
+54,What if i think my body is ugly when everyone is loud because it's lowkey messing with me?,SCIENCE,GENERIC_INTENT,
+55,What if people are making fun of me in comments after practice and i don't wanna get judged?,GENERIC,GENERIC_INTENT,
+56,"What if people are making fun of me in comments after practice, i'm not saying this out loud to anyone?",GENERIC,GENERIC_INTENT,
+57,Why my chest feels weird when i'm nervous in the lunch room because it's lowkey messing with me?,GENERIC,GENERIC_INTENT,
+58,Why my chest feels weird when i'm nervous in the lunch room because i'm not saying this out loud to anyone?,GENERIC,GENERIC_INTENT,
+59,Why tears come out when i'm mad too after school?,GENERIC,GENERIC_INTENT,
+60,Why tears come out when i'm mad too after school because it's kinda gross?,GENERIC,GENERIC_INTENT,
+61,If aliens would think cereal is soup when i look in the mirror?,GENERIC,GENERIC_INTENT,
+62,If aliens would think cereal is soup when i look in the mirror and i don't wanna get judged?,GENERIC,GENERIC_INTENT,
+63,What if somebody keeps threatening me at the mall?,GENERIC,GENERIC_INTENT,
+64,"What if somebody keeps threatening me at the mall, it feels weird?",GENERIC,GENERIC_INTENT,
+65,"Why the sky changes colors when i hear thunder, it's making my brain busy?",SCIENCE,GENERIC_INTENT,
+66,Why the sky changes colors when i hear thunder because it's actually stressing me out?,GENERIC,GENERIC_INTENT,
+67,"How plants know to grow up right before a test, i don't wanna sound cringe?",SCIENCE,GENERIC_INTENT,
+68,How plants know to grow up right before a test because it's kinda gross?,SCIENCE,GENERIC_INTENT,
+69,"What if i sent a pic and now i regret it when it's bedtime, it's literally awkward?",GENERIC,GENERIC_INTENT,
+70,What if i sent a pic and now i regret it when it's bedtime?,GENERIC,GENERIC_INTENT,
+71,What if i lied and now it's huge on my tablet because i'm trying to handle it better?,GENERIC,GENERIC_INTENT,
+72,What if i lied and now it's huge on my tablet because it's making my brain busy?,SCIENCE,GENERIC_INTENT,
+73,What do i do when my brain won't stop worrying at night during math because it's kinda embarrassing?,SCIENCE,PERSONAL_DIRECTION,has_personal_direction=true
+74,"What do i do when my brain won't stop worrying at night during math, it's kinda gross?",SCIENCE,PERSONAL_DIRECTION,has_personal_direction=true
+75,Why do compliments make me feel weird sometimes at the mall or no? i don't like it?,FACT,NEUTRAL_FACT,
+76,Why do compliments make me feel weird sometimes at the mall because i don't wanna get judged?,FACT,NEUTRAL_FACT,
+77,"How do i ask to change my seat when my parent says no, i keep thinking about it?",FACT,PERSONAL_DIRECTION,has_personal_direction=true
+78,How do i ask to change my seat when my parent says no and it's actually stressing me out?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+79,What if i'm mad at my parent and also love them after an argument?,GENERIC,GENERIC_INTENT,
+80,"What if i'm mad at my parent and also love them after an argument, i don't like it?",GENERIC,GENERIC_INTENT,
+81,How to stop thinking about someone being mad at me when my friend ignores me or no? it makes me go ewww?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+82,How to stop thinking about someone being mad at me when my friend ignores me and i feel weird even typing this?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+83,Why does my body look grown up but i still feel like a kid before soccer?,SCIENCE,NEUTRAL_FACT,
+84,Why does my body look grown up but i still feel like a kid before soccer because i don't wanna sound cringe?,SCIENCE,NEUTRAL_FACT,
+85,How vaccines work without tiny soldiers on picture day?,GENERIC,VIOLENCE,has_violence_possibility=true
+86,How vaccines work without tiny soldiers on picture day because i keep wondering?,GENERIC,VIOLENCE,has_violence_possibility=true
+87,What if they made a group chat without me at the mall and it's lowkey messing with me?,TECHNOLOGY,BULLYING,has_bullying_involved=true
+88,What if they made a group chat without me at the mall because it's literally awkward?,TECHNOLOGY,BULLYING,has_bullying_involved=true
+89,What if nobody likes me when i hear thunder?,GENERIC,EMOTIONAL,has_emotional_distress=true
+90,What if nobody likes me when i hear thunder or no? it's kinda gross?,GENERIC,EMOTIONAL,has_emotional_distress=true
+91,How do i stop panicking before presentations when my phone buzzes and i feel weird even typing this?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+92,"How do i stop panicking before presentations when my phone buzzes, it's making my brain busy?",TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+93,What if a grownup wants a hug and i don't at the mall?,GENERIC,GENERIC_INTENT,
+94,What if a grownup wants a hug and i don't at the mall or no? i'm not trying to be bad?,GENERIC,GENERIC_INTENT,
+95,What if my friend keeps saying jk after mean stuff when my sibling is there?,GENERIC,GENERIC_INTENT,
+96,"What if my friend keeps saying jk after mean stuff when my sibling is there, i feel dumb asking?",GENERIC,GENERIC_INTENT,
+97,"Whether a robot could be my brother after practice, i don't wanna get judged?",TECHNOLOGY,GENERIC_INTENT,
+98,Whether a robot could be my brother after practice because i keep wondering?,TECHNOLOGY,GENERIC_INTENT,
+99,"Why my chest feels weird when i'm nervous when it's bedtime, it makes me go ewww?",GENERIC,GENERIC_INTENT,
+100,Why my chest feels weird when i'm nervous when it's bedtime and it's actually stressing me out?,GENERIC,GENERIC_INTENT,
+101,"What if i mess up and everybody remembers forever before soccer, i don't like it?",GENERIC,GENERIC_INTENT,
+102,What if i mess up and everybody remembers forever before soccer because it's kinda embarrassing?,GENERIC,GENERIC_INTENT,
+103,If monsters are just confused shadows in PE?,GENERIC,GENERIC_INTENT,
+104,"If monsters are just confused shadows in PE, it's kinda embarrassing?",GENERIC,GENERIC_INTENT,
+105,"Why does my body look grown up but i still feel like a kid at the doctor's office, i feel weird even typing this?",SCIENCE,NEUTRAL_FACT,
+106,Why does my body look grown up but i still feel like a kid at the doctor's office because i don't wanna sound cringe?,SCIENCE,NEUTRAL_FACT,
+107,Is it normal that puberty is making me feel crazy when i'm alone because i feel stupid asking?,GENERIC,GENERIC_INTENT,
+108,Is it normal that puberty is making me feel crazy when i'm alone because i feel weird even typing this?,GENERIC,GENERIC_INTENT,
+109,If body hair means i'm growing up on my tablet or no? i don't like it?,SCIENCE,GENERIC_INTENT,
+110,If body hair means i'm growing up on my tablet?,SCIENCE,GENERIC_INTENT,
+111,What if i miss my other house at camp because i'm not saying this out loud to anyone?,GENERIC,GENERIC_INTENT,
+112,What if i miss my other house at camp because it's actually stressing me out?,GENERIC,GENERIC_INTENT,
+113,Whether fish get thirsty on my tablet or no? it makes me go ewww?,GENERIC,GENERIC_INTENT,
+114,"Whether fish get thirsty on my tablet, i don't wanna sound cringe?",GENERIC,GENERIC_INTENT,
+115,What if my parents are getting divorced on my tablet or no? i'm not trying to be bad?,GENERIC,GENERIC_INTENT,
+116,What if my parents are getting divorced on my tablet because i feel weird even typing this?,GENERIC,GENERIC_INTENT,
+117,If body hair means i'm growing up when i hear thunder?,SCIENCE,GENERIC_INTENT,
+118,"If body hair means i'm growing up when i hear thunder, i keep wondering?",SCIENCE,GENERIC_INTENT,
+119,"Why do i get so mad when the wifi dies on the bus, i don't wanna sound cringe?",TECHNOLOGY,NEUTRAL_FACT,
+120,Why do i get so mad when the wifi dies on the bus?,TECHNOLOGY,NEUTRAL_FACT,
+121,What if my friend keeps saying jk after mean stuff before soccer?,GENERIC,GENERIC_INTENT,
+122,What if my friend keeps saying jk after mean stuff before soccer because it's lowkey messing with me?,GENERIC,GENERIC_INTENT,
+123,Why babies don't have teeth at first after school?,GENERIC,GENERIC_INTENT,
+124,Why babies don't have teeth at first after school and i feel stupid asking?,GENERIC,GENERIC_INTENT,
+125,Why the moon follows the car at my grandma's house because it's kinda gross?,GENERIC,GENERIC_INTENT,
+126,"Why the moon follows the car at my grandma's house, i feel weird even typing this?",GENERIC,GENERIC_INTENT,
+127,Why do i feel gross after scrolling forever when my parent says no and it's lowkey messing with me?,FACT,NEUTRAL_FACT,
+128,"Why do i feel gross after scrolling forever when my parent says no, i don't wanna ask my grownup first?",FACT,NEUTRAL_FACT,
+129,"How do i know if a video is fake after school, i feel dumb asking?",TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+130,How do i know if a video is fake after school because i don't wanna get judged?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+131,"If my stuffed animal talks when i'm asleep when i look in the mirror, i feel dumb asking?",SCIENCE,GENERIC_INTENT,
+132,"If my stuffed animal talks when i'm asleep when i look in the mirror, i'm not saying this out loud to anyone?",SCIENCE,GENERIC_INTENT,
+133,What if i'm the only one who doesn't get the math at camp because i'm trying to handle it better?,GENERIC,GENERIC_INTENT,
+134,What if i'm the only one who doesn't get the math at camp because it's honestly stressing me out?,GENERIC,GENERIC_INTENT,
+135,Why does my body look grown up but i still feel like a kid during math because it's literally awkward?,SCIENCE,NEUTRAL_FACT,
+136,Why does my body look grown up but i still feel like a kid during math?,SCIENCE,NEUTRAL_FACT,
+137,How to make the scared feeling go away before school after school because i don't wanna get judged?,GENERIC,GENERIC_INTENT,
+138,How to make the scared feeling go away before school after school because i feel weird even typing this?,GENERIC,GENERIC_INTENT,
+139,"Why grownups say bedtime is early when night feels huge in group chat, i keep thinking about it?",TECHNOLOGY,GENERIC_INTENT,
+140,Why grownups say bedtime is early when night feels huge in group chat because i don't want a baby answer?,TECHNOLOGY,GENERIC_INTENT,
+141,How do i ask for deodorant or bras or pads without dying of embarrassment in PE and i'm trying to handle it better?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+142,How do i ask for deodorant or bras or pads without dying of embarrassment in PE?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+143,"If i can dig to the other side of earth in PE, i keep thinking about it?",GENERIC,GENERIC_INTENT,
+144,If i can dig to the other side of earth in PE?,GENERIC,GENERIC_INTENT,
+145,Whether my goldfish knows my name on vacation?,GENERIC,GENERIC_INTENT,
+146,"Whether my goldfish knows my name on vacation, i'm not trying to be bad?",GENERIC,GENERIC_INTENT,
+147,What if my friend posted me without asking in the shower?,GENERIC,GENERIC_INTENT,
+148,"What if my friend posted me without asking in the shower, it's making my brain busy?",SCIENCE,GENERIC_INTENT,
+149,If mermaids would go to school at the babysitter's or no? i keep thinking about it?,GENERIC,GENERIC_INTENT,
+150,If mermaids would go to school at the babysitter's because it's literally awkward?,GENERIC,GENERIC_INTENT,
+151,How do i stop feeling jealous of my friend in group chat?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+152,How do i stop feeling jealous of my friend in group chat because it's kinda gross?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+153,What if i got a bad grade and my parent gets mad when i'm alone?,GENERIC,GENERIC_INTENT,
+154,What if i got a bad grade and my parent gets mad when i'm alone because it's literally awkward?,GENERIC,GENERIC_INTENT,
+155,Why some foods taste bad then good later after an argument?,GENERIC,GENERIC_INTENT,
+156,"Why some foods taste bad then good later after an argument, i feel dumb asking?",GENERIC,GENERIC_INTENT,
+157,If monsters are just confused shadows when it's bedtime?,GENERIC,GENERIC_INTENT,
+158,If monsters are just confused shadows when it's bedtime and i don't wanna get judged?,GENERIC,GENERIC_INTENT,
+159,"Why babies don't have teeth at first before soccer, i feel stupid asking?",GENERIC,GENERIC_INTENT,
+160,Why babies don't have teeth at first before soccer?,GENERIC,GENERIC_INTENT,
+161,What if i lied and now it's huge when everyone is loud or no? i keep wondering?,GENERIC,GENERIC_INTENT,
+162,What if i lied and now it's huge when everyone is loud?,GENERIC,GENERIC_INTENT,
+163,Whether my goldfish knows my name when i'm alone?,GENERIC,GENERIC_INTENT,
+164,Whether my goldfish knows my name when i'm alone because i'm trying to handle it better?,GENERIC,GENERIC_INTENT,
+165,Why my feet smell gross when my room is messy?,GENERIC,GENERIC_INTENT,
+166,Why my feet smell gross when my room is messy because i don't wanna ask my grownup first?,GENERIC,GENERIC_INTENT,
+167,How do i ask for a break when everything is too much when it's bedtime?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+168,How do i ask for a break when everything is too much when it's bedtime because i feel stupid asking?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+169,"What if i forgot my homework again on my tablet, i'm not trying to be bad?",CIVIC_LAW,GENERIC_INTENT,
+170,"What if i forgot my homework again on my tablet, it's kinda embarrassing?",CIVIC_LAW,GENERIC_INTENT,
+171,Why the sky changes colors on my tablet and i feel weird even typing this?,GENERIC,GENERIC_INTENT,
+172,Why the sky changes colors on my tablet and it's honestly stressing me out?,GENERIC,GENERIC_INTENT,
+173,If it's bad to hold my pee on weekends because i don't wanna ask my grownup first?,GENERIC,GENERIC_INTENT,
+174,If it's bad to hold my pee on weekends?,GENERIC,GENERIC_INTENT,
+175,"How to tell if i'm just tired or actually sad in the locker room, i keep wondering?",GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+176,How to tell if i'm just tired or actually sad in the locker room because i feel dumb asking?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+177,What if i lied and now it's huge when my parent says no?,GENERIC,GENERIC_INTENT,
+178,What if i lied and now it's huge when my parent says no or no? i keep thinking about it?,GENERIC,GENERIC_INTENT,
+179,Why tears come out when i'm mad too at camp because i feel dumb asking?,GENERIC,GENERIC_INTENT,
+180,"Why tears come out when i'm mad too at camp, i keep thinking about it?",GENERIC,GENERIC_INTENT,
+181,If my stuffed animal talks when i'm asleep in the locker room?,SCIENCE,GENERIC_INTENT,
+182,If my stuffed animal talks when i'm asleep in the locker room because it's making my brain busy?,SCIENCE,GENERIC_INTENT,
+183,Why armpits get stinky when my room is messy and i feel stupid asking?,GENERIC,GENERIC_INTENT,
+184,Why armpits get stinky when my room is messy?,GENERIC,GENERIC_INTENT,
+185,If my pet secretly has a job when i'm at school in the shower because my tummy feels funny?,GENERIC,GENERIC_INTENT,
+186,If my pet secretly has a job when i'm at school in the shower because it's kinda gross?,GENERIC,GENERIC_INTENT,
+187,Whether my shadow gets lonely at night when i'm trying to sleep?,GENERIC,GENERIC_INTENT,
+188,Whether my shadow gets lonely at night when i'm trying to sleep and i'm trying to handle it better?,GENERIC,GENERIC_INTENT,
+189,Why boogers keep coming back at camp?,GENERIC,GENERIC_INTENT,
+190,Why boogers keep coming back at camp because my tummy feels funny?,GENERIC,GENERIC_INTENT,
+191,What if a kid keeps bothering me in class when i'm trying to sleep or no? it makes me go ewww?,GENERIC,GENERIC_INTENT,
+192,"What if a kid keeps bothering me in class when i'm trying to sleep, i feel dumb asking?",GENERIC,GENERIC_INTENT,
+193,"How to tell if i'm just tired or actually sad when i'm alone, it's actually stressing me out?",GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+194,"How to tell if i'm just tired or actually sad when i'm alone, i keep thinking about it?",GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+195,"What if i miss my other house during family stuff, i keep overthinking it?",GENERIC,GENERIC_INTENT,
+196,"What if i miss my other house during family stuff, i don't wanna get judged?",GENERIC,GENERIC_INTENT,
+197,If it's bad to hold my pee when i'm alone or no? i'm not trying to be bad?,GENERIC,GENERIC_INTENT,
+198,If it's bad to hold my pee when i'm alone because i'm trying to handle it better?,GENERIC,GENERIC_INTENT,
+199,"What if someone keeps texting me and i want them to stop in the car, it's kinda embarrassing?",GENERIC,GENERIC_INTENT,
+200,What if someone keeps texting me and i want them to stop in the car because i don't wanna sound cringe?,GENERIC,GENERIC_INTENT,
+201,"What if someone keeps texting me and i want them to stop when i'm alone, i don't wanna sound cringe?",GENERIC,GENERIC_INTENT,
+202,"What if someone keeps texting me and i want them to stop when i'm alone, i don't wanna ask my grownup first?",GENERIC,GENERIC_INTENT,
+203,Why my heart beats fast when i'm scared when i look in the mirror because i keep thinking about it?,SCIENCE,GENERIC_INTENT,
+204,"Why my heart beats fast when i'm scared when i look in the mirror, i'm not saying this out loud to anyone?",SCIENCE,GENERIC_INTENT,
+205,"Why my chest feels weird when i'm nervous in the dark, i keep overthinking it?",GENERIC,GENERIC_INTENT,
+206,"Why my chest feels weird when i'm nervous in the dark, i feel dumb asking?",GENERIC,GENERIC_INTENT,
+207,What if a kid keeps bothering me in class when my sibling is there because i keep wondering?,GENERIC,GENERIC_INTENT,
+208,What if a kid keeps bothering me in class when my sibling is there because i keep thinking about it?,GENERIC,GENERIC_INTENT,
+209,Why i sweat more now when my phone buzzes because it's making my brain busy?,TECHNOLOGY,GENERIC_INTENT,
+210,Why i sweat more now when my phone buzzes and i don't want a baby answer?,TECHNOLOGY,GENERIC_INTENT,
+211,"Whether my goldfish knows my name on weekends, it's making my brain busy?",SCIENCE,GENERIC_INTENT,
+212,"Whether my goldfish knows my name on weekends, i feel stupid asking?",GENERIC,GENERIC_INTENT,
+213,How do i know if a video is fake when i hear thunder because it's literally awkward?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+214,How do i know if a video is fake when i hear thunder or no? i'm not trying to be bad?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+215,Why the sky changes colors when everyone is loud or no? it feels weird?,GENERIC,GENERIC_INTENT,
+216,"Why the sky changes colors when everyone is loud, i don't wanna get judged?",GENERIC,GENERIC_INTENT,
+217,"What if they made a group chat without me at school, it makes me go ewww?",TECHNOLOGY,BULLYING,has_bullying_involved=true
+218,What if they made a group chat without me at school and i feel stupid asking?,TECHNOLOGY,BULLYING,has_bullying_involved=true
+219,"What if someone says keep this secret from my parents during dinner, it's literally awkward?",GENERIC,GENERIC_INTENT,
+220,What if someone says keep this secret from my parents during dinner and i don't wanna get judged?,GENERIC,GENERIC_INTENT,
+221,Why do i copy what other people do without meaning to in the shower because i keep overthinking it?,FACT,NEUTRAL_FACT,
+222,"Why do i copy what other people do without meaning to in the shower, it's lowkey messing with me?",FACT,NEUTRAL_FACT,
+223,If body hair means i'm growing up when everyone is loud?,SCIENCE,GENERIC_INTENT,
+224,"If body hair means i'm growing up when everyone is loud, i keep overthinking it?",SCIENCE,GENERIC_INTENT,
+225,If my stuffed animal talks when i'm asleep at the mall?,SCIENCE,GENERIC_INTENT,
+226,"If my stuffed animal talks when i'm asleep at the mall, i'm not trying to be bad?",SCIENCE,GENERIC_INTENT,
+227,"Am i weird if i don't feel like the other kids at camp, i feel dumb asking?",GENERIC,GENERIC_INTENT,
+228,Am i weird if i don't feel like the other kids at camp because i feel stupid asking?,GENERIC,GENERIC_INTENT,
+229,Why does my little brother wreck my stuff at the babysitter's?,FACT,NEUTRAL_FACT,
+230,"Why does my little brother wreck my stuff at the babysitter's, my tummy feels funny?",FACT,NEUTRAL_FACT,
+231,"What if i forgot my homework again in PE, i feel dumb asking?",CIVIC_LAW,GENERIC_INTENT,
+232,What if i forgot my homework again in PE because i don't wanna sound cringe?,CIVIC_LAW,GENERIC_INTENT,
+233,What if my parents keep yelling and i hate it when my phone buzzes and i don't want a baby answer?,TECHNOLOGY,GENERIC_INTENT,
+234,What if my parents keep yelling and i hate it when my phone buzzes because it's making my brain busy?,TECHNOLOGY,GENERIC_INTENT,
+235,How vaccines work without tiny soldiers in the dark?,GENERIC,VIOLENCE,has_violence_possibility=true
+236,How vaccines work without tiny soldiers in the dark because it's actually stressing me out?,GENERIC,VIOLENCE,has_violence_possibility=true
+237,"Why my voice cracks at the babysitter's, it's lowkey messing with me?",GENERIC,GENERIC_INTENT,
+238,Why my voice cracks at the babysitter's because i don't wanna ask my grownup first?,GENERIC,GENERIC_INTENT,
+239,What if my friend posted me without asking during family stuff or no? it's kinda gross?,GENERIC,GENERIC_INTENT,
+240,"What if my friend posted me without asking during family stuff, i don't wanna sound cringe?",GENERIC,GENERIC_INTENT,
+241,What if i'm the only one who doesn't get the math at the doctor's office because i don't wanna sound cringe?,GENERIC,GENERIC_INTENT,
+242,What if i'm the only one who doesn't get the math at the doctor's office?,GENERIC,GENERIC_INTENT,
+243,How do i ask to change my seat after scrolling because i'm not saying this out loud to anyone?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+244,How do i ask to change my seat after scrolling?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+245,"What if nobody likes me in PE, i don't wanna sound cringe?",GENERIC,EMOTIONAL,has_emotional_distress=true
+246,"What if nobody likes me in PE, it feels weird?",GENERIC,EMOTIONAL,has_emotional_distress=true
+247,"Why my stomach growls when i'm not even talking right before a test, it's honestly stressing me out?",CIVIC_LAW,GENERIC_INTENT,
+248,Why my stomach growls when i'm not even talking right before a test because it's actually stressing me out?,CIVIC_LAW,GENERIC_INTENT,
+249,What if my family is acting weird and won't tell me stuff at my grandma's house because i keep wondering?,GENERIC,GENERIC_INTENT,
+250,What if my family is acting weird and won't tell me stuff at my grandma's house because it's making my brain busy?,SCIENCE,GENERIC_INTENT,
+251,Why i feel left out even when people say hi in the dark because it's kinda gross?,GENERIC,EMOTIONAL,has_emotional_distress=true;has_bullying_involved=true
+252,Why i feel left out even when people say hi in the dark because i don't like it?,GENERIC,EMOTIONAL,has_emotional_distress=true;has_bullying_involved=true
+253,"Why rain sounds cozy but thunder sounds mad when i'm alone, i don't wanna sound cringe?",SCIENCE,GENERIC_INTENT,
+254,Why rain sounds cozy but thunder sounds mad when i'm alone because i feel stupid asking?,SCIENCE,GENERIC_INTENT,
+255,"If monsters are just confused shadows after scrolling, i don't wanna sound cringe?",GENERIC,GENERIC_INTENT,
+256,If monsters are just confused shadows after scrolling and i feel stupid asking?,GENERIC,GENERIC_INTENT,
+257,Why i sweat more now when i look in the mirror because i don't wanna sound cringe?,GENERIC,GENERIC_INTENT,
+258,"Why i sweat more now when i look in the mirror, i'm trying to handle it better?",GENERIC,GENERIC_INTENT,
+259,"What if i feel lonely even in a full house during math, i feel weird even typing this?",GENERIC,EMOTIONAL,has_emotional_distress=true
+260,"What if i feel lonely even in a full house during math, it makes me go ewww?",GENERIC,EMOTIONAL,has_emotional_distress=true
+261,Why my heart beats fast when i'm scared at camp or no? it's kinda gross?,SCIENCE,GENERIC_INTENT,
+262,Why my heart beats fast when i'm scared at camp because it's actually stressing me out?,SCIENCE,GENERIC_INTENT,
+263,"What if i keep having the same bad dream after scrolling, i keep thinking about it?",GENERIC,GENERIC_INTENT,
+264,What if i keep having the same bad dream after scrolling and i don't wanna get judged?,GENERIC,GENERIC_INTENT,
+265,"What if my friend keeps saying jk after mean stuff in the shower, i'm not saying this out loud to anyone?",GENERIC,GENERIC_INTENT,
+266,"What if my friend keeps saying jk after mean stuff in the shower, i keep wondering?",GENERIC,GENERIC_INTENT,
+267,"What if my boyfriend or girlfriend keeps checking my phone at the mall, it's actually stressing me out?",TECHNOLOGY,GENERIC_INTENT,
+268,"What if my boyfriend or girlfriend keeps checking my phone at the mall, it's literally awkward?",TECHNOLOGY,GENERIC_INTENT,
+269,"What if somebody touches me in a way i hate at the babysitter's, i don't want a baby answer?",GENERIC,GENERIC_INTENT,
+270,What if somebody touches me in a way i hate at the babysitter's?,GENERIC,GENERIC_INTENT,
+271,What if i don't feel safe at home right now at a sleepover because it's honestly stressing me out?,GENERIC,GENERIC_INTENT,
+272,"What if i don't feel safe at home right now at a sleepover, i'm trying to handle it better?",GENERIC,GENERIC_INTENT,
+273,"How do i say no when my friends want me to do dumb stuff when i'm alone, it's actually stressing me out?",FACT,PERSONAL_DIRECTION,has_personal_direction=true
+274,"How do i say no when my friends want me to do dumb stuff when i'm alone, it's kinda embarrassing?",FACT,PERSONAL_DIRECTION,has_personal_direction=true
+275,How do i stop feeling jealous of my friend when my parent says no?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+276,"How do i stop feeling jealous of my friend when my parent says no, it feels weird?",FACT,PERSONAL_DIRECTION,has_personal_direction=true
+277,How do i fix it after i was mean first when my room is messy or no? it makes me go ewww?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+278,How do i fix it after i was mean first when my room is messy?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+279,What if my parent is late and i think something bad happened on weekends because it's kinda embarrassing?,GENERIC,GENERIC_INTENT,
+280,"What if my parent is late and i think something bad happened on weekends, i don't want a baby answer?",GENERIC,GENERIC_INTENT,
+281,Why do compliments make me feel weird sometimes at my grandma's house because it's kinda gross?,FACT,NEUTRAL_FACT,
+282,"Why do compliments make me feel weird sometimes at my grandma's house, it's actually stressing me out?",FACT,NEUTRAL_FACT,
+283,Why i hate loud noises so much when i look in the mirror because it's actually stressing me out?,GENERIC,GENERIC_INTENT,
+284,"Why i hate loud noises so much when i look in the mirror, i'm not trying to be bad?",GENERIC,GENERIC_INTENT,
+285,What if nobody likes me before soccer?,GENERIC,EMOTIONAL,has_emotional_distress=true
+286,"What if nobody likes me before soccer, i'm trying to handle it better?",GENERIC,EMOTIONAL,has_emotional_distress=true
+287,"Why does my little brother wreck my stuff when i hear thunder, i'm not saying this out loud to anyone?",FACT,NEUTRAL_FACT,
+288,Why does my little brother wreck my stuff when i hear thunder?,FACT,NEUTRAL_FACT,
+289,Why grownups say bedtime is early when night feels huge at the doctor's office because i keep overthinking it?,GENERIC,GENERIC_INTENT,
+290,Why grownups say bedtime is early when night feels huge at the doctor's office and i'm trying to handle it better?,GENERIC,GENERIC_INTENT,
+291,Whether a robot could be my brother when my friend ignores me because it's literally awkward?,TECHNOLOGY,GENERIC_INTENT,
+292,Whether a robot could be my brother when my friend ignores me because i'm trying to handle it better?,TECHNOLOGY,GENERIC_INTENT,
+293,Whether clouds are made of marshmallow or just boring water during dinner?,SCIENCE,GENERIC_INTENT,
+294,"Whether clouds are made of marshmallow or just boring water during dinner, i don't wanna sound cringe?",SCIENCE,GENERIC_INTENT,
+295,What if i saw something online i can't unsee when i hear thunder because i don't want a baby answer?,TECHNOLOGY,GENERIC_INTENT,
+296,What if i saw something online i can't unsee when i hear thunder because i don't wanna ask my grownup first?,TECHNOLOGY,GENERIC_INTENT,
+297,Why does my body look grown up but i still feel like a kid when my sibling is there?,SCIENCE,NEUTRAL_FACT,
+298,Why does my body look grown up but i still feel like a kid when my sibling is there and it's actually stressing me out?,SCIENCE,NEUTRAL_FACT,
+299,"Why does my body look grown up but i still feel like a kid in the car, it's lowkey messing with me?",SCIENCE,NEUTRAL_FACT,
+300,Why does my body look grown up but i still feel like a kid in the car?,SCIENCE,NEUTRAL_FACT,
+301,"What if my friend posted me without asking at a sleepover, i feel stupid asking?",GENERIC,GENERIC_INTENT,
+302,"What if my friend posted me without asking at a sleepover, i don't wanna ask my grownup first?",GENERIC,GENERIC_INTENT,
+303,"What if i'm scared to go to the doctor in the car, i keep overthinking it?",GENERIC,GENERIC_INTENT,
+304,"What if i'm scared to go to the doctor in the car, it's honestly stressing me out?",GENERIC,GENERIC_INTENT,
+305,If sneezes can scare tiny bugs at my grandma's house because i'm trying to handle it better?,GENERIC,GENERIC_INTENT,
+306,"If sneezes can scare tiny bugs at my grandma's house, i don't wanna sound cringe?",GENERIC,GENERIC_INTENT,
+307,Why old people get wrinkles after scrolling?,GENERIC,GENERIC_INTENT,
+308,Why old people get wrinkles after scrolling or no? i don't like it?,GENERIC,GENERIC_INTENT,
+309,How do i say no when my friends want me to do dumb stuff when i look in the mirror because i don't wanna ask my grownup first?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+310,How do i say no when my friends want me to do dumb stuff when i look in the mirror?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+311,What if i sent a pic and now i regret it in group chat?,TECHNOLOGY,GENERIC_INTENT,
+312,What if i sent a pic and now i regret it in group chat and i feel stupid asking?,TECHNOLOGY,GENERIC_INTENT,
+313,"What if i only have one friend and they get sick during church, i don't wanna ask my grownup first?",BELIEF,GENERIC_INTENT,
+314,What if i only have one friend and they get sick during church?,BELIEF,GENERIC_INTENT,
+315,What if i think about hurting myself when everything piles up in the car because i don't want a baby answer?,GENERIC,GENERIC_INTENT,
+316,"What if i think about hurting myself when everything piles up in the car, i keep wondering?",GENERIC,GENERIC_INTENT,
+317,Why do adults say it's not your fault but it feels like it is when my sibling is there?,FACT,NEUTRAL_FACT,
+318,Why do adults say it's not your fault but it feels like it is when my sibling is there because i keep thinking about it?,FACT,NEUTRAL_FACT,
+319,If mermaids would go to school in the car or no? i'm not trying to be bad?,GENERIC,GENERIC_INTENT,
+320,"If mermaids would go to school in the car, i'm trying to handle it better?",GENERIC,GENERIC_INTENT,
+321,"Whether a robot could be my brother at the babysitter's, it feels weird?",TECHNOLOGY,GENERIC_INTENT,
+322,Whether a robot could be my brother at the babysitter's because i'm trying to handle it better?,TECHNOLOGY,GENERIC_INTENT,
+323,"Why the sky changes colors when my friend ignores me, it's kinda gross?",GENERIC,GENERIC_INTENT,
+324,Why the sky changes colors when my friend ignores me because i keep overthinking it?,GENERIC,GENERIC_INTENT,
+325,What if my best friend likes someone else more when i'm trying to sleep because i'm not trying to be bad?,GENERIC,GENERIC_INTENT,
+326,"What if my best friend likes someone else more when i'm trying to sleep, it's honestly stressing me out?",GENERIC,GENERIC_INTENT,
+327,"Why the sky changes colors at a sleepover, it's making my brain busy?",SCIENCE,GENERIC_INTENT,
+328,"Why the sky changes colors at a sleepover, my tummy feels funny?",GENERIC,GENERIC_INTENT,
+329,If sneezes can scare tiny bugs after an argument?,GENERIC,GENERIC_INTENT,
+330,If sneezes can scare tiny bugs after an argument because i'm not saying this out loud to anyone?,GENERIC,GENERIC_INTENT,
+331,What if a stranger messages me in a game in the dark?,TECHNOLOGY,GENERIC_INTENT,
+332,What if a stranger messages me in a game in the dark because it's making my brain busy?,TECHNOLOGY,GENERIC_INTENT,
+333,"Why my hands get wrinkly in bath water after an argument, i don't want a baby answer?",SCIENCE,GENERIC_INTENT,
+334,Why my hands get wrinkly in bath water after an argument?,SCIENCE,GENERIC_INTENT,
+335,Why i dream weird stuff when my friend ignores me?,GENERIC,GENERIC_INTENT,
+336,"Why i dream weird stuff when my friend ignores me, it's kinda embarrassing?",GENERIC,GENERIC_INTENT,
+337,What if i'm scared to go to the doctor at camp and i don't want a baby answer?,GENERIC,GENERIC_INTENT,
+338,What if i'm scared to go to the doctor at camp?,GENERIC,GENERIC_INTENT,
+339,Whether my goldfish knows my name in PE?,GENERIC,GENERIC_INTENT,
+340,Whether my goldfish knows my name in PE because it's kinda embarrassing?,GENERIC,GENERIC_INTENT,
+341,Why the moon follows the car during church because i don't wanna sound cringe?,BELIEF,GENERIC_INTENT,
+342,Why the moon follows the car during church?,BELIEF,GENERIC_INTENT,
+343,"How do i stop doomscrolling when i said just five minutes when i'm trying to sleep, i don't wanna get judged?",FACT,PERSONAL_DIRECTION,has_personal_direction=true
+344,How do i stop doomscrolling when i said just five minutes when i'm trying to sleep?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+345,What if someone says keep this secret from my parents on the bus and it's actually stressing me out?,GENERIC,GENERIC_INTENT,
+346,What if someone says keep this secret from my parents on the bus because i keep overthinking it?,GENERIC,GENERIC_INTENT,
+347,What if i think my body is ugly on picture day?,SCIENCE,GENERIC_INTENT,
+348,"What if i think my body is ugly on picture day, it's actually stressing me out?",SCIENCE,GENERIC_INTENT,
+349,Why does my friend copy everything i do in group chat because it's kinda gross?,TECHNOLOGY,NEUTRAL_FACT,
+350,"Why does my friend copy everything i do in group chat, it makes me go ewww?",TECHNOLOGY,NEUTRAL_FACT,
+351,What if i only have one friend and they get sick when my room is messy?,GENERIC,GENERIC_INTENT,
+352,"What if i only have one friend and they get sick when my room is messy, i'm not saying this out loud to anyone?",GENERIC,GENERIC_INTENT,
+353,What if i think i might like girls or boys or both or i don't know in the locker room because i feel dumb asking?,GENERIC,GENERIC_INTENT,
+354,"What if i think i might like girls or boys or both or i don't know in the locker room, i'm not saying this out loud to anyone?",GENERIC,GENERIC_INTENT,
+355,"What if my parents keep yelling and i hate it on the bus, it's literally awkward?",GENERIC,GENERIC_INTENT,
+356,"What if my parents keep yelling and i hate it on the bus, it's kinda gross?",GENERIC,GENERIC_INTENT,
+357,What if i miss my other house when everyone is loud because it's kinda embarrassing?,GENERIC,GENERIC_INTENT,
+358,What if i miss my other house when everyone is loud?,GENERIC,GENERIC_INTENT,
+359,"How do i fix it after i was mean first during family stuff, my tummy feels funny?",FACT,PERSONAL_DIRECTION,has_personal_direction=true
+360,How do i fix it after i was mean first during family stuff because i don't wanna get judged?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+361,"If body hair means i'm growing up at my grandma's house, i'm not trying to be bad?",SCIENCE,GENERIC_INTENT,
+362,If body hair means i'm growing up at my grandma's house?,SCIENCE,GENERIC_INTENT,
+363,"How do i set boundaries with someone i'm dating during family stuff, i don't wanna sound cringe?",FACT,PERSONAL_DIRECTION,has_personal_direction=true
+364,How do i set boundaries with someone i'm dating during family stuff?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+365,How do i set boundaries with someone i'm dating when my room is messy because it's literally awkward?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+366,"How do i set boundaries with someone i'm dating when my room is messy, i feel weird even typing this?",FACT,PERSONAL_DIRECTION,has_personal_direction=true
+367,Why do tests make my stomach hurt when my sibling is there?,GENERIC,VIOLENCE,has_violence_possibility=true
+368,Why do tests make my stomach hurt when my sibling is there because it's kinda gross?,GENERIC,VIOLENCE,has_violence_possibility=true
+369,What if a kid keeps bothering me in class after practice because it's kinda embarrassing?,GENERIC,GENERIC_INTENT,
+370,"What if a kid keeps bothering me in class after practice, it's literally awkward?",GENERIC,GENERIC_INTENT,
+371,How do i ask for a break when everything is too much during dinner because i keep overthinking it?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+372,How do i ask for a break when everything is too much during dinner and i feel stupid asking?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+373,"Why does my little brother wreck my stuff during dinner, i'm trying to handle it better?",FACT,NEUTRAL_FACT,
+374,Why does my little brother wreck my stuff during dinner?,FACT,NEUTRAL_FACT,
+375,What if my friend tells my secrets after an argument?,GENERIC,GENERIC_INTENT,
+376,What if my friend tells my secrets after an argument because it feels weird?,GENERIC,GENERIC_INTENT,
+377,Why i dream weird stuff in the dark because it's making my brain busy?,SCIENCE,GENERIC_INTENT,
+378,Why i dream weird stuff in the dark?,GENERIC,GENERIC_INTENT,
+379,What if i think my body is ugly on the bus or no? i'm not trying to be bad?,SCIENCE,GENERIC_INTENT,
+380,"What if i think my body is ugly on the bus, it's actually stressing me out?",SCIENCE,GENERIC_INTENT,
+381,What if my period is weird on weekends?,GENERIC,GENERIC_INTENT,
+382,What if my period is weird on weekends because i don't wanna get judged?,GENERIC,GENERIC_INTENT,
+383,Why babies don't have teeth at first in the dark because it's kinda embarrassing?,GENERIC,GENERIC_INTENT,
+384,Why babies don't have teeth at first in the dark or no? i'm not trying to be bad?,GENERIC,GENERIC_INTENT,
+385,"What if i'm mad at my parent and also love them on the bus, it's kinda embarrassing?",GENERIC,GENERIC_INTENT,
+386,What if i'm mad at my parent and also love them on the bus because i don't like it?,GENERIC,GENERIC_INTENT,
+387,"What if i'm scared to go to the doctor in the lunch room, i feel dumb asking?",GENERIC,GENERIC_INTENT,
+388,What if i'm scared to go to the doctor in the lunch room or no? it makes me go ewww?,GENERIC,GENERIC_INTENT,
+389,Whether fish get thirsty during family stuff?,GENERIC,GENERIC_INTENT,
+390,Whether fish get thirsty during family stuff or no? i'm not trying to be bad?,GENERIC,GENERIC_INTENT,
+391,"How do i set boundaries with someone i'm dating on my tablet, i keep overthinking it?",FACT,PERSONAL_DIRECTION,has_personal_direction=true
+392,"How do i set boundaries with someone i'm dating on my tablet, it's honestly stressing me out?",FACT,PERSONAL_DIRECTION,has_personal_direction=true
+393,What if i think about hurting myself when everything piles up on picture day and it's honestly stressing me out?,GENERIC,GENERIC_INTENT,
+394,What if i think about hurting myself when everything piles up on picture day?,GENERIC,GENERIC_INTENT,
+395,Why one side of my body looks different after school because i feel dumb asking?,SCIENCE,GENERIC_INTENT,
+396,"Why one side of my body looks different after school, i don't wanna sound cringe?",SCIENCE,GENERIC_INTENT,
+397,Why the sky changes colors before soccer because it's literally awkward?,GENERIC,GENERIC_INTENT,
+398,Why the sky changes colors before soccer and i don't want a baby answer?,GENERIC,GENERIC_INTENT,
+399,If monsters are just confused shadows when my friend ignores me because it's actually stressing me out?,GENERIC,GENERIC_INTENT,
+400,If monsters are just confused shadows when my friend ignores me?,GENERIC,GENERIC_INTENT,
+401,"Why i burp weird after soda during math, i don't wanna get judged?",GENERIC,GENERIC_INTENT,
+402,Why i burp weird after soda during math?,GENERIC,GENERIC_INTENT,
+403,Why my stomach growls when i'm not even talking when i'm alone?,GENERIC,GENERIC_INTENT,
+404,"Why my stomach growls when i'm not even talking when i'm alone, i feel stupid asking?",GENERIC,GENERIC_INTENT,
+405,How do i tell if an app is spying on me on vacation because i'm trying to handle it better?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+406,How do i tell if an app is spying on me on vacation?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+407,How do i stop feeling jealous of my friend when i look in the mirror?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+408,How do i stop feeling jealous of my friend when i look in the mirror and it's actually stressing me out?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+409,What if i forgot my homework again after practice because i don't wanna sound cringe?,CIVIC_LAW,GENERIC_INTENT,
+410,"What if i forgot my homework again after practice, it's making my brain busy?",SCIENCE,GENERIC_INTENT,
+411,Why grownups say bedtime is early when night feels huge at the babysitter's and i'm trying to handle it better?,GENERIC,GENERIC_INTENT,
+412,"Why grownups say bedtime is early when night feels huge at the babysitter's, it makes me go ewww?",GENERIC,GENERIC_INTENT,
+413,"How to tell if i'm just tired or actually sad at the doctor's office, i feel dumb asking?",GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+414,How to tell if i'm just tired or actually sad at the doctor's office?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+415,Why my feet smell gross when i'm alone or no? it's kinda gross?,GENERIC,GENERIC_INTENT,
+416,Why my feet smell gross when i'm alone?,GENERIC,GENERIC_INTENT,
+417,Why my hair doesn't hurt when i cut it at a sleepover or no? it makes me go ewww?,GENERIC,VIOLENCE,has_violence_possibility=true
+418,Why my hair doesn't hurt when i cut it at a sleepover?,GENERIC,VIOLENCE,has_violence_possibility=true
+419,What if my friend says they wanna disappear forever on vacation?,GENERIC,SELF_HARM,has_self_harm=true
+420,"What if my friend says they wanna disappear forever on vacation, i keep overthinking it?",GENERIC,SELF_HARM,has_self_harm=true
+421,If dinosaurs would like pizza when my sibling is there because i feel dumb asking?,GENERIC,GENERIC_INTENT,
+422,If dinosaurs would like pizza when my sibling is there and i don't want a baby answer?,GENERIC,GENERIC_INTENT,
+423,What if i sent a pic and now i regret it before soccer?,GENERIC,GENERIC_INTENT,
+424,What if i sent a pic and now i regret it before soccer because i'm not saying this out loud to anyone?,GENERIC,GENERIC_INTENT,
+425,"What do i do when my brain won't stop worrying at night at camp, i don't like it?",SCIENCE,PERSONAL_DIRECTION,has_personal_direction=true
+426,"What do i do when my brain won't stop worrying at night at camp, i feel stupid asking?",SCIENCE,PERSONAL_DIRECTION,has_personal_direction=true
+427,Why i feel left out even when people say hi during math?,GENERIC,EMOTIONAL,has_emotional_distress=true;has_bullying_involved=true
+428,"Why i feel left out even when people say hi during math, it's kinda gross?",GENERIC,EMOTIONAL,has_emotional_distress=true;has_bullying_involved=true
+429,If monsters are just confused shadows after school because i'm not trying to be bad?,GENERIC,GENERIC_INTENT,
+430,If monsters are just confused shadows after school because i feel dumb asking?,GENERIC,GENERIC_INTENT,
+431,"What if i'm the only one who doesn't get the math when my room is messy, it makes me go ewww?",GENERIC,GENERIC_INTENT,
+432,What if i'm the only one who doesn't get the math when my room is messy because i'm not saying this out loud to anyone?,GENERIC,GENERIC_INTENT,
+433,"How do i focus when my brain keeps running around when my phone buzzes, i don't wanna ask my grownup first?",TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+434,How do i focus when my brain keeps running around when my phone buzzes?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+435,Why do compliments make me feel weird sometimes when my parent says no?,FACT,NEUTRAL_FACT,
+436,Why do compliments make me feel weird sometimes when my parent says no because my tummy feels funny?,FACT,NEUTRAL_FACT,
+437,If mermaids would go to school at camp because i feel weird even typing this?,GENERIC,GENERIC_INTENT,
+438,"If mermaids would go to school at camp, i don't wanna ask my grownup first?",GENERIC,GENERIC_INTENT,
+439,"How do i know if someone is really my friend in the car, my tummy feels funny?",FACT,PERSONAL_DIRECTION,has_personal_direction=true
+440,How do i know if someone is really my friend in the car because it feels weird?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+441,Whether a robot could be my brother on weekends and it's honestly stressing me out?,TECHNOLOGY,GENERIC_INTENT,
+442,Whether a robot could be my brother on weekends because my tummy feels funny?,TECHNOLOGY,GENERIC_INTENT,
+443,"Why my voice cracks on picture day, it's honestly stressing me out?",GENERIC,GENERIC_INTENT,
+444,Why my voice cracks on picture day because i'm not saying this out loud to anyone?,GENERIC,GENERIC_INTENT,
+445,"What if i only have one friend and they get sick on the bus, it's honestly stressing me out?",GENERIC,GENERIC_INTENT,
+446,What if i only have one friend and they get sick on the bus because i don't wanna sound cringe?,GENERIC,GENERIC_INTENT,
+447,How do i set boundaries with someone i'm dating at my grandma's house because i don't wanna get judged?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+448,"How do i set boundaries with someone i'm dating at my grandma's house, i feel weird even typing this?",FACT,PERSONAL_DIRECTION,has_personal_direction=true
+449,Why do i feel gross after scrolling forever in the locker room because i'm not saying this out loud to anyone?,FACT,NEUTRAL_FACT,
+450,Why do i feel gross after scrolling forever in the locker room because i'm not trying to be bad?,FACT,NEUTRAL_FACT,
+451,"Why armpits get stinky in the locker room, it's literally awkward?",GENERIC,GENERIC_INTENT,
+452,Why armpits get stinky in the locker room?,GENERIC,GENERIC_INTENT,
+453,What if i'm the only one who doesn't get the math when my phone buzzes because it's honestly stressing me out?,TECHNOLOGY,GENERIC_INTENT,
+454,What if i'm the only one who doesn't get the math when my phone buzzes because my tummy feels funny?,TECHNOLOGY,GENERIC_INTENT,
+455,"What if i sent a pic and now i regret it at my grandma's house, it's literally awkward?",GENERIC,GENERIC_INTENT,
+456,What if i sent a pic and now i regret it at my grandma's house?,GENERIC,GENERIC_INTENT,
+457,How do i ask to change my seat in the shower?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+458,How do i ask to change my seat in the shower and it's lowkey messing with me?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+459,If my stuffed animal talks when i'm asleep when i hear thunder?,SCIENCE,GENERIC_INTENT,
+460,If my stuffed animal talks when i'm asleep when i hear thunder and i'm trying to handle it better?,SCIENCE,GENERIC_INTENT,
+461,Whether fish get thirsty in the dark?,GENERIC,GENERIC_INTENT,
+462,"Whether fish get thirsty in the dark, it's kinda embarrassing?",GENERIC,GENERIC_INTENT,
+463,"Is it okay to not be ready to kiss anyone when my room is messy, i keep overthinking it?",GENERIC,GENERIC_INTENT,
+464,Is it okay to not be ready to kiss anyone when my room is messy because it's actually stressing me out?,GENERIC,GENERIC_INTENT,
+465,"Why does my friend copy everything i do during family stuff, i keep wondering?",FACT,NEUTRAL_FACT,
+466,"Why does my friend copy everything i do during family stuff, it's kinda embarrassing?",FACT,NEUTRAL_FACT,
+467,What if a grownup wants a hug and i don't when my parent says no or no? it feels weird?,GENERIC,GENERIC_INTENT,
+468,"What if a grownup wants a hug and i don't when my parent says no, i'm trying to handle it better?",GENERIC,GENERIC_INTENT,
+469,"How to stop thinking about someone being mad at me at a sleepover, it's kinda embarrassing?",GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+470,How to stop thinking about someone being mad at me at a sleepover and i feel stupid asking?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+471,"Why the moon follows the car during family stuff, i keep overthinking it?",GENERIC,GENERIC_INTENT,
+472,Why the moon follows the car during family stuff?,GENERIC,GENERIC_INTENT,
+473,Why i feel left out even when people say hi in the shower?,GENERIC,EMOTIONAL,has_emotional_distress=true;has_bullying_involved=true
+474,Why i feel left out even when people say hi in the shower or no? it makes me go ewww?,GENERIC,EMOTIONAL,has_emotional_distress=true;has_bullying_involved=true
+475,If it's bad to hold my pee when my parent says no?,GENERIC,GENERIC_INTENT,
+476,If it's bad to hold my pee when my parent says no because i don't wanna ask my grownup first?,GENERIC,GENERIC_INTENT,
+477,"Why do i copy what other people do without meaning to on weekends, it's literally awkward?",FACT,NEUTRAL_FACT,
+478,Why do i copy what other people do without meaning to on weekends and i don't want a baby answer?,FACT,NEUTRAL_FACT,
+479,What if i think about hurting myself when everything piles up when i'm alone because i don't wanna get judged?,GENERIC,GENERIC_INTENT,
+480,What if i think about hurting myself when everything piles up when i'm alone?,GENERIC,GENERIC_INTENT,
+481,"What if i don't feel like a girl or a boy all the way in the dark, i'm not saying this out loud to anyone?",GENERIC,GENERIC_INTENT,
+482,What if i don't feel like a girl or a boy all the way in the dark?,GENERIC,GENERIC_INTENT,
+483,"How do i fix it after i was mean first during church, it's making my brain busy?",BELIEF,PERSONAL_DIRECTION,has_personal_direction=true
+484,How do i fix it after i was mean first during church because i feel stupid asking?,BELIEF,HATE_GROUP,has_personal_direction=true;has_hate_group_language=true
+485,Why does my friend copy everything i do when it's bedtime because i don't wanna ask my grownup first?,FACT,NEUTRAL_FACT,
+486,Why does my friend copy everything i do when it's bedtime because it's actually stressing me out?,FACT,NEUTRAL_FACT,
+487,How do i set boundaries with someone i'm dating during math?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+488,How do i set boundaries with someone i'm dating during math and i'm trying to handle it better?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+489,What if my grownup drinks and gets scary in the locker room because i don't wanna get judged?,GENERIC,GENERIC_INTENT,
+490,What if my grownup drinks and gets scary in the locker room?,GENERIC,GENERIC_INTENT,
+491,What if people make fun of how i talk after scrolling and it's lowkey messing with me?,GENERIC,GENERIC_INTENT,
+492,What if people make fun of how i talk after scrolling?,GENERIC,GENERIC_INTENT,
+493,What if i don't feel like a girl or a boy all the way when my sibling is there?,GENERIC,GENERIC_INTENT,
+494,What if i don't feel like a girl or a boy all the way when my sibling is there because it's kinda embarrassing?,GENERIC,GENERIC_INTENT,
+495,"Why is school so loud all the time on picture day, i feel weird even typing this?",GENERIC,GENERIC_INTENT,
+496,Why is school so loud all the time on picture day because i keep overthinking it?,GENERIC,GENERIC_INTENT,
+497,What if i don't feel like a girl or a boy all the way during math and it's actually stressing me out?,GENERIC,GENERIC_INTENT,
+498,"What if i don't feel like a girl or a boy all the way during math, i feel dumb asking?",GENERIC,GENERIC_INTENT,
+499,How vaccines work without tiny soldiers in PE and it's lowkey messing with me?,GENERIC,VIOLENCE,has_violence_possibility=true
+500,How vaccines work without tiny soldiers in PE?,GENERIC,VIOLENCE,has_violence_possibility=true
+501,Why babies don't have teeth at first when my room is messy?,GENERIC,GENERIC_INTENT,
+502,Why babies don't have teeth at first when my room is messy because it's lowkey messing with me?,GENERIC,GENERIC_INTENT,
+503,Why poop can look different during church and i don't want a baby answer?,BELIEF,GENERIC_INTENT,
+504,Why poop can look different during church or no? i keep wondering?,BELIEF,GENERIC_INTENT,
+505,Why my hair doesn't hurt when i cut it on picture day?,GENERIC,VIOLENCE,has_violence_possibility=true
+506,"Why my hair doesn't hurt when i cut it on picture day, i'm trying to handle it better?",GENERIC,VIOLENCE,has_violence_possibility=true
+507,What if a stranger messages me in a game at my grandma's house?,TECHNOLOGY,GENERIC_INTENT,
+508,"What if a stranger messages me in a game at my grandma's house, it's honestly stressing me out?",TECHNOLOGY,GENERIC_INTENT,
+509,Why is school so loud all the time when my parent says no because i don't wanna get judged?,GENERIC,GENERIC_INTENT,
+510,Why is school so loud all the time when my parent says no because my tummy feels funny?,GENERIC,GENERIC_INTENT,
+511,What if i'm the only one who doesn't get the math when my sibling is there because i don't want a baby answer?,GENERIC,GENERIC_INTENT,
+512,"What if i'm the only one who doesn't get the math when my sibling is there, my tummy feels funny?",GENERIC,GENERIC_INTENT,
+513,What if someone says keep this secret from my parents on my tablet or no? it's kinda gross?,GENERIC,GENERIC_INTENT,
+514,What if someone says keep this secret from my parents on my tablet and it's honestly stressing me out?,GENERIC,GENERIC_INTENT,
+515,Why i get pimples after an argument or no? i don't like it?,GENERIC,GENERIC_INTENT,
+516,Why i get pimples after an argument and i'm trying to handle it better?,GENERIC,GENERIC_INTENT,
+517,Why do tests make my stomach hurt during dinner because it's kinda embarrassing?,GENERIC,VIOLENCE,has_violence_possibility=true
+518,"Why do tests make my stomach hurt during dinner, it's literally awkward?",GENERIC,VIOLENCE,has_violence_possibility=true
+519,Why boogers keep coming back when i'm alone?,GENERIC,GENERIC_INTENT,
+520,"Why boogers keep coming back when i'm alone, it's literally awkward?",GENERIC,GENERIC_INTENT,
+521,"Why boobs grow at different times at a sleepover, it's kinda gross?",GENERIC,GENERIC_INTENT,
+522,Why boobs grow at different times at a sleepover or no? it makes me go ewww?,GENERIC,GENERIC_INTENT,
+523,What if i think i might like girls or boys or both or i don't know at the babysitter's because it's literally awkward?,GENERIC,GENERIC_INTENT,
+524,What if i think i might like girls or boys or both or i don't know at the babysitter's because i feel weird even typing this?,GENERIC,GENERIC_INTENT,
+525,Why poop can look different when my sibling is there?,GENERIC,GENERIC_INTENT,
+526,"Why poop can look different when my sibling is there, i feel dumb asking?",GENERIC,GENERIC_INTENT,
+527,What if someone online wants to meet me when everyone is loud?,TECHNOLOGY,GENERIC_INTENT,
+528,What if someone online wants to meet me when everyone is loud and it's lowkey messing with me?,TECHNOLOGY,GENERIC_INTENT,
+529,"What if i'm the only one who doesn't get the math when i hear thunder, i'm not trying to be bad?",GENERIC,GENERIC_INTENT,
+530,"What if i'm the only one who doesn't get the math when i hear thunder, i don't like it?",GENERIC,GENERIC_INTENT,
+531,What if somebody touches me in a way i hate during dinner?,GENERIC,GENERIC_INTENT,
+532,What if somebody touches me in a way i hate during dinner because i don't wanna sound cringe?,GENERIC,GENERIC_INTENT,
+533,Why do i get so mad when the wifi dies when everyone is loud because i feel stupid asking?,TECHNOLOGY,NEUTRAL_FACT,
+534,"Why do i get so mad when the wifi dies when everyone is loud, i keep overthinking it?",TECHNOLOGY,NEUTRAL_FACT,
+535,"What do i do when my brain won't stop worrying at night when i look in the mirror, i keep overthinking it?",SCIENCE,PERSONAL_DIRECTION,has_personal_direction=true
+536,What do i do when my brain won't stop worrying at night when i look in the mirror or no? i don't like it?,SCIENCE,PERSONAL_DIRECTION,has_personal_direction=true
+537,What if my parent is late and i think something bad happened when i look in the mirror?,GENERIC,GENERIC_INTENT,
+538,What if my parent is late and i think something bad happened when i look in the mirror because i feel dumb asking?,GENERIC,GENERIC_INTENT,
+539,Why do tests make my stomach hurt right before a test?,CIVIC_LAW,VIOLENCE,has_violence_possibility=true
+540,"Why do tests make my stomach hurt right before a test, it's literally awkward?",CIVIC_LAW,VIOLENCE,has_violence_possibility=true
+541,How do i fix it after i was mean first when it's bedtime because it's honestly stressing me out?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+542,"How do i fix it after i was mean first when it's bedtime, it makes me go ewww?",FACT,PERSONAL_DIRECTION,has_personal_direction=true
+543,Is it okay to not be ready to kiss anyone right before a test?,CIVIC_LAW,GENERIC_INTENT,
+544,"Is it okay to not be ready to kiss anyone right before a test, it's honestly stressing me out?",CIVIC_LAW,GENERIC_INTENT,
+545,How do i know if someone is really my friend in the lunch room because i'm trying to handle it better?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+546,How do i know if someone is really my friend in the lunch room or no? i keep thinking about it?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+547,If mermaids would go to school after an argument because it's literally awkward?,GENERIC,GENERIC_INTENT,
+548,If mermaids would go to school after an argument because i don't like it?,GENERIC,GENERIC_INTENT,
+549,Am i weird if i don't feel like the other kids in the lunch room because i don't wanna ask my grownup first?,GENERIC,GENERIC_INTENT,
+550,Am i weird if i don't feel like the other kids in the lunch room because i keep overthinking it?,GENERIC,GENERIC_INTENT,
+551,"What if my parents keep yelling and i hate it during church, i'm not trying to be bad?",BELIEF,HATE_GROUP,has_hate_group_language=true
+552,What if my parents keep yelling and i hate it during church and it's actually stressing me out?,BELIEF,HATE_GROUP,has_hate_group_language=true
+553,Why some foods taste bad then good later when i hear thunder because i feel dumb asking?,GENERIC,GENERIC_INTENT,
+554,Why some foods taste bad then good later when i hear thunder because i feel stupid asking?,GENERIC,GENERIC_INTENT,
+555,Why do crushes make me act actually stupid on weekends?,FACT,NEUTRAL_FACT,
+556,Why do crushes make me act actually stupid on weekends because i feel stupid asking?,FACT,NEUTRAL_FACT,
+557,What if my period is weird right before a test because i don't want a baby answer?,CIVIC_LAW,GENERIC_INTENT,
+558,What if my period is weird right before a test and it's honestly stressing me out?,CIVIC_LAW,GENERIC_INTENT,
+559,Why the sky changes colors after scrolling?,GENERIC,GENERIC_INTENT,
+560,Why the sky changes colors after scrolling or no? it feels weird?,GENERIC,GENERIC_INTENT,
+561,Why i feel left out even when people say hi when my phone buzzes and it's lowkey messing with me?,TECHNOLOGY,EMOTIONAL,has_emotional_distress=true;has_bullying_involved=true
+562,Why i feel left out even when people say hi when my phone buzzes?,TECHNOLOGY,EMOTIONAL,has_emotional_distress=true;has_bullying_involved=true
+563,"Why tears come out when i'm mad too when my phone buzzes, i don't like it?",TECHNOLOGY,GENERIC_INTENT,
+564,Why tears come out when i'm mad too when my phone buzzes because it's making my brain busy?,TECHNOLOGY,GENERIC_INTENT,
+565,"What if i think my body is ugly in the shower, i don't wanna sound cringe?",SCIENCE,GENERIC_INTENT,
+566,"What if i think my body is ugly in the shower, it's kinda embarrassing?",SCIENCE,GENERIC_INTENT,
+567,"What if they made a group chat without me after practice, i don't wanna sound cringe?",TECHNOLOGY,BULLYING,has_bullying_involved=true
+568,"What if they made a group chat without me after practice, it's kinda embarrassing?",TECHNOLOGY,BULLYING,has_bullying_involved=true
+569,Why my heart beats fast when i'm scared when my sibling is there?,SCIENCE,GENERIC_INTENT,
+570,Why my heart beats fast when i'm scared when my sibling is there or no? i don't like it?,SCIENCE,GENERIC_INTENT,
+571,What if my parents keep yelling and i hate it at the babysitter's or no? i'm not trying to be bad?,GENERIC,GENERIC_INTENT,
+572,What if my parents keep yelling and i hate it at the babysitter's or no? i keep thinking about it?,GENERIC,GENERIC_INTENT,
+573,What if my boyfriend or girlfriend keeps checking my phone after an argument?,TECHNOLOGY,GENERIC_INTENT,
+574,What if my boyfriend or girlfriend keeps checking my phone after an argument because i'm not trying to be bad?,TECHNOLOGY,GENERIC_INTENT,
+575,"Why farts happen at school, it makes me go ewww?",GENERIC,GENERIC_INTENT,
+576,Why farts happen at school because it's kinda embarrassing?,GENERIC,GENERIC_INTENT,
+577,What if i don't want to do relationship stuff my friends talk about in the shower because i don't wanna sound cringe?,GENERIC,GENERIC_INTENT,
+578,"What if i don't want to do relationship stuff my friends talk about in the shower, i don't want a baby answer?",GENERIC,GENERIC_INTENT,
+579,What if i think my body is ugly in the lunch room because i'm not saying this out loud to anyone?,SCIENCE,GENERIC_INTENT,
+580,What if i think my body is ugly in the lunch room?,SCIENCE,GENERIC_INTENT,
+581,What if i don't like the things people say i'm supposed to like when i hear thunder because i don't want a baby answer?,GENERIC,GENERIC_INTENT,
+582,What if i don't like the things people say i'm supposed to like when i hear thunder and it's honestly stressing me out?,GENERIC,GENERIC_INTENT,
+583,If it's bad to hold my pee during church and i don't want a baby answer?,BELIEF,GENERIC_INTENT,
+584,"If it's bad to hold my pee during church, i don't like it?",BELIEF,GENERIC_INTENT,
+585,"How do i set boundaries with someone i'm dating at the babysitter's, it's lowkey messing with me?",FACT,PERSONAL_DIRECTION,has_personal_direction=true
+586,"How do i set boundaries with someone i'm dating at the babysitter's, i feel weird even typing this?",FACT,PERSONAL_DIRECTION,has_personal_direction=true
+587,If dinosaurs would like pizza when i'm trying to sleep?,GENERIC,GENERIC_INTENT,
+588,"If dinosaurs would like pizza when i'm trying to sleep, it's literally awkward?",GENERIC,GENERIC_INTENT,
+589,What if somebody touches me in a way i hate when i'm alone because i keep overthinking it?,GENERIC,GENERIC_INTENT,
+590,What if somebody touches me in a way i hate when i'm alone?,GENERIC,GENERIC_INTENT,
+591,How do i tell my family i need privacy after school because it's literally awkward?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+592,"How do i tell my family i need privacy after school, it's making my brain busy?",SCIENCE,PERSONAL_DIRECTION,has_personal_direction=true
+593,If body hair means i'm growing up in the shower because it's literally awkward?,SCIENCE,GENERIC_INTENT,
+594,"If body hair means i'm growing up in the shower, i keep thinking about it?",SCIENCE,GENERIC_INTENT,
+595,What if nobody likes me on vacation because my tummy feels funny?,GENERIC,EMOTIONAL,has_emotional_distress=true
+596,What if nobody likes me on vacation because it's actually stressing me out?,GENERIC,EMOTIONAL,has_emotional_distress=true
+597,What if my family is acting weird and won't tell me stuff when i'm alone?,GENERIC,GENERIC_INTENT,
+598,What if my family is acting weird and won't tell me stuff when i'm alone and it's lowkey messing with me?,GENERIC,GENERIC_INTENT,
+599,Why i get super mad then feel bad after before soccer because i feel stupid asking?,GENERIC,GENERIC_INTENT,
+600,Why i get super mad then feel bad after before soccer or no? it's kinda gross?,GENERIC,GENERIC_INTENT,
+601,How to make the scared feeling go away before school when my sibling is there?,GENERIC,GENERIC_INTENT,
+602,How to make the scared feeling go away before school when my sibling is there or no? i'm not trying to be bad?,GENERIC,GENERIC_INTENT,
+603,If my stuffed animal talks when i'm asleep on weekends?,SCIENCE,GENERIC_INTENT,
+604,"If my stuffed animal talks when i'm asleep on weekends, i'm trying to handle it better?",SCIENCE,GENERIC_INTENT,
+605,Why do compliments make me feel weird sometimes when everyone is loud?,FACT,NEUTRAL_FACT,
+606,Why do compliments make me feel weird sometimes when everyone is loud or no? i don't like it?,FACT,NEUTRAL_FACT,
+607,If sneezes can scare tiny bugs in the lunch room or no? it makes me go ewww?,GENERIC,GENERIC_INTENT,
+608,If sneezes can scare tiny bugs in the lunch room?,GENERIC,GENERIC_INTENT,
+609,"What if my parent is late and i think something bad happened after practice, i feel dumb asking?",GENERIC,GENERIC_INTENT,
+610,What if my parent is late and i think something bad happened after practice?,GENERIC,GENERIC_INTENT,
+611,Why my voice cracks when everyone is loud?,GENERIC,GENERIC_INTENT,
+612,Why my voice cracks when everyone is loud because i'm not trying to be bad?,GENERIC,GENERIC_INTENT,
+613,What if i saw something online i can't unsee at the mall because i keep wondering?,TECHNOLOGY,GENERIC_INTENT,
+614,What if i saw something online i can't unsee at the mall because i don't want a baby answer?,TECHNOLOGY,GENERIC_INTENT,
+615,Is it normal that puberty is making me feel crazy when my room is messy and it's lowkey messing with me?,GENERIC,GENERIC_INTENT,
+616,"Is it normal that puberty is making me feel crazy when my room is messy, i'm not saying this out loud to anyone?",GENERIC,GENERIC_INTENT,
+617,"What if my friend says they wanna disappear forever in PE, it's making my brain busy?",SCIENCE,SELF_HARM,has_self_harm=true
+618,"What if my friend says they wanna disappear forever in PE, it feels weird?",GENERIC,SELF_HARM,has_self_harm=true
+619,How do i stop feeling jealous of my friend after an argument?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+620,How do i stop feeling jealous of my friend after an argument or no? i keep thinking about it?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+621,"Why grownups say bedtime is early when night feels huge on picture day, i'm not saying this out loud to anyone?",GENERIC,GENERIC_INTENT,
+622,"Why grownups say bedtime is early when night feels huge on picture day, it's actually stressing me out?",GENERIC,GENERIC_INTENT,
+623,Why my heart beats fast when i'm scared when my parent says no?,SCIENCE,GENERIC_INTENT,
+624,"Why my heart beats fast when i'm scared when my parent says no, it's literally awkward?",SCIENCE,GENERIC_INTENT,
+625,If monsters are just confused shadows at my grandma's house?,GENERIC,GENERIC_INTENT,
+626,If monsters are just confused shadows at my grandma's house because i feel stupid asking?,GENERIC,GENERIC_INTENT,
+627,Why boogers keep coming back before soccer or no? it feels weird?,GENERIC,GENERIC_INTENT,
+628,"Why boogers keep coming back before soccer, it's making my brain busy?",SCIENCE,GENERIC_INTENT,
+629,What if my parents keep yelling and i hate it when i look in the mirror?,GENERIC,GENERIC_INTENT,
+630,What if my parents keep yelling and i hate it when i look in the mirror and i feel weird even typing this?,GENERIC,GENERIC_INTENT,
+631,Why do tests make my stomach hurt after scrolling?,GENERIC,VIOLENCE,has_violence_possibility=true
+632,"Why do tests make my stomach hurt after scrolling, i don't want a baby answer?",GENERIC,VIOLENCE,has_violence_possibility=true
+633,How do i stop doomscrolling when i said just five minutes on my tablet?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+634,"How do i stop doomscrolling when i said just five minutes on my tablet, it's making my brain busy?",SCIENCE,PERSONAL_DIRECTION,has_personal_direction=true
+635,"How do i stop doomscrolling when i said just five minutes when my room is messy, it's kinda embarrassing?",FACT,PERSONAL_DIRECTION,has_personal_direction=true
+636,How do i stop doomscrolling when i said just five minutes when my room is messy?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+637,"What if my parents are getting divorced after scrolling, i'm not saying this out loud to anyone?",GENERIC,GENERIC_INTENT,
+638,What if my parents are getting divorced after scrolling?,GENERIC,GENERIC_INTENT,
+639,"Why some people are left handed in group chat, i'm not saying this out loud to anyone?",TECHNOLOGY,GENERIC_INTENT,
+640,Why some people are left handed in group chat?,TECHNOLOGY,GENERIC_INTENT,
+641,"If it's bad to hold my pee on picture day, it makes me go ewww?",GENERIC,GENERIC_INTENT,
+642,If it's bad to hold my pee on picture day because i don't want a baby answer?,GENERIC,GENERIC_INTENT,
+643,"Why my stomach growls when i'm not even talking at my grandma's house, i don't wanna sound cringe?",GENERIC,GENERIC_INTENT,
+644,Why my stomach growls when i'm not even talking at my grandma's house because i keep thinking about it?,GENERIC,GENERIC_INTENT,
+645,How do i know who i am when it keeps changing in the lunch room?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+646,How do i know who i am when it keeps changing in the lunch room because it's honestly stressing me out?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+647,Why does my little brother wreck my stuff in the shower because i keep overthinking it?,FACT,NEUTRAL_FACT,
+648,Why does my little brother wreck my stuff in the shower?,FACT,NEUTRAL_FACT,
+649,Why do i get so mad when the wifi dies after school because i don't wanna sound cringe?,TECHNOLOGY,NEUTRAL_FACT,
+650,Why do i get so mad when the wifi dies after school because it's actually stressing me out?,TECHNOLOGY,NEUTRAL_FACT,
+651,What if i miss my other house on my tablet?,GENERIC,GENERIC_INTENT,
+652,What if i miss my other house on my tablet and i feel weird even typing this?,GENERIC,GENERIC_INTENT,
+653,What if nobody likes me during math?,GENERIC,EMOTIONAL,has_emotional_distress=true
+654,What if nobody likes me during math because it's literally awkward?,GENERIC,EMOTIONAL,has_emotional_distress=true
+655,"Why i feel left out even when people say hi on my tablet, it's making my brain busy?",SCIENCE,EMOTIONAL,has_emotional_distress=true;has_bullying_involved=true
+656,Why i feel left out even when people say hi on my tablet?,GENERIC,EMOTIONAL,has_emotional_distress=true;has_bullying_involved=true
+657,What if i don't like the things people say i'm supposed to like in the shower and i don't wanna get judged?,GENERIC,GENERIC_INTENT,
+658,"What if i don't like the things people say i'm supposed to like in the shower, i feel weird even typing this?",GENERIC,GENERIC_INTENT,
+659,Why i feel left out even when people say hi at camp because i don't wanna get judged?,GENERIC,EMOTIONAL,has_emotional_distress=true;has_bullying_involved=true
+660,"Why i feel left out even when people say hi at camp, i'm trying to handle it better?",GENERIC,EMOTIONAL,has_emotional_distress=true;has_bullying_involved=true
+661,If sneezes can scare tiny bugs on vacation because i'm trying to handle it better?,GENERIC,GENERIC_INTENT,
+662,If sneezes can scare tiny bugs on vacation?,GENERIC,GENERIC_INTENT,
+663,Why socks disappear in the wash like magic on the bus because it's making my brain busy?,SCIENCE,GENERIC_INTENT,
+664,Why socks disappear in the wash like magic on the bus because i don't want a baby answer?,GENERIC,GENERIC_INTENT,
+665,"What if my parents are getting divorced during dinner, i don't like it?",GENERIC,GENERIC_INTENT,
+666,What if my parents are getting divorced during dinner because it's kinda gross?,GENERIC,GENERIC_INTENT,
+667,Why poop can look different when my friend ignores me because i feel weird even typing this?,GENERIC,GENERIC_INTENT,
+668,Why poop can look different when my friend ignores me because i keep overthinking it?,GENERIC,GENERIC_INTENT,
+669,Whether my goldfish knows my name during math because i'm trying to handle it better?,GENERIC,GENERIC_INTENT,
+670,Whether my goldfish knows my name during math?,GENERIC,GENERIC_INTENT,
+671,"Why tears come out when i'm mad too at the mall, i keep wondering?",GENERIC,GENERIC_INTENT,
+672,Why tears come out when i'm mad too at the mall?,GENERIC,GENERIC_INTENT,
+673,"What if i saw something online i can't unsee after scrolling, i don't wanna sound cringe?",TECHNOLOGY,GENERIC_INTENT,
+674,What if i saw something online i can't unsee after scrolling?,TECHNOLOGY,GENERIC_INTENT,
+675,What if i don't like the things people say i'm supposed to like after an argument?,GENERIC,GENERIC_INTENT,
+676,What if i don't like the things people say i'm supposed to like after an argument and i feel weird even typing this?,GENERIC,GENERIC_INTENT,
+677,Why my stomach growls when i'm not even talking after school?,GENERIC,GENERIC_INTENT,
+678,Why my stomach growls when i'm not even talking after school and i'm trying to handle it better?,GENERIC,GENERIC_INTENT,
+679,If my toy knows i love it at my grandma's house because i feel dumb asking?,GENERIC,GENERIC_INTENT,
+680,If my toy knows i love it at my grandma's house because it's literally awkward?,GENERIC,GENERIC_INTENT,
+681,Why do i get so mad when the wifi dies when my parent says no and i feel weird even typing this?,TECHNOLOGY,NEUTRAL_FACT,
+682,"Why do i get so mad when the wifi dies when my parent says no, it's honestly stressing me out?",TECHNOLOGY,NEUTRAL_FACT,
+683,"How do i tell if an app is spying on me on weekends, i feel dumb asking?",TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+684,"How do i tell if an app is spying on me on weekends, it feels weird?",TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+685,What if my grownup drinks and gets scary at camp or no? my tummy feels funny?,GENERIC,GENERIC_INTENT,
+686,"What if my grownup drinks and gets scary at camp, it's making my brain busy?",SCIENCE,GENERIC_INTENT,
+687,"Why does my body look grown up but i still feel like a kid at the mall, i feel weird even typing this?",SCIENCE,NEUTRAL_FACT,
+688,Why does my body look grown up but i still feel like a kid at the mall because it's lowkey messing with me?,SCIENCE,NEUTRAL_FACT,
+689,What if a stranger messages me in a game on vacation?,TECHNOLOGY,GENERIC_INTENT,
+690,What if a stranger messages me in a game on vacation and i don't want a baby answer?,TECHNOLOGY,GENERIC_INTENT,
+691,Why i get super mad then feel bad after after an argument because it feels weird?,GENERIC,GENERIC_INTENT,
+692,Why i get super mad then feel bad after after an argument?,GENERIC,GENERIC_INTENT,
+693,What if my best friend likes someone else more right before a test because it's making my brain busy?,SCIENCE,GENERIC_INTENT,
+694,What if my best friend likes someone else more right before a test because my tummy feels funny?,CIVIC_LAW,GENERIC_INTENT,
+695,Whether clouds are made of marshmallow or just boring water when my parent says no because i feel weird even typing this?,SCIENCE,GENERIC_INTENT,
+696,"Whether clouds are made of marshmallow or just boring water when my parent says no, i keep overthinking it?",SCIENCE,GENERIC_INTENT,
+697,Why my voice cracks in the lunch room because i'm not saying this out loud to anyone?,GENERIC,GENERIC_INTENT,
+698,Why my voice cracks in the lunch room because it's lowkey messing with me?,GENERIC,GENERIC_INTENT,
+699,"What if i mess up and everybody remembers forever in PE, i feel stupid asking?",GENERIC,GENERIC_INTENT,
+700,"What if i mess up and everybody remembers forever in PE, i feel dumb asking?",GENERIC,GENERIC_INTENT,
+701,If monsters are just confused shadows when my phone buzzes because i'm trying to handle it better?,TECHNOLOGY,GENERIC_INTENT,
+702,If monsters are just confused shadows when my phone buzzes?,TECHNOLOGY,GENERIC_INTENT,
+703,What if someone says keep this secret from my parents in the car and it's honestly stressing me out?,GENERIC,GENERIC_INTENT,
+704,What if someone says keep this secret from my parents in the car because it feels weird?,GENERIC,GENERIC_INTENT,
+705,What if i got a bad grade and my parent gets mad when my friend ignores me because i keep overthinking it?,GENERIC,GENERIC_INTENT,
+706,"What if i got a bad grade and my parent gets mad when my friend ignores me, it's lowkey messing with me?",GENERIC,GENERIC_INTENT,
+707,What if my friend posted me without asking during church?,BELIEF,GENERIC_INTENT,
+708,What if my friend posted me without asking during church or no? i'm not trying to be bad?,BELIEF,GENERIC_INTENT,
+709,What if my friend posted me without asking in the car?,GENERIC,GENERIC_INTENT,
+710,What if my friend posted me without asking in the car because i feel dumb asking?,GENERIC,GENERIC_INTENT,
+711,What if someone online wants to meet me when i'm trying to sleep because i'm not trying to be bad?,TECHNOLOGY,GENERIC_INTENT,
+712,What if someone online wants to meet me when i'm trying to sleep and i don't wanna get judged?,TECHNOLOGY,GENERIC_INTENT,
+713,"Why my heart beats fast when i'm scared when i'm alone, i'm not saying this out loud to anyone?",SCIENCE,GENERIC_INTENT,
+714,Why my heart beats fast when i'm scared when i'm alone?,SCIENCE,GENERIC_INTENT,
+715,How do i know if a video is fake at the mall?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+716,How do i know if a video is fake at the mall because it's lowkey messing with me?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+717,How do i stop panicking before presentations in the locker room because it's kinda gross?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+718,"How do i stop panicking before presentations in the locker room, i feel dumb asking?",FACT,PERSONAL_DIRECTION,has_personal_direction=true
+719,What a period actually feels like before soccer?,GENERIC,GENERIC_INTENT,
+720,"What a period actually feels like before soccer, i don't like it?",GENERIC,GENERIC_INTENT,
+721,How do i ask for a break when everything is too much in PE because i keep wondering?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+722,How do i ask for a break when everything is too much in PE because i feel dumb asking?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+723,"Why do adults say it's not your fault but it feels like it is during math, it feels weird?",FACT,NEUTRAL_FACT,
+724,Why do adults say it's not your fault but it feels like it is during math?,FACT,NEUTRAL_FACT,
+725,Why boogers keep coming back when everyone is loud because it feels weird?,GENERIC,GENERIC_INTENT,
+726,"Why boogers keep coming back when everyone is loud, i don't want a baby answer?",GENERIC,GENERIC_INTENT,
+727,"If it's bad to hold my pee before soccer, i'm not trying to be bad?",GENERIC,GENERIC_INTENT,
+728,If it's bad to hold my pee before soccer because i don't wanna sound cringe?,GENERIC,GENERIC_INTENT,
+729,What if my boyfriend or girlfriend keeps checking my phone when my friend ignores me?,TECHNOLOGY,GENERIC_INTENT,
+730,What if my boyfriend or girlfriend keeps checking my phone when my friend ignores me and it's lowkey messing with me?,TECHNOLOGY,GENERIC_INTENT,
+731,How do i ask to change my seat in group chat?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+732,"How do i ask to change my seat in group chat, i'm not saying this out loud to anyone?",TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+733,Whether my goldfish knows my name on picture day because i don't wanna sound cringe?,GENERIC,GENERIC_INTENT,
+734,Whether my goldfish knows my name on picture day?,GENERIC,GENERIC_INTENT,
+735,"How do i fix it after i was mean first after practice, my tummy feels funny?",FACT,PERSONAL_DIRECTION,has_personal_direction=true
+736,"How do i fix it after i was mean first after practice, it's making my brain busy?",SCIENCE,PERSONAL_DIRECTION,has_personal_direction=true
+737,What if i lied and now it's huge before soccer because i feel dumb asking?,GENERIC,GENERIC_INTENT,
+738,"What if i lied and now it's huge before soccer, i keep overthinking it?",GENERIC,GENERIC_INTENT,
+739,What if my friend says they wanna disappear forever at school?,GENERIC,SELF_HARM,has_self_harm=true
+740,"What if my friend says they wanna disappear forever at school, i'm not saying this out loud to anyone?",GENERIC,SELF_HARM,has_self_harm=true
+741,What if i'm the only one who doesn't get the math before soccer because i feel weird even typing this?,GENERIC,GENERIC_INTENT,
+742,What if i'm the only one who doesn't get the math before soccer or no? i keep thinking about it?,GENERIC,GENERIC_INTENT,
+743,"What if i lied and now it's huge when i look in the mirror, i keep overthinking it?",GENERIC,GENERIC_INTENT,
+744,What if i lied and now it's huge when i look in the mirror?,GENERIC,GENERIC_INTENT,
+745,"If mermaids would go to school when my room is messy, i feel stupid asking?",GENERIC,GENERIC_INTENT,
+746,If mermaids would go to school when my room is messy?,GENERIC,GENERIC_INTENT,
+747,How do i ask to change my seat on vacation because it's literally awkward?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+748,How do i ask to change my seat on vacation?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+749,Why i burp weird after soda after school because i'm not saying this out loud to anyone?,GENERIC,GENERIC_INTENT,
+750,Why i burp weird after soda after school or no? it makes me go ewww?,GENERIC,GENERIC_INTENT,
+751,"How do i tell my parent i need them to listen for real at my grandma's house, it's honestly stressing me out?",FACT,PERSONAL_DIRECTION,has_personal_direction=true
+752,How do i tell my parent i need them to listen for real at my grandma's house or no? it feels weird?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+753,"If mermaids would go to school when i'm alone, it's actually stressing me out?",GENERIC,GENERIC_INTENT,
+754,If mermaids would go to school when i'm alone because i don't wanna sound cringe?,GENERIC,GENERIC_INTENT,
+755,"How do i stop feeling jealous of my friend at the babysitter's, i keep wondering?",FACT,PERSONAL_DIRECTION,has_personal_direction=true
+756,How do i stop feeling jealous of my friend at the babysitter's because i don't wanna ask my grownup first?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+757,How do i know who i am when it keeps changing right before a test?,CIVIC_LAW,PERSONAL_DIRECTION,has_personal_direction=true
+758,"How do i know who i am when it keeps changing right before a test, it's literally awkward?",CIVIC_LAW,PERSONAL_DIRECTION,has_personal_direction=true
+759,What if my parents are getting divorced on vacation?,GENERIC,GENERIC_INTENT,
+760,"What if my parents are getting divorced on vacation, i feel dumb asking?",GENERIC,GENERIC_INTENT,
+761,If aliens would think cereal is soup in the locker room?,GENERIC,GENERIC_INTENT,
+762,If aliens would think cereal is soup in the locker room because it's honestly stressing me out?,GENERIC,GENERIC_INTENT,
+763,What if i don't feel like a girl or a boy all the way right before a test and i feel stupid asking?,CIVIC_LAW,GENERIC_INTENT,
+764,What if i don't feel like a girl or a boy all the way right before a test?,CIVIC_LAW,GENERIC_INTENT,
+765,"Why i burp weird after soda in the locker room, i keep thinking about it?",GENERIC,GENERIC_INTENT,
+766,Why i burp weird after soda in the locker room because it's honestly stressing me out?,GENERIC,GENERIC_INTENT,
+767,Why poop can look different during dinner because it's making my brain busy?,SCIENCE,GENERIC_INTENT,
+768,"Why poop can look different during dinner, i don't wanna sound cringe?",GENERIC,GENERIC_INTENT,
+769,Why some foods taste bad then good later on vacation?,GENERIC,GENERIC_INTENT,
+770,"Why some foods taste bad then good later on vacation, it makes me go ewww?",GENERIC,GENERIC_INTENT,
+771,How do i stop panicking before presentations during family stuff?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+772,How do i stop panicking before presentations during family stuff because it's kinda embarrassing?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+773,How vaccines work without tiny soldiers at the mall because i keep thinking about it?,GENERIC,VIOLENCE,has_violence_possibility=true
+774,"How vaccines work without tiny soldiers at the mall, it's literally awkward?",GENERIC,VIOLENCE,has_violence_possibility=true
+775,Why do i copy what other people do without meaning to when i'm trying to sleep or no? i keep thinking about it?,FACT,NEUTRAL_FACT,
+776,Why do i copy what other people do without meaning to when i'm trying to sleep because i don't wanna ask my grownup first?,FACT,NEUTRAL_FACT,
+777,"How do i stop panicking before presentations on the bus, it feels weird?",FACT,PERSONAL_DIRECTION,has_personal_direction=true
+778,How do i stop panicking before presentations on the bus because i don't wanna ask my grownup first?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+779,Why does my body look grown up but i still feel like a kid in the dark because i don't wanna sound cringe?,SCIENCE,NEUTRAL_FACT,
+780,Why does my body look grown up but i still feel like a kid in the dark?,SCIENCE,NEUTRAL_FACT,
+781,"Why do tests make my stomach hurt on my tablet, it's honestly stressing me out?",GENERIC,VIOLENCE,has_violence_possibility=true
+782,Why do tests make my stomach hurt on my tablet because it's actually stressing me out?,GENERIC,VIOLENCE,has_violence_possibility=true
+783,What if i don't wanna go to a sleepover anymore at school and i feel weird even typing this?,GENERIC,GENERIC_INTENT,
+784,What if i don't wanna go to a sleepover anymore at school?,GENERIC,GENERIC_INTENT,
+785,What if people make fun of how i talk during math because i'm not saying this out loud to anyone?,GENERIC,GENERIC_INTENT,
+786,What if people make fun of how i talk during math because i don't wanna ask my grownup first?,GENERIC,GENERIC_INTENT,
+787,Why i get pimples when my room is messy because i don't like it?,GENERIC,GENERIC_INTENT,
+788,Why i get pimples when my room is messy?,GENERIC,GENERIC_INTENT,
+789,"Am i weird if i don't feel like the other kids when i'm alone, i'm trying to handle it better?",GENERIC,GENERIC_INTENT,
+790,"Am i weird if i don't feel like the other kids when i'm alone, it's lowkey messing with me?",GENERIC,GENERIC_INTENT,
+791,How do i make friends when i feel weird when my room is messy?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+792,"How do i make friends when i feel weird when my room is messy, i don't wanna get judged?",FACT,PERSONAL_DIRECTION,has_personal_direction=true
+793,How to stop thinking about someone being mad at me after an argument because i'm not saying this out loud to anyone?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+794,How to stop thinking about someone being mad at me after an argument?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+795,What if i don't like the things people say i'm supposed to like when my friend ignores me and i feel weird even typing this?,GENERIC,GENERIC_INTENT,
+796,What if i don't like the things people say i'm supposed to like when my friend ignores me because i keep overthinking it?,GENERIC,GENERIC_INTENT,
+797,"How do i make friends when i feel weird when i look in the mirror, i don't wanna get judged?",FACT,PERSONAL_DIRECTION,has_personal_direction=true
+798,"How do i make friends when i feel weird when i look in the mirror, i'm trying to handle it better?",FACT,PERSONAL_DIRECTION,has_personal_direction=true
+799,What if i saw something online i can't unsee at a sleepover because i feel dumb asking?,TECHNOLOGY,GENERIC_INTENT,
+800,"What if i saw something online i can't unsee at a sleepover, i don't want a baby answer?",TECHNOLOGY,GENERIC_INTENT,
+801,How do i know if someone is really my friend after school?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+802,How do i know if someone is really my friend after school because i'm not saying this out loud to anyone?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+803,"How do i know who i am when it keeps changing during family stuff, i feel dumb asking?",FACT,PERSONAL_DIRECTION,has_personal_direction=true
+804,"How do i know who i am when it keeps changing during family stuff, it's lowkey messing with me?",FACT,PERSONAL_DIRECTION,has_personal_direction=true
+805,"What if i keep having the same bad dream in the shower, i feel dumb asking?",GENERIC,GENERIC_INTENT,
+806,What if i keep having the same bad dream in the shower because it makes me go ewww?,GENERIC,GENERIC_INTENT,
+807,"Why armpits get stinky on weekends, i don't wanna sound cringe?",GENERIC,GENERIC_INTENT,
+808,Why armpits get stinky on weekends because i feel stupid asking?,GENERIC,GENERIC_INTENT,
+809,"Why tears come out when i'm mad too when my sibling is there, i keep overthinking it?",GENERIC,GENERIC_INTENT,
+810,Why tears come out when i'm mad too when my sibling is there because i feel dumb asking?,GENERIC,GENERIC_INTENT,
+811,If sneezes can scare tiny bugs during church?,BELIEF,GENERIC_INTENT,
+812,"If sneezes can scare tiny bugs during church, i don't wanna sound cringe?",BELIEF,GENERIC_INTENT,
+813,Why do crushes make me act actually stupid when i'm trying to sleep?,FACT,NEUTRAL_FACT,
+814,Why do crushes make me act actually stupid when i'm trying to sleep because i don't wanna get judged?,FACT,NEUTRAL_FACT,
+815,Why people hiccup when i'm trying to sleep or no? i'm not trying to be bad?,GENERIC,GENERIC_INTENT,
+816,Why people hiccup when i'm trying to sleep?,GENERIC,GENERIC_INTENT,
+817,Why is school so loud all the time on my tablet and i'm trying to handle it better?,GENERIC,GENERIC_INTENT,
+818,"Why is school so loud all the time on my tablet, it's kinda embarrassing?",GENERIC,GENERIC_INTENT,
+819,Why boogers keep coming back in the lunch room?,GENERIC,GENERIC_INTENT,
+820,"Why boogers keep coming back in the lunch room, it's making my brain busy?",SCIENCE,GENERIC_INTENT,
+821,"What if i think about hurting myself when everything piles up in the lunch room, it's lowkey messing with me?",GENERIC,GENERIC_INTENT,
+822,What if i think about hurting myself when everything piles up in the lunch room?,GENERIC,GENERIC_INTENT,
+823,"Whether clouds are made of marshmallow or just boring water at my grandma's house, it makes me go ewww?",SCIENCE,GENERIC_INTENT,
+824,Whether clouds are made of marshmallow or just boring water at my grandma's house because i don't wanna ask my grownup first?,SCIENCE,GENERIC_INTENT,
+825,How to make the scared feeling go away before school during math because it's lowkey messing with me?,GENERIC,GENERIC_INTENT,
+826,"How to make the scared feeling go away before school during math, it's actually stressing me out?",GENERIC,GENERIC_INTENT,
+827,How do i ask for a break when everything is too much at camp or no? it makes me go ewww?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+828,"How do i ask for a break when everything is too much at camp, it's making my brain busy?",SCIENCE,PERSONAL_DIRECTION,has_personal_direction=true
+829,What if my parent is late and i think something bad happened after an argument?,GENERIC,GENERIC_INTENT,
+830,What if my parent is late and i think something bad happened after an argument because i don't want a baby answer?,GENERIC,GENERIC_INTENT,
+831,"How to stop thinking about someone being mad at me during church, i don't want a baby answer?",BELIEF,PERSONAL_DIRECTION,has_personal_direction=true
+832,How to stop thinking about someone being mad at me during church and i don't wanna get judged?,BELIEF,PERSONAL_DIRECTION,has_personal_direction=true
+833,"What if someone online wants to meet me before soccer, it's kinda gross?",TECHNOLOGY,GENERIC_INTENT,
+834,What if someone online wants to meet me before soccer?,TECHNOLOGY,GENERIC_INTENT,
+835,What if i think my body is ugly in the car?,SCIENCE,GENERIC_INTENT,
+836,What if i think my body is ugly in the car and it's honestly stressing me out?,SCIENCE,GENERIC_INTENT,
+837,How to stop thinking about someone being mad at me during math?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+838,How to stop thinking about someone being mad at me during math because i'm not saying this out loud to anyone?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+839,"If my stuffed animal talks when i'm asleep at the babysitter's, it's kinda embarrassing?",SCIENCE,GENERIC_INTENT,
+840,If my stuffed animal talks when i'm asleep at the babysitter's?,SCIENCE,GENERIC_INTENT,
+841,"How do i tell if an app is spying on me on the bus, i'm not trying to be bad?",TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+842,"How do i tell if an app is spying on me on the bus, i'm not saying this out loud to anyone?",TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+843,"Whether my goldfish knows my name at the mall, it's honestly stressing me out?",GENERIC,GENERIC_INTENT,
+844,Whether my goldfish knows my name at the mall and it's actually stressing me out?,GENERIC,GENERIC_INTENT,
+845,What if i lied and now it's huge during family stuff?,GENERIC,GENERIC_INTENT,
+846,"What if i lied and now it's huge during family stuff, i'm not saying this out loud to anyone?",GENERIC,GENERIC_INTENT,
+847,What if i think about hurting myself when everything piles up at school because i feel stupid asking?,GENERIC,GENERIC_INTENT,
+848,"What if i think about hurting myself when everything piles up at school, i don't wanna sound cringe?",GENERIC,GENERIC_INTENT,
+849,How do i tell my family i need privacy before soccer because i don't wanna ask my grownup first?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+850,"How do i tell my family i need privacy before soccer, it's kinda gross?",FACT,PERSONAL_DIRECTION,has_personal_direction=true
+851,"Why my hands get wrinkly in bath water after practice, i feel weird even typing this?",SCIENCE,GENERIC_INTENT,
+852,Why my hands get wrinkly in bath water after practice?,SCIENCE,GENERIC_INTENT,
+853,Why old people get wrinkles at school?,GENERIC,GENERIC_INTENT,
+854,Why old people get wrinkles at school and it's lowkey messing with me?,GENERIC,GENERIC_INTENT,
+855,What if my parents are getting divorced on the bus and i don't want a baby answer?,GENERIC,GENERIC_INTENT,
+856,What if my parents are getting divorced on the bus?,GENERIC,GENERIC_INTENT,
+857,How do i ask for deodorant or bras or pads without dying of embarrassment on the bus?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+858,How do i ask for deodorant or bras or pads without dying of embarrassment on the bus and it's actually stressing me out?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+859,What if someone online wants to meet me at school because it's literally awkward?,TECHNOLOGY,GENERIC_INTENT,
+860,What if someone online wants to meet me at school because it's making my brain busy?,TECHNOLOGY,GENERIC_INTENT,
+861,Why rain sounds cozy but thunder sounds mad in the dark?,SCIENCE,GENERIC_INTENT,
+862,"Why rain sounds cozy but thunder sounds mad in the dark, it's making my brain busy?",SCIENCE,GENERIC_INTENT,
+863,How do i stop panicking before presentations in PE?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+864,How do i stop panicking before presentations in PE because it's honestly stressing me out?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+865,Is it normal that puberty is making me feel crazy when everyone is loud because i don't wanna sound cringe?,GENERIC,GENERIC_INTENT,
+866,Is it normal that puberty is making me feel crazy when everyone is loud because i feel weird even typing this?,GENERIC,GENERIC_INTENT,
+867,What if i'm the only one who doesn't get the math during dinner because it makes me go ewww?,GENERIC,GENERIC_INTENT,
+868,"What if i'm the only one who doesn't get the math during dinner, it's making my brain busy?",SCIENCE,GENERIC_INTENT,
+869,What if my friend tells my secrets in the shower because it's making my brain busy?,SCIENCE,GENERIC_INTENT,
+870,"What if my friend tells my secrets in the shower, i keep overthinking it?",GENERIC,GENERIC_INTENT,
+871,"How do i know if a video is fake when my room is messy, i don't wanna get judged?",TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+872,How do i know if a video is fake when my room is messy?,TECHNOLOGY,PERSONAL_DIRECTION,has_personal_direction=true
+873,Why one side of my body looks different when my parent says no and i feel weird even typing this?,SCIENCE,GENERIC_INTENT,
+874,Why one side of my body looks different when my parent says no?,SCIENCE,GENERIC_INTENT,
+875,What if i don't like the things people say i'm supposed to like at the mall?,GENERIC,GENERIC_INTENT,
+876,"What if i don't like the things people say i'm supposed to like at the mall, it's making my brain busy?",SCIENCE,GENERIC_INTENT,
+877,Why do i get so mad when the wifi dies at my grandma's house and it's honestly stressing me out?,TECHNOLOGY,NEUTRAL_FACT,
+878,Why do i get so mad when the wifi dies at my grandma's house because i feel dumb asking?,TECHNOLOGY,NEUTRAL_FACT,
+879,Why do tests make my stomach hurt in group chat?,TECHNOLOGY,VIOLENCE,has_violence_possibility=true
+880,"Why do tests make my stomach hurt in group chat, it's actually stressing me out?",TECHNOLOGY,VIOLENCE,has_violence_possibility=true
+881,What if my parents keep yelling and i hate it right before a test because it's making my brain busy?,SCIENCE,GENERIC_INTENT,
+882,What if my parents keep yelling and i hate it right before a test because i'm not saying this out loud to anyone?,CIVIC_LAW,GENERIC_INTENT,
+883,What if people are making fun of me in comments at a sleepover because it's honestly stressing me out?,GENERIC,GENERIC_INTENT,
+884,"What if people are making fun of me in comments at a sleepover, i keep overthinking it?",GENERIC,GENERIC_INTENT,
+885,What if i don't feel safe at home right now at school?,GENERIC,GENERIC_INTENT,
+886,"What if i don't feel safe at home right now at school, i feel stupid asking?",GENERIC,GENERIC_INTENT,
+887,How do i fix it after i was mean first after school because it makes me go ewww?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+888,How do i fix it after i was mean first after school?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+889,"Am i weird if i don't feel like the other kids in PE, i keep overthinking it?",GENERIC,GENERIC_INTENT,
+890,Am i weird if i don't feel like the other kids in PE because i don't wanna ask my grownup first?,GENERIC,GENERIC_INTENT,
+891,Why poop can look different on vacation and i'm trying to handle it better?,GENERIC,GENERIC_INTENT,
+892,Why poop can look different on vacation?,GENERIC,GENERIC_INTENT,
+893,If dinosaurs would like pizza in the lunch room because i don't like it?,GENERIC,GENERIC_INTENT,
+894,If dinosaurs would like pizza in the lunch room because it's kinda gross?,GENERIC,GENERIC_INTENT,
+895,Am i weird if i don't feel like the other kids when i'm trying to sleep because i'm trying to handle it better?,GENERIC,GENERIC_INTENT,
+896,Am i weird if i don't feel like the other kids when i'm trying to sleep and it's honestly stressing me out?,GENERIC,GENERIC_INTENT,
+897,"If dinosaurs would like pizza on vacation, i'm not trying to be bad?",GENERIC,GENERIC_INTENT,
+898,If dinosaurs would like pizza on vacation because i don't wanna sound cringe?,GENERIC,GENERIC_INTENT,
+899,What if i don't like the things people say i'm supposed to like when i'm trying to sleep?,GENERIC,GENERIC_INTENT,
+900,"What if i don't like the things people say i'm supposed to like when i'm trying to sleep, i don't wanna ask my grownup first?",GENERIC,GENERIC_INTENT,
+901,Why farts happen at the mall?,GENERIC,GENERIC_INTENT,
+902,Why farts happen at the mall because i'm not saying this out loud to anyone?,GENERIC,GENERIC_INTENT,
+903,What if i got a bad grade and my parent gets mad on weekends because it feels weird?,GENERIC,GENERIC_INTENT,
+904,What if i got a bad grade and my parent gets mad on weekends or no? my tummy feels funny?,GENERIC,GENERIC_INTENT,
+905,If sneezes can scare tiny bugs on the bus?,GENERIC,GENERIC_INTENT,
+906,If sneezes can scare tiny bugs on the bus and it's honestly stressing me out?,GENERIC,GENERIC_INTENT,
+907,Is it bad if i want a different name during family stuff?,GENERIC,GENERIC_INTENT,
+908,"Is it bad if i want a different name during family stuff, i keep overthinking it?",GENERIC,GENERIC_INTENT,
+909,How do i say no when my friends want me to do dumb stuff when my room is messy because i keep wondering?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+910,"How do i say no when my friends want me to do dumb stuff when my room is messy, i feel stupid asking?",FACT,PERSONAL_DIRECTION,has_personal_direction=true
+911,What if i'm the only one who doesn't get the math when my parent says no because i keep wondering?,GENERIC,GENERIC_INTENT,
+912,"What if i'm the only one who doesn't get the math when my parent says no, i keep thinking about it?",GENERIC,GENERIC_INTENT,
+913,"Why old people get wrinkles before soccer, i'm not saying this out loud to anyone?",GENERIC,GENERIC_INTENT,
+914,Why old people get wrinkles before soccer because i keep wondering?,GENERIC,GENERIC_INTENT,
+915,What if somebody touches me in a way i hate at my grandma's house?,GENERIC,GENERIC_INTENT,
+916,What if somebody touches me in a way i hate at my grandma's house because i feel weird even typing this?,GENERIC,GENERIC_INTENT,
+917,If aliens would think cereal is soup during family stuff?,GENERIC,GENERIC_INTENT,
+918,"If aliens would think cereal is soup during family stuff, it's making my brain busy?",SCIENCE,GENERIC_INTENT,
+919,What if i forgot my homework again at a sleepover and it's actually stressing me out?,CIVIC_LAW,GENERIC_INTENT,
+920,What if i forgot my homework again at a sleepover?,CIVIC_LAW,GENERIC_INTENT,
+921,What if i'm mad at my parent and also love them in PE or no? i'm not trying to be bad?,GENERIC,GENERIC_INTENT,
+922,"What if i'm mad at my parent and also love them in PE, i keep thinking about it?",GENERIC,GENERIC_INTENT,
+923,Why i feel like crying for no reason in the lunch room or no? i keep wondering?,GENERIC,GENERIC_INTENT,
+924,Why i feel like crying for no reason in the lunch room?,GENERIC,GENERIC_INTENT,
+925,If sneezes can scare tiny bugs when i'm trying to sleep because i feel stupid asking?,GENERIC,GENERIC_INTENT,
+926,If sneezes can scare tiny bugs when i'm trying to sleep and i don't want a baby answer?,GENERIC,GENERIC_INTENT,
+927,What if i don't like the things people say i'm supposed to like after scrolling?,GENERIC,GENERIC_INTENT,
+928,What if i don't like the things people say i'm supposed to like after scrolling and i don't wanna get judged?,GENERIC,GENERIC_INTENT,
+929,Why i get goosebumps before soccer?,GENERIC,GENERIC_INTENT,
+930,Why i get goosebumps before soccer because it's literally awkward?,GENERIC,GENERIC_INTENT,
+931,How do i ask for deodorant or bras or pads without dying of embarrassment at the mall?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+932,"How do i ask for deodorant or bras or pads without dying of embarrassment at the mall, i don't want a baby answer?",FACT,PERSONAL_DIRECTION,has_personal_direction=true
+933,If monsters are just confused shadows in the lunch room?,GENERIC,GENERIC_INTENT,
+934,"If monsters are just confused shadows in the lunch room, i keep thinking about it?",GENERIC,GENERIC_INTENT,
+935,What if my friend says they wanna disappear forever after scrolling because i'm trying to handle it better?,GENERIC,SELF_HARM,has_self_harm=true
+936,"What if my friend says they wanna disappear forever after scrolling, i keep overthinking it?",GENERIC,SELF_HARM,has_self_harm=true
+937,How vaccines work without tiny soldiers during family stuff?,GENERIC,VIOLENCE,has_violence_possibility=true
+938,How vaccines work without tiny soldiers during family stuff because it's lowkey messing with me?,GENERIC,VIOLENCE,has_violence_possibility=true
+939,Why boobs grow at different times in the lunch room because it's literally awkward?,GENERIC,GENERIC_INTENT,
+940,"Why boobs grow at different times in the lunch room, i feel stupid asking?",GENERIC,GENERIC_INTENT,
+941,If i can dig to the other side of earth in the shower?,GENERIC,GENERIC_INTENT,
+942,If i can dig to the other side of earth in the shower or no? i'm not trying to be bad?,GENERIC,GENERIC_INTENT,
+943,How do i focus when my brain keeps running around at a sleepover?,SCIENCE,PERSONAL_DIRECTION,has_personal_direction=true
+944,How do i focus when my brain keeps running around at a sleepover because it's making my brain busy?,SCIENCE,PERSONAL_DIRECTION,has_personal_direction=true
+945,Why i feel left out even when people say hi during dinner and i feel stupid asking?,GENERIC,EMOTIONAL,has_emotional_distress=true;has_bullying_involved=true
+946,"Why i feel left out even when people say hi during dinner, i feel dumb asking?",GENERIC,EMOTIONAL,has_emotional_distress=true;has_bullying_involved=true
+947,Why people hiccup when everyone is loud?,GENERIC,GENERIC_INTENT,
+948,Why people hiccup when everyone is loud because i don't wanna get judged?,GENERIC,GENERIC_INTENT,
+949,How do i fix it after i was mean first in the lunch room?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+950,"How do i fix it after i was mean first in the lunch room, it's making my brain busy?",SCIENCE,PERSONAL_DIRECTION,has_personal_direction=true
+951,What if i'm scared to go to the doctor at my grandma's house because i feel stupid asking?,GENERIC,GENERIC_INTENT,
+952,"What if i'm scared to go to the doctor at my grandma's house, i keep wondering?",GENERIC,GENERIC_INTENT,
+953,If it's bad to hold my pee at a sleepover and it's actually stressing me out?,GENERIC,GENERIC_INTENT,
+954,If it's bad to hold my pee at a sleepover?,GENERIC,GENERIC_INTENT,
+955,What if my parents are getting divorced when my friend ignores me or no? i don't like it?,GENERIC,GENERIC_INTENT,
+956,What if my parents are getting divorced when my friend ignores me?,GENERIC,GENERIC_INTENT,
+957,"Why people hiccup at school, i don't want a baby answer?",GENERIC,GENERIC_INTENT,
+958,"Why people hiccup at school, it's lowkey messing with me?",GENERIC,GENERIC_INTENT,
+959,What if they made a group chat without me at the doctor's office because i feel stupid asking?,TECHNOLOGY,BULLYING,has_bullying_involved=true
+960,What if they made a group chat without me at the doctor's office because i'm not saying this out loud to anyone?,TECHNOLOGY,BULLYING,has_bullying_involved=true
+961,Why socks disappear in the wash like magic when my parent says no and it's actually stressing me out?,GENERIC,GENERIC_INTENT,
+962,Why socks disappear in the wash like magic when my parent says no because i feel stupid asking?,GENERIC,GENERIC_INTENT,
+963,How do i tell my teacher i need help without feeling dumb after an argument because i'm not saying this out loud to anyone?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+964,How do i tell my teacher i need help without feeling dumb after an argument or no? it's kinda gross?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+965,What if my friend posted me without asking after an argument because i feel stupid asking?,GENERIC,GENERIC_INTENT,
+966,What if my friend posted me without asking after an argument because i keep wondering?,GENERIC,GENERIC_INTENT,
+967,Why grownups say bedtime is early when night feels huge at a sleepover because it's literally awkward?,GENERIC,GENERIC_INTENT,
+968,Why grownups say bedtime is early when night feels huge at a sleepover because i'm trying to handle it better?,GENERIC,GENERIC_INTENT,
+969,"What if my period is weird after scrolling, i keep overthinking it?",GENERIC,GENERIC_INTENT,
+970,"What if my period is weird after scrolling, i don't wanna get judged?",GENERIC,GENERIC_INTENT,
+971,"Why poop can look different in group chat, i don't want a baby answer?",TECHNOLOGY,GENERIC_INTENT,
+972,Why poop can look different in group chat because it's kinda embarrassing?,TECHNOLOGY,GENERIC_INTENT,
+973,What if my grownup drinks and gets scary when my phone buzzes or no? i'm not trying to be bad?,TECHNOLOGY,GENERIC_INTENT,
+974,"What if my grownup drinks and gets scary when my phone buzzes, i feel dumb asking?",TECHNOLOGY,GENERIC_INTENT,
+975,How do i say sorry and mean it during family stuff?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+976,"How do i say sorry and mean it during family stuff, it's kinda embarrassing?",FACT,PERSONAL_DIRECTION,has_personal_direction=true
+977,How to stop thinking about someone being mad at me after scrolling?,GENERIC,PERSONAL_DIRECTION,has_personal_direction=true
+978,How to stop thinking about someone being mad at me after scrolling because it's making my brain busy?,SCIENCE,PERSONAL_DIRECTION,has_personal_direction=true
+979,"What if my friend says they wanna disappear forever when i'm alone, it's kinda embarrassing?",GENERIC,SELF_HARM,has_self_harm=true
+980,What if my friend says they wanna disappear forever when i'm alone?,GENERIC,SELF_HARM,has_self_harm=true
+981,If my toy knows i love it right before a test?,CIVIC_LAW,GENERIC_INTENT,
+982,If my toy knows i love it right before a test because it's lowkey messing with me?,CIVIC_LAW,GENERIC_INTENT,
+983,"What if i saw something online i can't unsee when i'm alone, it's making my brain busy?",TECHNOLOGY,GENERIC_INTENT,
+984,What if i saw something online i can't unsee when i'm alone because i keep overthinking it?,TECHNOLOGY,GENERIC_INTENT,
+985,What if i got a bad grade and my parent gets mad in the dark because it feels weird?,GENERIC,GENERIC_INTENT,
+986,What if i got a bad grade and my parent gets mad in the dark because i don't wanna sound cringe?,GENERIC,GENERIC_INTENT,
+987,How do i say sorry and mean it after scrolling because it's literally awkward?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+988,How do i say sorry and mean it after scrolling?,FACT,PERSONAL_DIRECTION,has_personal_direction=true
+989,Is it okay to not be ready to kiss anyone in the car because i don't wanna sound cringe?,GENERIC,GENERIC_INTENT,
+990,Is it okay to not be ready to kiss anyone in the car?,GENERIC,GENERIC_INTENT,
+991,What if i lied and now it's huge after scrolling or no? i keep wondering?,GENERIC,GENERIC_INTENT,
+992,"What if i lied and now it's huge after scrolling, i feel weird even typing this?",GENERIC,GENERIC_INTENT,
+993,"What if i miss my other house after school, it makes me go ewww?",GENERIC,GENERIC_INTENT,
+994,"What if i miss my other house after school, i feel dumb asking?",GENERIC,GENERIC_INTENT,
+995,What if i don't want to do relationship stuff my friends talk about on vacation and i don't want a baby answer?,GENERIC,GENERIC_INTENT,
+996,"What if i don't want to do relationship stuff my friends talk about on vacation, it's honestly stressing me out?",GENERIC,GENERIC_INTENT,
+997,If my pet secretly has a job when i'm at school on my tablet because i'm not saying this out loud to anyone?,GENERIC,GENERIC_INTENT,
+998,If my pet secretly has a job when i'm at school on my tablet because it's kinda gross?,GENERIC,GENERIC_INTENT,
+999,"What if they made a group chat without me when i'm trying to sleep, i'm not saying this out loud to anyone?",TECHNOLOGY,BULLYING,has_bullying_involved=true
+1000,"What if they made a group chat without me when i'm trying to sleep, it's kinda embarrassing?",TECHNOLOGY,BULLYING,has_bullying_involved=true

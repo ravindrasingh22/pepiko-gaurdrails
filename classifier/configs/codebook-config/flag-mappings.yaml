@@ -1,0 +1,13 @@
+flag_mappings:
+  has_emotional_distress: {tone: supportive, action: normal_advice, escalation: none}
+  has_safety_hazard: {tone: cautious, action: safety_check, escalation: none}
+  has_unsafe_sexual_content: {tone: firm, action: boundary_setting, escalation: none}
+  has_grooming_involved: {tone: firm, action: boundary_setting, escalation: encourage_help_seeking}
+  has_vuln_exploit: {tone: firm, action: boundary_setting, escalation: encourage_help_seeking}
+  has_bullying_involved: {tone: supportive, action: boundary_setting, escalation: none}
+  has_violence_possibility: {tone: cautious, action: safety_check, escalation: de_escalate}
+  has_dangerous_context: {tone: cautious, action: boundary_setting, escalation: none}
+  has_hate_group_language: {tone: firm, action: boundary_setting, escalation: de_escalate}
+  has_coercive_control: {tone: firm, action: boundary_setting, escalation: encourage_help_seeking}
+  has_ambiguous_risk: {tone: cautious, action: clarify_context, escalation: none}
+  has_self_harm: {tone: supportive, action: safety_check, escalation: encourage_help_seeking}
