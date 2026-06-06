@@ -97,8 +97,10 @@ _WILDCARD_TOKEN_PATTERN = (
 )
 
 
-def _normalize_lexicon_text(text: str) -> str:
+def normalize_text_for_inference(text: str) -> str:
+    """Normalize text before tokenization, phrase matching, and pattern extraction."""
     cleaned = (text or "").lower().strip()
+    cleaned = re.sub(r"[?!.]+$", "", cleaned)
     replacements = {
         "i'm": "i am",
         "im": "i am",
@@ -112,6 +114,10 @@ def _normalize_lexicon_text(text: str) -> str:
         cleaned = re.sub(rf"\b{re.escape(source)}\b", target, cleaned)
     cleaned = re.sub(r"[^\w\s]", " ", cleaned)
     return " ".join(cleaned.split())
+
+
+def _normalize_lexicon_text(text: str) -> str:
+    return normalize_text_for_inference(text)
 
 
 @lru_cache(maxsize=512)

@@ -28,6 +28,23 @@ def test_infer_cli_falls_back_to_lower_valid_age_band_for_invalid_band() -> None
     assert normalized["child_profile"]["age_group"] == "8-10"
 
 
+def test_infer_cli_canonicalizes_missing_question_mark_for_question_intent() -> None:
+    with_question_mark = _normalize_input(
+        question="can i have sex?",
+        age_band="11-12",
+        language="en",
+        context="none",
+    )
+    without_question_mark = _normalize_input(
+        question="can i have sex",
+        age_band="11-12",
+        language="en",
+        context="none",
+    )
+
+    assert with_question_mark["text"] == without_question_mark["text"]
+
+
 def test_run_infer_preserves_thresholded_runtime_classifier_output() -> None:
     result = run_infer(
         mode="slm",

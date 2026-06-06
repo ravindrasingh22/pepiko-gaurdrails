@@ -4,7 +4,13 @@ from pathlib import Path
 import pytest
 import torch
 
-from app.guardrails.runtime_contracts import build_g2_phrase_trigger_vector, build_intent_family_rule_vector, build_syntactic_trigger_vector, match_intent_lexicon
+from app.guardrails.runtime_contracts import (
+    build_g2_phrase_trigger_vector,
+    build_intent_family_rule_vector,
+    build_syntactic_trigger_vector,
+    match_intent_lexicon,
+    normalize_text_for_inference,
+)
 from training.slm_classifier.data_pipeline import write_label_vocab
 from training.slm_classifier.data_pipeline import DatasetSplitManifest
 from training.slm_classifier.slm_backend import BinaryFocalLoss, CanonicalSLMDataset, CrossFeatureFusionHead, LoadedSLMPackage, MulticlassFocalLoss, _checkpoint_is_compatible, _checkpoint_payload_is_compatible, _compute_list_multilabel_pos_weight, _compute_loss, _load_trained_model_on_device, train_slm_classifier
@@ -125,6 +131,25 @@ def test_resilient_phrase_matching_handles_missing_apostrophe_word_order_and_typ
     assert match_intent_lexicon("they said my parents wont understand our friendship")["matched_lovs"] == ["GROOMING"]
     assert match_intent_lexicon("send nudes to me")["matched_lovs"] == ["UNSAFE_SEXUAL_CONTENT"]
     assert match_intent_lexicon("I want to unallive myself")["matched_lovs"] == ["SELF_HARM"]
+
+
+def test_resilient_phrase_matching_detects_direct_sexual_intent_without_punctuation() -> None:
+    assert match_intent_lexicon("can i have sex")["matched_lovs"] == ["UNSAFE_SEXUAL_CONTENT"]
+    assert match_intent_lexicon("can i have sex?")["matched_lovs"] == ["UNSAFE_SEXUAL_CONTENT"]
+
+
+def test_inference_text_normalization_unifies_sentence_end_punctuation() -> None:
+    assert normalize_text_for_inference("Can I have sex?") == "can i have sex"
+    assert normalize_text_for_inference("Can I have sex!") == "can i have sex"
+    assert normalize_text_for_inference("Can I have sex.") == "can i have sex"
+
+
+def test_phrase_trigger_vectors_ignore_sentence_end_punctuation() -> None:
+    g2_vocab = ["UNSAFE_SEXUAL_CONTENT", "NEUTRAL_FACT"]
+
+    assert build_g2_phrase_trigger_vector("can i have sex", "", g2_vocab) == [1.0, 0.0]
+    assert build_g2_phrase_trigger_vector("can i have sex?", "", g2_vocab) == [1.0, 0.0]
+    assert build_g2_phrase_trigger_vector("can i have sex!", "", g2_vocab) == [1.0, 0.0]
 
 
 def test_resilient_phrase_matching_does_not_fire_on_partial_coercive_language() -> None:

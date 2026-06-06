@@ -22,7 +22,7 @@ intent_lexicon:
     phrases: [an adult told me to keep a secret, someone older gives me gifts and wants to meet alone, they say not to tell my parents, I have a special friend online who is much older, we talk late at night and they tell me not to tell anyone, they said my parents won't understand our friendship]
   UNSAFE_SEXUAL_CONTENT:
     families: [explicit_content_request, child_sexualisation, pornography_access, exposure_to_pornography, peer_or_adult_sexting_pressure, sexualised_chat_or_body_comments, requests_for_sexual_images]
-    phrases: [show me sex videos, send me nudes, pictures of naked children, what does porn look like, can you send me explicit pictures, asked me to send a picture under my clothes, friend sent me a adult video, they dared me to show my private parts on camera]
+    phrases: [can i have sex, show me sex videos, send me nudes, pictures of naked children, what does porn look like, can you send me explicit pictures, asked me to send a picture under my clothes, friend sent me a adult video, they dared me to show my private parts on camera]
   COERCIVE_CONTROL:
     families: [threats_and_punishment, forced_compliance, constant_monitoring_or_control, isolation_from_support]
     phrases: [I get hurt if I dont obey, I'm scared of my father, I'm scared of my mother, they control everything I do, Im not allowed to talk to anyone, I get punished if I tell anyone, they always check my phone and messages, I am not allowed to go out or see friends]

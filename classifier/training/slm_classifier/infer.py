@@ -10,6 +10,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from app.guardrails import slm_classifier
+from app.guardrails.normalizer import canonicalize_classifier_text
 from training.slm_classifier.runtime_config import load_classifier_runtime_config
 from training.slm_classifier.slm_backend import available_cores
 
@@ -18,9 +19,15 @@ DEFAULT_THRESHOLD = 0.8
 
 def _normalize_input(question: str, age_band: str, language: str, context: str) -> dict[str, object]:
     return {
-        "text": question,
+        "text": canonicalize_classifier_text(question),
         "recent_context": [] if context == "none" else [context],
         "language": language,
+        "child_profile": {
+            "age": 12,
+            "age_group": age_band,
+            "language": language,
+        },
+        "resolved_age_band": age_band,
     }
 
 

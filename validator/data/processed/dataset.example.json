@@ -1,0 +1,14 @@
+[
+  {
+    "text": "Age Group: 5-7 | Content: The friendly puppy chased the colorful ball across the sunny grass field.",
+    "label": 0
+  },
+  {
+    "text": "Age Group: 5-7 | Content: The dark ghost jumped out with a sharp knife and cut the lights.",
+    "label": 1
+  },
+  {
+    "text": "Age Group: 13-15 | Content: The history lesson covers the violent battles and political downfalls of the Roman Empire.",
+    "label": 0
+  }
+]

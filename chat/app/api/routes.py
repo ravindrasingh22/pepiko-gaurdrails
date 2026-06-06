@@ -8,6 +8,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel, Field, model_validator
 
 from app.model_service import DEFAULT_CHAT_MODEL, generate_chat_response
+from app.validator_client import validate_assistant_response
 
 router = APIRouter()
 
@@ -22,6 +23,7 @@ class ChatRequest(BaseModel):
     messages: list[ChatMessage] = Field(default_factory=list)
     temperature: float = Field(default=0.2, ge=0.0, le=2.0)
     max_tokens: int = Field(default=256, ge=1, le=1024)
+    validate_response: bool = False
 
     session_id: str = Field(min_length=1)
     child_profile: dict[str, Any] = Field(default_factory=dict)
@@ -57,6 +59,12 @@ class ChatUsage(BaseModel):
     total_tokens: int
 
 
+class ValidatorUsage(BaseModel):
+    prompt_tokens: int
+    completion_tokens: int
+    total_tokens: int
+
+
 class ChatResponse(BaseModel):
     id: str
     object: Literal["chat.completion"] = "chat.completion"
@@ -65,6 +73,11 @@ class ChatResponse(BaseModel):
     choices: list[ChatChoice]
     usage: ChatUsage
     session_id: str
+    child_profile: dict[str, Any]
+    response_validation: Literal["Safe", "UnSafe"] | None = None
+    validation_score: float | None = None
+    validator_usage: ValidatorUsage | None = None
+    validator_error: str | None = None
 
 
 def _messages_from_legacy(payload: ChatRequest) -> list[dict[str, str]]:
@@ -90,6 +103,15 @@ async def chat_guardrail(payload: ChatRequest) -> ChatResponse:
         model_name=payload.model,
     )
     usage = generation.get("usage", {})
+    answer = str(generation.get("answer", ""))
+    validation = (
+        validate_assistant_response(
+            content=answer,
+            child_profile=dict(payload.child_profile),
+        )
+        if payload.validate_response
+        else {}
+    )
     return ChatResponse(
         id=f"chatcmpl-{uuid.uuid4().hex}",
         created=int(time.time()),
@@ -97,7 +119,7 @@ async def chat_guardrail(payload: ChatRequest) -> ChatResponse:
         choices=[
             ChatChoice(
                 index=0,
-                message=ChatChoiceMessage(content=str(generation.get("answer", ""))),
+                message=ChatChoiceMessage(content=answer),
                 finish_reason="stop",
             )
         ],
@@ -107,4 +129,9 @@ async def chat_guardrail(payload: ChatRequest) -> ChatResponse:
             total_tokens=int(usage.get("total_tokens", 0)),
         ),
         session_id=payload.session_id,
+        child_profile=dict(payload.child_profile),
+        response_validation=validation.get("response_validation"),
+        validation_score=float(validation["validation_score"]) if "validation_score" in validation else None,
+        validator_usage=ValidatorUsage(**dict(validation["validator_usage"])) if "validator_usage" in validation else None,
+        validator_error=validation.get("validator_error"),
     )
