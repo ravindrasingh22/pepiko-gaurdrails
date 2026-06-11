@@ -1,0 +1,11 @@
+source_file,output_file,original_rows,removed_roleplay_rows,remaining_rows,removed_percent,removed_by_explicit_roleplay,removed_by_assume_or_take_role,removed_by_act_as,removed_by_pretend_prompt,removed_by_imagine_you_are,removed_by_you_are_ai_or_character,removed_by_as_professional_role,removed_by_hypothetical_or_fictional_scenario,removed_by_alternate_or_parallel_universe,removed_by_fantasy_world_or_realm,removed_by_simulation_or_simulate,removed_by_lets_play
+Corrected_Classified_Prompt_0.csv,Roleplay_Removed_Corrected_Classified_Prompt_0.csv,16111,2197,13914,13.64,270,104,139,28,586,85,183,368,63,67,294,10
+Corrected_Classified_Prompt_1.csv,Roleplay_Removed_Corrected_Classified_Prompt_1.csv,16111,2215,13896,13.75,308,87,144,35,535,80,215,382,75,58,290,6
+Corrected_Classified_Prompt_2.csv,Roleplay_Removed_Corrected_Classified_Prompt_2.csv,16110,2196,13914,13.63,288,80,153,20,522,112,200,393,73,71,275,9
+Corrected_Classified_Prompt_3.csv,Roleplay_Removed_Corrected_Classified_Prompt_3.csv,16110,2224,13886,13.81,315,99,141,36,574,98,174,353,84,59,283,8
+Corrected_Classified_Prompt_4.csv,Roleplay_Removed_Corrected_Classified_Prompt_4.csv,16110,2207,13903,13.70,273,92,154,37,612,98,144,395,76,46,274,6
+Corrected_Classified_Prompt_5.csv,Roleplay_Removed_Corrected_Classified_Prompt_5.csv,16110,2213,13897,13.74,323,105,150,26,501,105,203,396,68,72,255,9
+Corrected_Classified_Prompt_6.csv,Roleplay_Removed_Corrected_Classified_Prompt_6.csv,16110,2177,13933,13.51,285,89,121,34,558,86,184,387,73,67,285,8
+Corrected_Classified_Prompt_7.csv,Roleplay_Removed_Corrected_Classified_Prompt_7.csv,16110,2113,13997,13.12,286,89,136,42,480,102,164,409,63,68,266,8
+Corrected_Classified_Prompt_8.csv,Roleplay_Removed_Corrected_Classified_Prompt_8.csv,16110,2233,13877,13.86,284,105,151,30,590,76,195,372,71,62,292,5
+Corrected_Classified_Prompt_9.csv,Roleplay_Removed_Corrected_Classified_Prompt_9.csv,16110,2234,13876,13.87,286,84,137,26,542,105,169,430,76,68,302,9

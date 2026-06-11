@@ -13,7 +13,7 @@ from app.guardrails.runtime_contracts import (
 )
 from training.slm_classifier.data_pipeline import write_label_vocab
 from training.slm_classifier.data_pipeline import DatasetSplitManifest
-from training.slm_classifier.slm_backend import BinaryFocalLoss, CanonicalSLMDataset, CrossFeatureFusionHead, LoadedSLMPackage, MulticlassFocalLoss, _checkpoint_is_compatible, _checkpoint_payload_is_compatible, _compute_list_multilabel_pos_weight, _compute_loss, _load_trained_model_on_device, train_slm_classifier
+from training.slm_classifier.slm_backend import BinaryFocalLoss, CanonicalSLMDataset, CrossFeatureFusionHead, LoadedSLMPackage, MulticlassFocalLoss, _checkpoint_is_compatible, _checkpoint_payload_is_compatible, _compute_list_multilabel_pos_weight, _compute_loss, _load_trained_model_on_device, _validate_rows_against_label_vocab, train_slm_classifier
 
 
 def test_compute_list_multilabel_pos_weight_counts_only_true_flag_values() -> None:
@@ -84,6 +84,59 @@ def test_write_label_vocab_includes_intent_families_and_phrases(tmp_path: Path) 
     assert "threats_and_punishment" in payload["intent_families"]
     assert "what should I do" in payload["intent_phrases"]
     assert "should I" in payload["intent_phrases"]
+
+
+def test_incremental_vocab_validation_rejects_new_intent_phrase() -> None:
+    label_vocab = {
+        "g1": ["GENERIC"],
+        "g2": ["NEUTRAL_FACT"],
+        "flags": [],
+        "intent_families": ["factual_definition"],
+        "intent_phrases": ["what is"],
+    }
+
+    with pytest.raises(ValueError, match="unknown intent_phrase=new phrase"):
+        _validate_rows_against_label_vocab(
+            [
+                {
+                    "sample_id": "incremental-1",
+                    "question": "test",
+                    "context": "",
+                    "g1": "GENERIC",
+                    "g2": ["NEUTRAL_FACT"],
+                    "flags": {},
+                    "intent_families": ["factual_definition"],
+                    "intent_phrases": ["new phrase"],
+                }
+            ],
+            label_vocab,
+        )
+
+
+def test_incremental_vocab_validation_accepts_existing_vocab() -> None:
+    label_vocab = {
+        "g1": ["GENERIC"],
+        "g2": ["NEUTRAL_FACT"],
+        "flags": ["has_ambiguous_risk"],
+        "intent_families": ["factual_definition"],
+        "intent_phrases": ["what is"],
+    }
+
+    _validate_rows_against_label_vocab(
+        [
+            {
+                "sample_id": "incremental-1",
+                "question": "test",
+                "context": "",
+                "g1": "GENERIC",
+                "g2": ["NEUTRAL_FACT"],
+                "flags": {"has_ambiguous_risk": True},
+                "intent_families": ["factual_definition"],
+                "intent_phrases": ["what is"],
+            }
+        ],
+        label_vocab,
+    )
 
 
 def test_compute_loss_includes_intent_phrase_head_when_targets_are_present() -> None:

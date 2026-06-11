@@ -137,6 +137,27 @@ def _g1_score(metadata: dict[str, object], g1_id: str) -> tuple[float | None, di
     return scores.get(g1_id), scores
 
 
+def _usage_payload(metadata: dict[str, object], payload: ClassificationTestRequest) -> dict[str, int]:
+    raw_usage = metadata.get("usage", {})
+    if isinstance(raw_usage, dict):
+        prompt_tokens = int(raw_usage.get("prompt_tokens", 0))
+        completion_tokens = int(raw_usage.get("completion_tokens", 0))
+        total_tokens = int(raw_usage.get("total_tokens", prompt_tokens + completion_tokens))
+        if prompt_tokens or completion_tokens or total_tokens:
+            return {
+                "prompt_tokens": prompt_tokens,
+                "completion_tokens": completion_tokens,
+                "total_tokens": total_tokens,
+            }
+    fallback_text = " ".join([payload.message, *[str(item) for item in payload.recent_context]]).strip()
+    prompt_tokens = len(fallback_text.split())
+    return {
+        "prompt_tokens": prompt_tokens,
+        "completion_tokens": 0,
+        "total_tokens": prompt_tokens,
+    }
+
+
 def _classify_response(
     payload: ClassificationTestRequest,
     decision_metadata: dict[str, object],
@@ -199,6 +220,7 @@ def _classify_response(
             "Max_Words": age_settings["max_words"],
             "Depth": age_settings["depth"],
         },
+        usage=_usage_payload(decision_metadata, payload),
         modifier_tags=_modifier_tags(active_flags),
     )
 

@@ -22,9 +22,11 @@ from training.slm_classifier.data_pipeline import (
     parse_g2_values,
     primary_g2_label,
     select_rows_for_split,
+    validate_dataset_rows,
     write_label_vocab,
 )
 from training.slm_classifier.runtime_config import load_classifier_runtime_config
+from training.slm_classifier.source_normalizer import expand_authoring_rows
 
 # Keep Hugging Face fully local for this project. Transformers can start a
 # safetensors auto-conversion background thread during import/model loading, so
@@ -392,6 +394,20 @@ def _save_training_checkpoint(
     torch.save(payload, path)
 
 
+def _classifier_token_usage(encoded: dict[str, Any]) -> dict[str, int]:
+    attention_mask = encoded.get("attention_mask")
+    if attention_mask is not None:
+        prompt_tokens = int(attention_mask.sum().item())
+    else:
+        input_ids = encoded.get("input_ids")
+        prompt_tokens = int(input_ids.numel()) if input_ids is not None else 0
+    return {
+        "prompt_tokens": prompt_tokens,
+        "completion_tokens": 0,
+        "total_tokens": prompt_tokens,
+    }
+
+
 def _format_classifier_input(row: dict[str, Any]) -> str:
     context = str(row.get("context", row.get("recent_context", "none")) or "none").strip()
     question = str(row["question"]).strip()
@@ -471,6 +487,46 @@ def _compute_sample_weights(rows: list[dict[str, Any]], label_vocab: dict[str, l
         g2_weight = max(active_g2_weights) if active_g2_weights else 1.0
         weights.append(float(g2_weight))
     return weights
+
+
+def _validate_rows_against_label_vocab(rows: list[dict[str, Any]], label_vocab: dict[str, list[str]]) -> None:
+    vocab_sets = {
+        "g1": set(label_vocab.get("g1", [])),
+        "g2": set(label_vocab.get("g2", [])),
+        "flags": set(label_vocab.get("flags", [])),
+        "intent_families": set(label_vocab.get("intent_families", [])),
+        "intent_phrases": set(label_vocab.get("intent_phrases", [])),
+    }
+    errors: list[str] = []
+    for row in rows:
+        sample_id = str(row.get("sample_id", "unknown"))
+        g1 = str(row.get("g1", "")).strip()
+        if g1 and g1 not in vocab_sets["g1"]:
+            errors.append(f"{sample_id}: unknown g1={g1}")
+        for g2 in parse_g2_values(row.get("g2", [])):
+            if g2 not in vocab_sets["g2"]:
+                errors.append(f"{sample_id}: unknown g2={g2}")
+        flags = row.get("flags", {})
+        if isinstance(flags, dict):
+            for flag, enabled in flags.items():
+                if enabled and str(flag) not in vocab_sets["flags"]:
+                    errors.append(f"{sample_id}: unknown flag={flag}")
+        for family in row.get("intent_families", []) or []:
+            family_id = str(family).strip()
+            if family_id and family_id not in vocab_sets["intent_families"]:
+                errors.append(f"{sample_id}: unknown intent_family={family_id}")
+        for phrase in row.get("intent_phrases", []) or []:
+            phrase_id = str(phrase).strip()
+            if phrase_id and phrase_id not in vocab_sets["intent_phrases"]:
+                errors.append(f"{sample_id}: unknown intent_phrase={phrase_id}")
+    if errors:
+        preview = "\n".join(errors[:20])
+        suffix = f"\n... and {len(errors) - 20} more" if len(errors) > 20 else ""
+        raise ValueError(
+            "Incremental source is incompatible with the existing model label vocab. "
+            "Run full training with --rebuild-dataset if you need to add new vocab entries.\n"
+            f"{preview}{suffix}"
+        )
 
 
 class CanonicalSLMDataset(Dataset):  # pragma: no cover - exercised through training/inference path
@@ -1165,6 +1221,7 @@ def train_slm_classifier(
     *,
     core: str | None = None,
     enable_training: bool = False,
+    incremental_source_path: Path | None = None,
     epochs: int | None = None,
     batch_size: int | None = None,
     max_length: int | None = None,
@@ -1195,7 +1252,18 @@ def train_slm_classifier(
     rows: list[dict[str, Any]] = []
     train_rows: list[dict[str, Any]] = []
     test_rows: list[dict[str, Any]] = []
-    if not dataset_path.exists():
+    paths = _paths_for_core(resolved_core, model_dir=model_dir)
+    incremental_mode = incremental_source_path is not None
+    if incremental_mode:
+        incremental_source_path = Path(incremental_source_path)
+        if not incremental_source_path.exists():
+            raise FileNotFoundError(f"Incremental source not found: {incremental_source_path}")
+        rows = expand_authoring_rows(incremental_source_path)
+        validate_dataset_rows(rows)
+        train_rows = list(rows)
+        test_rows = []
+        train_on_all_data = True
+    elif not dataset_path.exists():
         try:
             from training.slm_classifier.source_normalizer import write_canonical_jsonl_with_metadata
 
@@ -1203,10 +1271,11 @@ def train_slm_classifier(
         except ValueError:
             if enable_training:
                 raise
-    paths = _paths_for_core(resolved_core, model_dir=model_dir)
-    if dataset_path.exists():
+    if not incremental_mode and dataset_path.exists():
         rows = _iter_rows(dataset_path)
-    if rows:
+    if incremental_mode:
+        pass
+    elif rows:
         if train_on_all_data:
             train_rows = list(rows)
             test_rows = []
@@ -1225,7 +1294,19 @@ def train_slm_classifier(
             "No test rows were selected for training. Rebuild dataset splits or pass --train-on-all-data explicitly."
         )
     model_dir.mkdir(parents=True, exist_ok=True)
-    ensure_label_vocab(model_dir=model_dir, core=resolved_core)
+    if incremental_mode and paths["label_vocab"].exists():
+        if not paths["state"].exists():
+            raise FileNotFoundError(
+                f"Incremental training requires existing trained weights: {paths['state']}"
+            )
+        label_vocab = json.loads(paths["label_vocab"].read_text(encoding="utf-8"))
+        _validate_rows_against_label_vocab(train_rows, label_vocab)
+    elif incremental_mode:
+        raise FileNotFoundError(
+            f"Incremental training requires an existing model label vocab: {paths['label_vocab']}"
+        )
+    else:
+        ensure_label_vocab(model_dir=model_dir, core=resolved_core)
     config = _training_defaults(resolved_core)
     if epochs is not None:
         config["epochs"] = int(epochs)
@@ -1273,6 +1354,11 @@ def train_slm_classifier(
         config["checkpoint_every_batches"] = int(checkpoint_every_batches)
     if balanced_sampling is not None:
         config["balanced_sampling"] = bool(balanced_sampling)
+    if incremental_mode:
+        config["resume_if_available"] = True if resume_if_available is None else bool(resume_if_available)
+        config["train_on_all_data"] = True
+        config["incremental_training"] = True
+        config["incremental_source_path"] = str(incremental_source_path)
     log_prefix = f"[SLM:{resolved_core}]"
     if bool(config.get("balanced_sampling", False)):
         max_balanced_epochs = int(config.get("balanced_sampling_max_epochs", 4) or 4)
@@ -1291,6 +1377,9 @@ def train_slm_classifier(
             config["freeze_backbone"] = True
             config["unfreeze_top_layers"] = 0
     config["train_on_all_data"] = bool(train_on_all_data)
+    config["incremental_training"] = bool(incremental_mode)
+    if incremental_source_path is not None:
+        config["incremental_source_path"] = str(incremental_source_path)
     paths["training_config"].write_text(json.dumps(config, indent=2), encoding="utf-8")
 
     trained = False
@@ -1738,6 +1827,10 @@ def train_slm_classifier(
         metadata["intent_phrase_focal_gamma"] = float(config.get("intent_phrase_focal_gamma", 2.0))
         metadata["head_learning_rate"] = float(config.get("head_learning_rate", config["learning_rate"]))
         metadata["train_on_all_data"] = bool(config.get("train_on_all_data", False))
+        metadata["incremental_training"] = bool(incremental_mode)
+        if incremental_source_path is not None:
+            metadata["incremental_source_path"] = str(incremental_source_path)
+            metadata["incremental_rows"] = len(train_rows)
         metadata["resumed_from_existing"] = resumed_from_existing
         if len(test_rows):
             gate_eval = _evaluate_gate_accuracy(model, test_loader, label_vocab)
@@ -2024,6 +2117,7 @@ def build_decision_from_slm(
         max_length=int(package.training_config.get("max_length", 192)),
         return_tensors="pt",
     )
+    usage = _classifier_token_usage(encoded)
     recent_context = " ".join(str(item) for item in normalized.get("recent_context", [])) or ""
     encoded["intent_rule_features"] = torch.tensor(
         [
@@ -2116,6 +2210,7 @@ def build_decision_from_slm(
             "classifier_metadata": {
                 **decision.classifier_metadata,
                 "inference_device": inference_device,
+                "usage": usage,
                 "head_confidences": {
                     **decision.classifier_metadata.get("head_confidences", {}),
                     "flags": {flag: float(flag_probs[idx]) for idx, flag in enumerate(flag_vocab)},
@@ -2168,6 +2263,7 @@ def build_decision_from_slm_pure(
         max_length=int(package.training_config.get("max_length", 192)),
         return_tensors="pt",
     )
+    usage = _classifier_token_usage(encoded)
     recent_context = " ".join(str(item) for item in normalized.get("recent_context", [])) or ""
     encoded["intent_rule_features"] = torch.tensor(
         [
@@ -2241,6 +2337,7 @@ def build_decision_from_slm_pure(
             "trained": bool(package.metadata.get("trained", False)),
             "flags_trained": bool(package.metadata.get("flags_trained", False)),
             "inference_device": str(inference_device),
+            "usage": usage,
             "g2_threshold": threshold,
             "label_vocab_path": str(resolved_dir / "label_vocab.json"),
             "head_confidences": {

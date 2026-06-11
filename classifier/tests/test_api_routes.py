@@ -40,6 +40,9 @@ def test_classify_endpoint_returns_gate_values() -> None:
     assert payload["g3"]["G3_SV"]
     assert payload["g3"]["G3_FORWARD"]["severity"] == payload["g3"]["G3_SV"]
     assert payload["g4"]["action"]
+    assert payload["usage"]["prompt_tokens"] > 0
+    assert payload["usage"]["completion_tokens"] == 0
+    assert payload["usage"]["total_tokens"] == payload["usage"]["prompt_tokens"]
     assert "prompt" not in payload
     assert "stage_outputs" not in payload
     assert "decision" not in payload
@@ -136,6 +139,8 @@ def test_classified_prompt_endpoint_returns_system_prompt_with_classifier_output
     assert payload["classifier_output"]["g2"]["id"]
     assert payload["classifier_output"]["g2"]["score"] == payload["classifier_output"]["g2"]["model_score"]
     assert payload["classifier_output"]["g2"]["score_source"] == "g2_head"
+    assert payload["classifier_output"]["usage"]["prompt_tokens"] > 0
+    assert payload["classifier_output"]["usage"]["completion_tokens"] == 0
 
 
 def test_classified_prompt_endpoint_nests_classification_metadata() -> None:

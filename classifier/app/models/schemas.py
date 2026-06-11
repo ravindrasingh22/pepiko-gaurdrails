@@ -37,6 +37,7 @@ class ClassificationTestResponse(BaseModel):
     g3: dict[str, Any]
     g4: dict[str, Any]
     age_policy: dict[str, Any]
+    usage: dict[str, Any]
     modifier_tags: dict[str, Any]
 
 

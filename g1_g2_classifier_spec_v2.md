@@ -104,6 +104,8 @@ Allowed support flags:
 - has_ambiguous_risk
 - has_safety_hazard
 - has_violence_possibility
+- has_clinical_concern
+- has_significant_impairment
 
 No other labels or flags are allowed.
 
@@ -291,7 +293,7 @@ Do not use `DANGEROUS` for merely ambiguous queries where the intent could be be
 
 Use `EMOTIONAL` when the child expresses sadness, fear, loneliness, distress, hopelessness, anxiety, shame, rejection, or emotional pain.
 
-Common supporting flags include `has_bullying_involved`, `has_self_harm`, `has_coercive_control`, or `has_vuln_exploit` when present.
+Common supporting flags include `has_bullying_involved`, `has_self_harm`, `has_coercive_control`, `has_vuln_exploit` or `has_clinical_concern` when present.
 
 Examples:
 - I feel sad.
@@ -301,6 +303,8 @@ Examples:
 - I cry all the time.
 
 This LOV is about emotional distress. It can co-occur with `BULLYING`, `SELF_HARM`, `COERCIVE_CONTROL`, or other G2 LOVs.
+
+When this distress sounds big and ongoing, or the child seems unable to cope, has_clinical_concern may be set; if it is also disrupting daily life (school, sleep, eating, friendships, activities), `has_significant_impairment` may be set as well.
 
 Do not automatically convert `EMOTIONAL` into `SELF_HARM`. Only use `SELF_HARM` when self-harm or suicidal ideation is actually present.
 
@@ -322,7 +326,7 @@ Use `BULLYING` for peer-targeted interpersonal harm. If the same input also cont
 
 Use `GROOMING` for adult-child dynamics involving secrecy, gifts, special treatment, manipulation, requests for private contact, or pressure not to tell trusted adults.
 
-Common supporting flags include `has_emotional_distress`, `has_vuln_exploit`, or `has_unsafe_sexual_content`.
+Common supporting flags include `has_emotional_distress`, `has_vuln_exploit`, `has_unsafe_sexual_content` or `has_clinical_concern`.
 
 Look for patterns such as:
 - an older person wants secrecy,
@@ -358,7 +362,7 @@ It may co-occur with `GROOMING`, `VULN_EXPLOIT`, or `COERCIVE_CONTROL` if those 
 
 Use `COERCIVE_CONTROL` when the child is under threatening, fear-based, punishing, isolating, or highly controlling authority. The controlling figure is often a parent, caregiver, guardian, or older authority figure, though other controlling dynamics may also fit.
 
-Common supporting flags include `has_emotional_distress` and `has_vuln_exploit`.
+Common supporting flags include `has_emotional_distress`, `has_vuln_exploit` or `has_clinical_concern`.
 
 Examples:
 - I get hurt if I do not obey.
@@ -373,7 +377,7 @@ This LOV is about sustained fear-based control, not ordinary rules or discipline
 
 Use `VULN_EXPLOIT` when someone deliberately manipulates the child by using private information, emotional dependence, isolation, blackmail, insecurity, or a known vulnerability.
 
-Common supporting flags include `has_grooming_involved`, `has_coercive_control`, or `has_emotional_distress`.
+Common supporting flags include `has_grooming_involved`, `has_coercive_control`, `has_emotional_distress` or `has_clinical_concern`.
 
 Examples:
 - They know my secret and use it against me.
@@ -387,7 +391,7 @@ This LOV captures exploitation of vulnerability, not just generic meanness.
 
 Use `SELF_HARM` when the child references self-harm, suicidal ideation, wanting to die, wanting to disappear, non-suicidal self-injury, or harming their own body.
 
-Common supporting flags include `has_emotional_distress`, `has_bullying_involved`, or `has_violence_possibility`.
+Common supporting flags include `has_emotional_distress`, `has_bullying_involved`, `has_violence_possibility` or `has_clinical_concern`.
 
 Examples:
 - I want to die.
@@ -399,6 +403,8 @@ Examples:
 This LOV should be treated as high priority. Do not miss it when present.
 
 If the input is emotionally distressed but does not mention self-harm, do not use `SELF_HARM`; use `EMOTIONAL` instead.
+
+All SELF_HARM queries should normally set `has_clinical_concern`=true, and may set `has_significant_impairment`=true when the self-harm thoughts or actions are clearly affecting daily life.
 
 ### AMBIGUOUS_RISK
 
@@ -672,6 +678,10 @@ has_safety_hazard
 
 has_violence_possibility
 
+has_clinical_concern
+
+has_significant_impairment
+
 General flag rules
 For each input:
 
@@ -847,6 +857,60 @@ Examples:
 
 “How do I hurt someone so they stay home from school?” → has_violence_possibility=true
 
+Flag: has_clinical_concern
+Set has_clinical_concern=true if:
+
+G2_LOV_ID is one of: EMOTIONAL, SELF_HARM, DEATH_GRIEF, BULLYING, COERCIVE_CONTROL, VULN_EXPLOIT, GROOMING, UNSAFE_SEXUAL_CONTENT, OR
+
+The query shows more than everyday ups and downs — for example, strong hopelessness, feeling unable to cope, or distress that sounds big and ongoing rather than a one‑off bad day.
+
+Do NOT set this flag when:
+
+The child is just nervous about a normal event (like one test or game), mildly annoyed, or briefly sad about a single incident with no sign it’s overwhelming them.
+
+Examples:
+
+“Nothing feels good anymore, I’m sad all the time and I don’t see the point of anything.” → has_clinical_concern=true
+
+“Kids at school have been making fun of me for months and I feel like I can’t take it anymore.” → has_clinical_concern=true
+
+“My dad shouts at me every day and I’m always scared at home.” → has_clinical_concern=true
+
+“I think about hurting myself when things go wrong.” → has_clinical_concern=true
+
+“My friend didn’t sit with me at lunch and I felt bad today.” → has_clinical_concern=false
+
+“I’m a bit stressed about my exam tomorrow.” → has_clinical_concern=false
+
+This flag marks that the child’s message sounds like a possible mental‑health concern or bigger than everyday ups and downs; it is not a diagnosis.
+
+Flag: has_significant_impairment
+Set has_significant_impairment=true if:
+
+has_clinical_concern=true, AND
+
+The query clearly describes distress seriously interfering with daily life — for example: not going to school, not sleeping, not eating, not leaving their room, avoiding everyone, or stopping normal activities they used to do.
+
+Do NOT set this flag when:
+
+The child is distressed but still going to school, seeing friends, and doing usual activities, or when the problem sounds short‑term and not life‑disrupting.
+
+Examples:
+
+“I haven’t slept properly for days, I stopped eating, and I just stay in my room all the time.” → has_significant_impairment=true
+
+“They bully me every day and I don’t want to go to school anymore.” → has_significant_impairment=true
+
+“I feel so bad that I quit all my clubs and never see my friends now.” → has_significant_impairment=true
+
+“I get really anxious so I always make excuses to stay home instead of going to school.” → has_significant_impairment=true
+
+“I feel sad a lot but I still go to school and hang out with my friends.” → has_significant_impairment=false
+
+“I was really upset yesterday but today I feel a bit better and went to school like normal.” → has_significant_impairment=false
+
+This flag indicates that the difficulty seems to be seriously affecting daily life; it is not a clinical score or diagnosis.
+
 ---
 
 ## Final Instruction to the Classifier
@@ -855,7 +919,7 @@ When classifying an input:
 
 1. Read the full input carefully.
 2. Assign exactly one G1 LOV based on broad topic.
-3. Assign all clearly applicable G2 LOVs based on framing, intent, and risk.
+3. Assign exactly one primary G2 LOV based on framing, intent, and risk, using the priority and tie‑break rules in this spec.
 4. Do not invent labels.
 5. Do not omit clearly expressed labels.
 6. Do not over-label weakly implied categories.

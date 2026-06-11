@@ -66,6 +66,12 @@ def main() -> None:
         help="Rebuild the canonical dataset from current raw files and continue training from the latest compatible checkpoint.",
     )
     parser.add_argument(
+        "--incremental-source",
+        type=Path,
+        default=None,
+        help="Train only rows from this source CSV using existing model weights and label vocab.",
+    )
+    parser.add_argument(
         "--train-on-all-data",
         action="store_true",
         help="Use all canonical dataset rows for training instead of reserving dev/test splits.",
@@ -79,13 +85,17 @@ def main() -> None:
     core = resolve_core(args.core)
     model_dir = model_dir_for_core(core)
     manifest = write_manifest()
-    rebuild_dataset = bool(args.rebuild_dataset or args.continuous or _dataset_is_stale())
-    resume_training = bool(args.resume or args.continuous)
+    incremental_training = args.incremental_source is not None
+    rebuild_dataset = False if incremental_training else bool(args.rebuild_dataset or args.continuous or _dataset_is_stale())
+    resume_training = True if incremental_training else bool(args.resume or args.continuous)
     if rebuild_dataset:
         write_canonical_jsonl()
     else:
         print(f"Using existing canonical dataset: {CANONICAL_DATASET}")
-    if args.continuous:
+    if incremental_training:
+        print(f"Incremental training enabled: source={args.incremental_source}")
+        print("Only the incremental source rows will be trained; existing model weights and label vocab are reused.")
+    elif args.continuous:
         print("Continuous training enabled: rebuilding dataset from data/raw and resuming from the latest compatible checkpoint.")
     elif resume_training:
         print("Checkpoint resume enabled: existing model weights may be reused.")
@@ -95,6 +105,7 @@ def main() -> None:
         enable_training=True,
         core=core,
         model_dir=model_dir,
+        incremental_source_path=args.incremental_source,
         epochs=args.epochs,
         batch_size=args.batch_size,
         max_length=args.max_length,
@@ -133,6 +144,10 @@ def main() -> None:
     print(f"Freeze backbone: {slm_metadata.get('freeze_backbone', args.freeze_backbone)}")
     print(f"Unfreeze top layers: {slm_metadata.get('unfreeze_top_layers', args.unfreeze_top_layers)}")
     print(f"Continuous training: {args.continuous}")
+    print(f"Incremental training: {slm_metadata.get('incremental_training', incremental_training)}")
+    if slm_metadata.get("incremental_source_path"):
+        print(f"Incremental source: {slm_metadata['incremental_source_path']}")
+        print(f"Incremental rows: {slm_metadata.get('incremental_rows', 'n/a')}")
     print(f"Checkpoint every batches: {args.checkpoint_every_batches}")
     print(f"SLM training backend: {slm_metadata['training_backend']}")
     print(f"SLM resumed from existing checkpoint: {slm_metadata.get('resumed_from_existing', False)}")
