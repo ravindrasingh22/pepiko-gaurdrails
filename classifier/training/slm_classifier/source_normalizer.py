@@ -13,6 +13,7 @@ from training.slm_classifier.data_pipeline import (
     CANONICAL_SHARD_ROWS,
     DATASET_SPLITS_PATH,
     G2_VOCAB,
+    TRAINING_EXCLUDED_G2,
     FLAG_VOCAB,
     LABEL_VOCAB_PATH,
     CODEBOOK,
@@ -52,6 +53,9 @@ CANONICAL_COLUMNS = [
 ]
 
 IGNORED_LEGACY_SOURCE_FLAGS = {"has_personal_direction"}
+LEGACY_FLAG_ALIASES = {
+    "has_subsatance_use_concern": "has_substance_use_concern",
+}
 
 @dataclass
 class AuthoringRow:
@@ -143,9 +147,14 @@ def _clean_g2_values(raw: str, *, first_only: bool = False) -> list[str]:
         parts = [G2_ALIAS_MAP.get(item.strip(), item.strip()) for item in value.split(separator) if item.strip()]
     else:
         value = G2_ALIAS_MAP.get(value, value)
+        if value in TRAINING_EXCLUDED_G2:
+            raise ValueError(f"G2 LOV is excluded from training normalization: {value}")
         if value and value not in G2_VOCAB:
             raise ValueError(f"Unsupported G2 LOV in source data: {value}")
         return [value] if value else []
+    excluded = [item for item in parts if item in TRAINING_EXCLUDED_G2]
+    if excluded:
+        raise ValueError(f"G2 LOVs are excluded from training normalization: {', '.join(sorted(dict.fromkeys(excluded)))}")
     unsupported = [item for item in parts if item not in G2_VOCAB]
     if unsupported:
         raise ValueError(f"Unsupported G2 LOVs in source data: {', '.join(sorted(dict.fromkeys(unsupported)))}")
@@ -308,6 +317,10 @@ def _parse_flags(raw: str) -> dict[str, bool]:
                 raise ValueError(f"Invalid flags JSON: {exc}") from fallback_exc
     if not isinstance(payload, dict):
         raise ValueError("Flags must be a JSON object.")
+    payload = {
+        LEGACY_FLAG_ALIASES.get(str(key), str(key)): value
+        for key, value in payload.items()
+    }
     unknown = [str(key) for key in payload if str(key) not in FLAG_VOCAB and str(key) not in IGNORED_LEGACY_SOURCE_FLAGS]
     if unknown:
         raise ValueError(f"Unknown flags in source data: {', '.join(sorted(dict.fromkeys(unknown)))}")

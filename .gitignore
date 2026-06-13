@@ -17,6 +17,9 @@ classifier/data/processed/*
 !classifier/data/processed/.gitkeep
 !classifier/data/processed/piku_gl_classifier_train/
 !classifier/data/processed/piku_gl_classifier_train/*.jsonl
+classifier/data/llm-classified/big-files/
+classifier/data/synthetic/
+classifier/data/raw/normalized/
 data/raw/*
 !data/raw/.gitkeep
 data/synthetic/*

@@ -67,6 +67,31 @@ def test_source_normalizer_parses_exported_flags_without_deriving_g2(tmp_path: P
     assert "has_personal_direction" not in parsed[0]["flags"]
 
 
+def test_source_normalizer_accepts_new_codebook_flags_and_legacy_substance_typo(tmp_path: Path) -> None:
+    source_path = tmp_path / "new-flags.csv"
+    rows = [
+        ["input_text", "G1_LOV_ID", "G2_LOV_ID", "FLAGS"],
+        [
+            "I feel sick after trying a vape and I shared my address online",
+            "GENERIC",
+            "SAFETY_HAZARD",
+            "has_clinical_concern=true;has_significant_impairment=true;has_medical_concern=true;has_subsatance_use_concern=true;has_privacy_risk=true",
+        ],
+    ]
+    with source_path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerows(rows)
+
+    parsed = expand_authoring_rows(source_path)
+
+    assert parsed[0]["flags"]["has_clinical_concern"] is True
+    assert parsed[0]["flags"]["has_significant_impairment"] is True
+    assert parsed[0]["flags"]["has_medical_concern"] is True
+    assert parsed[0]["flags"]["has_substance_use_concern"] is True
+    assert parsed[0]["flags"]["has_privacy_risk"] is True
+    assert "has_subsatance_use_concern" not in parsed[0]["flags"]
+
+
 def test_source_discovery_skips_codebook_csv_and_picks_training_sheet(tmp_path: Path, monkeypatch) -> None:
     raw_dir = tmp_path / "raw"
     raw_dir.mkdir()
@@ -136,9 +161,38 @@ def test_canonical_jsonl_writes_split_and_vocab_metadata(tmp_path: Path) -> None
     vocab = json.loads(vocab_path.read_text(encoding="utf-8"))
     assert "train_ids" in splits
     assert "flags" in vocab
+    assert "UNKNOWN" not in vocab["g2"]
+    assert "has_clinical_concern" in vocab["flags"]
     assert "intent_families" in vocab
     assert "intent_phrases" in vocab
     assert "gl_columns" not in vocab
+
+
+def test_canonical_jsonl_rejects_unknown_g2_rows(tmp_path: Path, monkeypatch) -> None:
+    source_path = tmp_path / "unknown-g2.csv"
+    target_jsonl = tmp_path / "canonical.jsonl"
+    rejected_path = tmp_path / "rejected.csv"
+    rows = [
+        ["input_text", "G1_LOV_ID", "G2_LOV_ID", "FLAGS"],
+        ["Why is the sky blue?", "SCIENCE", "NEUTRAL_FACT", ""],
+        ["I cannot classify this yet", "GENERIC", "UNKNOWN", ""],
+    ]
+    with source_path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerows(rows)
+    monkeypatch.setattr("training.slm_classifier.source_normalizer.REJECTED_ROWS_CSV", rejected_path)
+
+    write_canonical_jsonl_with_metadata(source_path=source_path, target_path=target_jsonl)
+
+    parsed = [
+        json.loads(line)
+        for line in target_jsonl.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    rejected = list(csv.DictReader(rejected_path.open(encoding="utf-8", newline="")))
+    assert [row["g2"] for row in parsed] == [["NEUTRAL_FACT"]]
+    assert rejected[0]["G2"] == "UNKNOWN"
+    assert "excluded from training normalization" in rejected[0]["rejection_reason"]
 
 
 def test_canonical_jsonl_omits_legacy_gl_authoring_columns(tmp_path: Path) -> None:

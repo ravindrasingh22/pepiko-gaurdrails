@@ -11,3 +11,8 @@ flag_mappings:
   has_coercive_control: {tone: firm, action: boundary_setting, escalation: encourage_help_seeking}
   has_ambiguous_risk: {tone: cautious, action: clarify_context, escalation: none}
   has_self_harm: {tone: supportive, action: safety_check, escalation: encourage_help_seeking}
+  has_clinical_concern: {tone: supportive, action: boundary_setting, escalation: encourage_help_seeking}
+  has_significant_impairment: {tone: supportive, action: safety_check, escalation: encourage_help_seeking}
+  has_medical_concern: {tone: cautious, action: boundary_setting, escalation: encourage_help_seeking}
+  has_substance_use_concern: {tone: cautious, action: boundary_setting, escalation: encourage_help_seeking}
+  has_privacy_risk: {tone: firm, action: boundary_setting, escalation: encourage_help_seeking}

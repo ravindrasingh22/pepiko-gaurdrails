@@ -1,5 +1,5 @@
 from training.slm_classifier.codebook import CODEBOOK_CONFIG_DIR, codebook_fingerprint, parse_codebook
-from training.slm_classifier.data_pipeline import FLAG_VOCAB
+from training.slm_classifier.data_pipeline import FLAG_VOCAB, G2_VOCAB
 
 
 def test_codebook_parses_age_policy_runtime_block() -> None:
@@ -20,7 +20,19 @@ def test_codebook_drives_training_flag_vocab() -> None:
     assert FLAG_VOCAB == list(codebook.flag_mappings)
     assert codebook.flag_mappings["has_self_harm"].action == "safety_check"
     assert codebook.flag_mappings["has_self_harm"].escalation == "encourage_help_seeking"
+    assert codebook.flag_mappings["has_clinical_concern"].action == "boundary_setting"
+    assert codebook.flag_mappings["has_significant_impairment"].action == "safety_check"
+    assert codebook.flag_mappings["has_medical_concern"].escalation == "encourage_help_seeking"
+    assert codebook.flag_mappings["has_substance_use_concern"].tone == "cautious"
+    assert codebook.flag_mappings["has_privacy_risk"].tone == "firm"
     assert "has_personal_direction" not in FLAG_VOCAB
+
+
+def test_unknown_g2_is_codebook_only_not_training_vocab() -> None:
+    codebook = parse_codebook()
+
+    assert "UNKNOWN" in codebook.g2_specs
+    assert "UNKNOWN" not in G2_VOCAB
 
 
 def test_codebook_parses_block_k_modifier_tags() -> None:

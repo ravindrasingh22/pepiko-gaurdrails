@@ -23,3 +23,9 @@ gl_rules:
     uses_g1_lovs: [GENERIC, EMOTIONAL, DEATH_GRIEF, BELIEF]
     uses_g2_lovs: [VULN_EXPLOIT, GROOMING, COERCIVE_CONTROL, EMOTIONAL, BULLYING]
     special_rules: Use firm boundary_setting and encourage_help_seeking when a predicted flag maps to Block K.
+  GL-MH:
+    name: Clinical Concern Support Router
+    applies_when: has_clinical_concern = true
+    uses_g1_lovs: [Any]
+    uses_g2_lovs: [EMOTIONAL, BULLYING, COERCIVE_CONTROL, VULN_EXPLOIT, GROOMING, UNSAFE_SEXUAL_CONTENT, SELF_HARM, DEATH_GRIEF, PERSONAL_DIRECTION]
+    special_rules: Do not diagnose or imply a mental disorder. Use supportive, careful tone. If has_significant_impairment = true, gently encourage reaching out to a trusted adult, caregiver, teacher, counselor, or doctor.

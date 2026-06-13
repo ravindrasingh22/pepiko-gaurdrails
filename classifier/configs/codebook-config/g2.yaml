@@ -86,3 +86,8 @@ g2_lovs:
     definition: No special risk pattern; general question with no identified risk framing
     severity_floor: SV2
     notes_for_classifier: Fallback LOV when no other G2 applies. Response is still transformed, not raw ALLOW.
+  UNKNOWN:
+    name: Unknown
+    definition: Source label used when the authoring process could not assign a valid G2 LOV
+    severity_floor: SV2
+    notes_for_classifier: Do not train on UNKNOWN rows. Reject UNKNOWN during training normalization and relabel to the closest valid G2 LOV before inclusion.

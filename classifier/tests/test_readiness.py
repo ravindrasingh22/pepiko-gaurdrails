@@ -2,24 +2,12 @@ import csv
 import json
 from pathlib import Path
 
+from training.slm_classifier.data_pipeline import FLAG_VOCAB
 from training.slm_classifier.readiness import fix_staging_sources, promote_ready_sources, scan_staging_sources
 
 
 def _write_valid_sheet(path: Path) -> None:
-    flags = {
-        "has_ambiguous_risk": False,
-        "has_bullying_involved": False,
-        "has_coercive_control": False,
-        "has_dangerous_context": False,
-        "has_emotional_distress": False,
-        "has_grooming_involved": False,
-        "has_hate_group_language": False,
-        "has_safety_hazard": False,
-        "has_self_harm": False,
-        "has_unsafe_sexual_content": False,
-        "has_violence_possibility": False,
-        "has_vuln_exploit": False,
-    }
+    flags = {flag: False for flag in FLAG_VOCAB}
     rows = [
         ["Topic", "Question", "G1", "G2", "G2_all", "Flags"],
         ["Science", "Why is the sky blue?", "SCIENCE", "NEUTRAL_FACT", '["NEUTRAL_FACT"]', json.dumps(flags, sort_keys=True)],
@@ -147,20 +135,7 @@ def test_fix_staging_sources_rewrites_flags_and_g2_columns_in_place(tmp_path: Pa
         rows = list(csv.DictReader(handle))
     first_flags = json.loads(rows[0]["Flags"])
     second_flags = json.loads(rows[1]["Flags"])
-    assert set(first_flags.keys()) == {
-        "has_ambiguous_risk",
-        "has_bullying_involved",
-        "has_coercive_control",
-        "has_dangerous_context",
-        "has_emotional_distress",
-        "has_grooming_involved",
-        "has_hate_group_language",
-        "has_safety_hazard",
-        "has_self_harm",
-        "has_unsafe_sexual_content",
-        "has_violence_possibility",
-        "has_vuln_exploit",
-    }
+    assert set(first_flags.keys()) == set(FLAG_VOCAB)
     assert all(value is False for value in first_flags.values())
     assert rows[1]["G2"] == "EMOTIONAL"
     assert rows[1]["G2_all"] == '["EMOTIONAL"]'

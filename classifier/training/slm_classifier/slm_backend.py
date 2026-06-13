@@ -2040,8 +2040,13 @@ def build_decision_from_slm(
     if package is None:
         try:
             train_slm_classifier(model_dir=resolved_dir, core=resolved_core, enable_training=False)
-        except FileNotFoundError:
+        except (FileNotFoundError, ValueError) as exc:
             heuristic = heuristic_classifier.classify_heuristic(normalized)
+            fallback_reason = (
+                "canonical_dataset_not_available"
+                if isinstance(exc, FileNotFoundError)
+                else "canonical_dataset_not_trainable"
+            )
             return heuristic.model_copy(
                 update={
                     "classifier_metadata": {
@@ -2051,7 +2056,8 @@ def build_decision_from_slm(
                         "core_model": resolved_core or DEFAULT_CORE,
                         "rollout_mode": load_classifier_runtime_config().rollout_mode,
                         "trained": False,
-                        "fallback_reason": "canonical_dataset_not_available",
+                        "fallback_reason": fallback_reason,
+                        "fallback_error": str(exc),
                         "label_vocab_path": str(resolved_dir / "label_vocab.json"),
                         "thresholds_path": str(resolved_dir / "thresholds.json"),
                     }

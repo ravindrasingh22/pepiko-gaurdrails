@@ -138,7 +138,10 @@ def test_classified_prompt_endpoint_returns_system_prompt_with_classifier_output
     assert payload["prompt_checklist"]["passed"] is True
     assert payload["classifier_output"]["g2"]["id"]
     assert payload["classifier_output"]["g2"]["score"] == payload["classifier_output"]["g2"]["model_score"]
-    assert payload["classifier_output"]["g2"]["score_source"] == "g2_head"
+    if payload["classifier_output"]["classifier"]["trained"]:
+        assert payload["classifier_output"]["g2"]["score_source"] == "g2_head"
+    else:
+        assert payload["classifier_output"]["g2"]["score_source"] == "none"
     assert payload["classifier_output"]["usage"]["prompt_tokens"] > 0
     assert payload["classifier_output"]["usage"]["completion_tokens"] == 0
 

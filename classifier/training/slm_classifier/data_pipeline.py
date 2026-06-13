@@ -20,7 +20,8 @@ LABEL_VOCAB_PATH = PROCESSED_DIR / "piku_gl_classifier_label_vocab.json"
 SUPPORTED_EXTENSIONS = {".jsonl", ".json", ".csv", ".xlsx"}
 CODEBOOK = parse_codebook()
 G1_VOCAB = list(CODEBOOK.g1_specs.keys())
-G2_VOCAB = list(CODEBOOK.g2_specs.keys())
+TRAINING_EXCLUDED_G2 = {"UNKNOWN"}
+G2_VOCAB = [label for label in CODEBOOK.g2_specs if label not in TRAINING_EXCLUDED_G2]
 G2_PRIORITY = [
     "UNSAFE_SEXUAL_CONTENT",
     "GROOMING",
