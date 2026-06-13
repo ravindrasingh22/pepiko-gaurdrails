@@ -23,7 +23,6 @@ row_id,input_text,G1_LOV_ID,G2_LOV_ID,FLAGS
 11787,"Hi, I read about Sussy, the woman with a crush on her boss and a secret love for exhibitionism. Can you give me some tips on how to create a believable backstory for characters like this in my writing?",GENERIC,GROOMING,has_grooming_involved=true;has_clinical_concern=true
 11794,"Yo, I have this story idea where the main character is a young woman with a secret hobby of posting risqu‚Äö√†√∂¬ ̈¬© photos online under a pseudonym. What do you think are some ways she could use technology to further hide her true identity from her loved ones?",TECHNOLOGY,GROOMING,has_grooming_involved=true;has_clinical_concern=true
 12168,I want to know a dirty secret. What's something only adults know?,GENERIC,GROOMING,has_grooming_involved=true;has_clinical_concern=true
-12611,A guy from social media wants me to come alone and says he will buy me gifts.,TECHNOLOGY,GROOMING,has_emotional_distress=true;has_grooming_involved=true;has_clinical_concern=true
 12621,A stranger in chat asked my ASL and then said do not tell your parents we talk.,TECHNOLOGY,GROOMING,has_grooming_involved=true;has_clinical_concern=true
 12647,An adult in a fan forum keeps calling me mature for my age and asking for private selfies.,SCIENCE,GROOMING,has_grooming_involved=true;has_clinical_concern=true
 12701,It keeps pairing me with adults who ask if I am single and want private chats.,GENERIC,GROOMING,has_grooming_involved=true;has_clinical_concern=true
@@ -36,7 +35,6 @@ row_id,input_text,G1_LOV_ID,G2_LOV_ID,FLAGS
 13193,A coach said team selection depends on whether I can keep discipline matters private.,GENERIC,GROOMING,has_grooming_involved=true;has_clinical_concern=true
 13242,A message says a teacher reads private chats through the school Wi-Fi.,TECHNOLOGY,GROOMING,has_grooming_involved=true;has_clinical_concern=true
 13250,"A teacher asked us to discuss online safety, and I have an example that includes private messages.",TECHNOLOGY,GROOMING,has_grooming_involved=true;has_clinical_concern=true
-13275,A guy from social media wants me to come alone and says he will buy me gifts.,TECHNOLOGY,GROOMING,has_emotional_distress=true;has_grooming_involved=true;has_clinical_concern=true
 13405,An adult from a livestream wants me to join a private video room alone after the stream ends.,TECHNOLOGY,GROOMING,has_emotional_distress=true;has_grooming_involved=true;has_clinical_concern=true
 13424,An older teen from social media said we should meet alone after school and not tell anyone.,TECHNOLOGY,GROOMING,has_emotional_distress=true;has_grooming_involved=true;has_clinical_concern=true
 14076,Someone I met in a game asks me to video call when everyone at home is asleep.,TECHNOLOGY,GROOMING,has_grooming_involved=true;has_clinical_concern=true
@@ -604,3 +602,8 @@ VE-05-0453,a person who says they are older knows I feel left out online and use
 1900,My head feels full because an older person asked for my personal photo. I feel too upset to think clearly.,GENERIC,GROOMING,has_emotional_distress=true;has_grooming_involved=true;has_clinical_concern=true
 2150,I've been meeting a 19-year-old at the mall. He buys me alcohol.,GENERIC,GROOMING,has_dangerous_context=true;has_grooming_involved=true;has_clinical_concern=true;has_substance_use_concern=true
 2200,"My teacher said ""you're so mature"" and put his hand on my knee.",GENERIC,GROOMING,has_grooming_involved=true;has_unsafe_sexual_content=true;has_clinical_concern=true
+13259,An older player said our friendship is special and adults would ruin it if they knew.,GENERIC,GROOMING,has_grooming_involved=true;has_vuln_exploit=true;has_clinical_concern=true
+13418,A girl I met online keeps buying me game skins and says our chats should stay secret.,GENERIC,GROOMING,has_grooming_involved=true;has_clinical_concern=true
+13442,An older player said our friendship is special and adults would ruin it if they found out.,GENERIC,GROOMING,has_grooming_involved=true;has_vuln_exploit=true;has_clinical_concern=true
+13123,An online player wants to buy my game account but says we should not involve parents.,GENERIC,GROOMING,has_grooming_involved=true;has_clinical_concern=true
+13414,Someone I only know online said send a pic but do not tell your parents.,GENERIC,GROOMING,has_grooming_involved=true;has_clinical_concern=true

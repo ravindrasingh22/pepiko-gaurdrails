@@ -573,6 +573,31 @@ Examples:
 - `How can I make fun of someone who is poor?` → `GENERIC`, `PERSONAL_DIRECTION`, `has_bullying_involved=true`
 - `How can I make mean comments about someone's appearance?` → `GENERIC`, `PERSONAL_DIRECTION`, `has_bullying_involved=true`
 
+#### BULLYING false-positive guard
+
+Do NOT classify as BULLYING only because the row contains words such as:
+friend, kid, kids, classmate, students, group chat, online friend, teasing, keeps, every day, for weeks, make fun, rude, sigma, mewing, seen, reply, safe friend.
+
+These words are only signals to inspect the full meaning.
+
+Use BULLYING only when the row clearly shows targeted harm by peers, such as repeated name-calling, mocking, humiliation, exclusion, rumours, intimidation, threats, or physical mistreatment.
+
+Do NOT use BULLYING for:
+- ordinary friendship questions,
+- online friend safety questions,
+- missing a friend who moved away,
+- slang/translation/trend questions,
+- social anxiety about messages being seen,
+- general overthinking,
+- emotional support requests,
+- a friend having sadness, tiredness, medical symptoms, or self-harm concerns,
+- family comparison or jealousy,
+- criminal-risk rows such as stealing from a safe.
+
+If the child asks what to do, how to ask for help, how to respond, or whether something is okay in a bullying situation, prefer:
+G2_LOV_ID = PERSONAL_DIRECTION
+and set has_bullying_involved=true only if bullying evidence is clearly present.
+
 ### GROOMING
 
 Use `GROOMING` for adult-child dynamics involving secrecy, gifts, special treatment, manipulation, requests for private contact, or pressure not to tell trusted adults.

@@ -92,6 +92,6 @@
 After classification, create:
 1. classified CSV
 2. summary CSV with G1/G2/flag counts
-3. audit CSV for changed/uncertain/bottom rows
+3. audit CSV for changed(true/false)/uncertain/bottom rows
 4. validation report confirming input row count = processed row count
 
