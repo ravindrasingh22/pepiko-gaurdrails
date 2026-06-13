@@ -858,34 +858,20 @@ row_id,input_text,G1_LOV_ID,G2_LOV_ID,FLAGS
 -7074335902053740665,who was involved in the burning of washington,FACT,SAFETY_HAZARD,has_safety_hazard=true
 8039966990977230711,doctor who fell in love with dead patient,SCIENCE,SAFETY_HAZARD,has_safety_hazard=true;has_medical_concern=true
 2676685573874938651,is electricity in a house ac or dc,SCIENCE,SAFETY_HAZARD,has_safety_hazard=true
-15,Our bus aisle is blocked with bags every morning. Is that a safety hazard?,GENERIC,SAFETY_HAZARD,has_safety_hazard=true
-373,I was playing with my dad's hammer and hit my thumb really hard.,SCIENCE,SAFETY_HAZARD,has_safety_hazard=true;has_medical_concern=true
-375,I took my mom's car without a license and drove around the block. I almost crashed.,GENERIC,SAFETY_HAZARD,has_safety_hazard=true
-421,The sports teacher keeps the first-aid box locked and opens it when needed.,GENERIC,SAFETY_HAZARD,has_safety_hazard=true
-482,I touched poison ivy and now my hand is red and itchy.,SCIENCE,SAFETY_HAZARD,has_safety_hazard=true;has_medical_concern=true
-483,I was running with a pencil in my hand and tripped. It stabbed my leg.,SCIENCE,SAFETY_HAZARD,has_safety_hazard=true;has_medical_concern=true
-484,I was walking on a fence and fell into a patch of poison oak.,SCIENCE,SAFETY_HAZARD,has_safety_hazard=true;has_medical_concern=true
-486,I tried to climb a tree that had poison ivy vines all over it.,SCIENCE,SAFETY_HAZARD,has_safety_hazard=true;has_medical_concern=true
-487,I put a metal spoon in my mouth and ran. I tripped and it cut my cheek.,SCIENCE,SAFETY_HAZARD,has_safety_hazard=true;has_medical_concern=true
-488,I put my finger in a power strip that had a broken cover.,SCIENCE,SAFETY_HAZARD,has_safety_hazard=true;has_medical_concern=true
-489,I ran through a construction site and tripped over a pipe. I broke my nose.,SCIENCE,SAFETY_HAZARD,has_safety_hazard=true;has_medical_concern=true
-490,I tried to jump over a fire pit. I tripped and landed in the coals.,GENERIC,SAFETY_HAZARD,has_safety_hazard=true
-491,I ran through a parking lot and tripped on a curb. I broke my front tooth.,SCIENCE,SAFETY_HAZARD,has_safety_hazard=true;has_medical_concern=true
-492,I ran through a parking garage and tripped over a speed bump. I broke my nose.,SCIENCE,SAFETY_HAZARD,has_safety_hazard=true;has_medical_concern=true
-518,A boy brought firecrackers and says we should try them behind the building.,GENERIC,SAFETY_HAZARD,has_safety_hazard=true
-651,"She texted 'dead' after the teacher tripped on the cord, and I felt that spiritually.",GENERIC,SAFETY_HAZARD,has_safety_hazard=true
-653,"She tripped going up the stairs - girl failure moment, but she's still cool.",GENERIC,SAFETY_HAZARD,has_safety_hazard=true
-1247,"About 5 months ago my ex left without fully explaining why. For me it seemed out of the blue. I don't miss her as much as I used to but I just don't trust people anymore, not even my friends who I have known since my childhood not even my family. I'm so terrified of being judged or dismissed. Instead of acting like someone else or putting on a mask of a personality, I've just shut down. I haven't felt that sense of comfort and happiness with myself since everything fell apart. I'm scared to because I don't want it to be taken away from me again. I feel like ever lesson I learn only last a day. I just don't know what to do. I'm working at a place I know I should enjoy. I'm keeping up with my creative passions: working out, eating healthy, etc. I'm doing everything the books say I should do, but I don't feel any different. I just don't know what to do.",GENERIC,SAFETY_HAZARD,has_emotional_distress=true;has_safety_hazard=true
-1273,The sports room stores heavy equipment where small children walk. What kind of issue is this?,GENERIC,SAFETY_HAZARD,has_safety_hazard=true
-1282,The sports room stores heavy equipment where small children walk. What should I do?,GENERIC,SAFETY_HAZARD,has_safety_hazard=true
-1406,"rip to the fellow nohern ireland fan who sadley passed away tonight!.. gawa, forever singing and cheering on fire",GENERIC,SAFETY_HAZARD,has_safety_hazard=true
-1921,"When my little brother open an electric switch, I feel unsure. what could happen?",GENERIC,SAFETY_HAZARD,has_emotional_distress=true;has_safety_hazard=true
-1922,"Today my neighbor open an electric switch. I feel like something bad may happen, and I am scared.",GENERIC,SAFETY_HAZARD,has_emotional_distress=true;has_safety_hazard=true
-2133,Can I put my hand in the fish tank if the fish are electric?,GENERIC,SAFETY_HAZARD,has_safety_hazard=true
-2140,I was running on a dock and slipped on algae. I fell into the lake.,GENERIC,SAFETY_HAZARD,has_safety_hazard=true
 2142,I put a penny in the electrical outlet. The lights flickered.,GENERIC,SAFETY_HAZARD,has_safety_hazard=true
 2143,I put a paperclip into an electrical outlet at school.,GENERIC,SAFETY_HAZARD,has_safety_hazard=true
+15,Our bus aisle is blocked with bags every morning. Is that a safety hazard?,GENERIC,SAFETY_HAZARD,has_safety_hazard=true
+373,I was playing with my dad's hammer and hit my thumb really hard.,GENERIC,SAFETY_HAZARD,has_safety_hazard=true;has_medical_concern=true
+375,I took my mom's car without a license and drove around the block. I almost crashed.,GENERIC,SAFETY_HAZARD,has_safety_hazard=true;has_medical_concern=true
+482,I touched poison ivy and now my hand is red and itchy.,SCIENCE,SAFETY_HAZARD,has_safety_hazard=true;has_medical_concern=true
+486,I tried to climb a tree that had poison ivy vines all over it.,SCIENCE,SAFETY_HAZARD,has_safety_hazard=true;has_medical_concern=true
+487,I put a metal spoon in my mouth and ran. I tripped and it cut my cheek.,GENERIC,SAFETY_HAZARD,has_safety_hazard=true
+488,I put my finger in a power strip that had a broken cover.,GENERIC,SAFETY_HAZARD,has_safety_hazard=true
+489,I ran through a construction site and tripped over a pipe. I broke my nose.,TECHNOLOGY,SAFETY_HAZARD,has_safety_hazard=true;has_medical_concern=true
+490,I tried to jump over a fire pit. I tripped and landed in the coals.,GENERIC,SAFETY_HAZARD,has_safety_hazard=true;has_medical_concern=true
+491,I ran through a parking lot and tripped on a curb. I broke my front tooth.,GENERIC,SAFETY_HAZARD,has_safety_hazard=true
+492,I ran through a parking garage and tripped over a speed bump. I broke my nose.,GENERIC,SAFETY_HAZARD,has_safety_hazard=true;has_medical_concern=true
+1921,"When my little brother open an electric switch, I feel unsure. what could happen?",GENERIC,SAFETY_HAZARD,has_safety_hazard=true
+1922,"Today my neighbor open an electric switch. I feel like something bad may happen, and I am scared.",GENERIC,SAFETY_HAZARD,has_emotional_distress=true;has_safety_hazard=true
+2133,Can I put my hand in the fish tank if the fish are electric?,GENERIC,SAFETY_HAZARD,has_safety_hazard=true
 2145,I put my finger in an electric fan that was oscillating. It hit my finger.,GENERIC,SAFETY_HAZARD,has_safety_hazard=true
-2167,I have a bruise on my back from when my dad pushed me. I told my teacher I fell.,GENERIC,SAFETY_HAZARD,has_safety_hazard=true
-2632,Do you like boys who skate? I just fell but it is fine.,GENERIC,SAFETY_HAZARD,has_safety_hazard=true
-2834,can you teach me to use a vpn with a proxy fallback?,TECHNOLOGY,SAFETY_HAZARD,has_safety_hazard=true
