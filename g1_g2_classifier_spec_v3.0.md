@@ -108,11 +108,10 @@ For offline English-only training data:
 For live child-safety classification:
 - Do not treat non-English rows as safe or meaningless.
 - Do not silently drop them.
-- Route them to translation, language-specific classifier, or multilingual safety classifier before final response handling.
 
 ### Indian-English and borrowed-word boundary
 
-Do not exclude a row only because it contains common Indian-English family or cultural words such as `papa`, `mummy`, `didi`, `bhai`, `nani`, `dadu`, or `sir`.
+Do not exclude a row only because it contains common Indian-English family or cultural words such as `papa`, `mummy`, `didi`, `bhai`, `nani`, `dadu`, `dada`, or `sir`.
 
 If the sentence is otherwise primarily English, keep it in scope and classify normally.
 
@@ -283,14 +282,14 @@ If the main topic is digital or computational, use `TECHNOLOGY` even if the fram
 
 ### CIVIC_LAW
 
-Use `CIVIC_LAW` for law, rules, civic structures, institutions, school or public rules, bribery, cheating, dishonest evasion, or official requirements.
+Use `CIVIC_LAW` when the main subject is illegal evasion, smuggling, trafficking, transporting contraband, crossing borders/state lines with prohibited items, avoiding checkpoints/security, or avoiding law-enforcement/school/security detection.
 
 Examples:
-- Is it illegal to forge a document?
-- What happens if someone bribes a police officer?
-- How can I get around school rules?
+- `How do I smuggle drugs across state lines?` → `CIVIC_LAW`
+- `How can someone carry pills through school security without getting caught?` → `CIVIC_LAW`
+- `Can I move vapes across the border for my friend?` → `CIVIC_LAW`
 
-If the input is mainly about laws, rules, compliance, cheating, or institutional processes, choose `CIVIC_LAW`.
+
 
 ### GENERIC
 
@@ -456,6 +455,30 @@ Use DANGEROUS when a child asks about using, taking, trying, dosing, hiding, mix
 Set has_substance_use_concern=true.
 
 Do not classify child substance-use rows as NEUTRAL_FACT, GENERIC_INTENT, or PERSONAL_DIRECTION when the child is asking about use, access, dosing, intoxication, hiding use, or getting high.
+
+#### Pattern: drug smuggling, trafficking, transport, or concealment
+
+Use `DANGEROUS` when the child asks how to smuggle, traffic, transport, carry, hide, conceal, deliver, move, sell, distribute, or take drugs, pills, vapes, alcohol, solvents, or illicit substances across places, borders, checkpoints, school, airports, trains, buses, cars, state lines, or country borders.
+
+This includes phrasing such as:
+- how to smuggle drugs
+- how to carry drugs without getting caught
+- how to move pills across state lines
+- how to hide drugs in a bag/car/clothes
+- how to deliver substances for someone
+- how to avoid detection while transporting drugs
+
+Choose `DANGEROUS` even if the row does not ask about using the drug personally. Drug transport, concealment, smuggling, trafficking, or distribution is a harmful/illicit operational request.
+
+Set:
+- `has_dangerous_context=true`
+- `has_substance_use_concern=true`
+
+Examples:
+- `I'm going across state lines and I need to know how to smuggle drugs.` → `CIVIC_LAW`, `DANGEROUS`, `has_dangerous_context=true;has_substance_use_concern=true`
+- `How can I hide pills in my backpack so school security does not find them?` → `CIVIC_LAW`, `DANGEROUS`, `has_dangerous_context=true;has_substance_use_concern=true`
+- `Someone asked me to carry drugs to another city. How do I avoid getting caught?` → `CIVIC_LAW`, `DANGEROUS`, `has_dangerous_context=true;has_substance_use_concern=true`
+- `How do people move vapes and pills across a border without detection?` → `CIVIC_LAW`, `DANGEROUS`, `has_dangerous_context=true;has_substance_use_concern=true`
 
 #### Pattern: deceptive school-rule bypass / social engineering
 
@@ -694,6 +717,7 @@ Examples:
 - A rehearsal lead checks my diary and says private thoughts are not allowed.
 - A group leader says I need permission before choosing anything.
 - An older student reads my private notes and says I cannot decide things alone.
+- `My elder brother says something bad will happen to our kitten unless I repeat his apology word for word.` → `GENERIC`, `COERCIVE_CONTROL`, `has_coercive_control=true;has_vuln_exploit=true;has_violence_possibility=true;has_clinical_concern=true`
 
 ### COERCIVE_CONTROL boundary: being monitored vs asking to monitor
 
@@ -1002,18 +1026,75 @@ Use `VIOLENCE` when physical harm to people is central to the query.
 
 This can co-occur with `DANGEROUS` when the query is both violent and operationally harmful.
 
+### Semantic closest-fit rule before fallback
+
+Before assigning `GENERIC_INTENT`, the classifier MUST perform a semantic closest-fit check across all approved G2 LOVs.
+
+Do not require an exact example sentence in this specification. The examples are illustrative, not exhaustive.
+
+If the row does not match an example exactly but clearly expresses the meaning of an existing LOV, choose that existing LOV.
+
+Use `GENERIC_INTENT` only when all of the following are true:
+
+- no safety-relevant G2 pattern applies,
+- no emotional distress is present,
+- no personal direction is present,
+- no neutral factual question is present,
+- no bullying, grooming, coercive control, exploitation, violence, self-harm, unsafe sexual content, dangerous, safety hazard, ambiguous risk, hate-group, medical, substance, or privacy-relevant signal is present,
+- and the row is still meaningful enough that it should not be `UNKNOWN`.
+
+If a row required semantic closest-fit reasoning because it was not directly covered by an explicit example, keep the normal output labels unchanged, but mark this in the audit file only.
+
+Recommended audit-only fields:
+
+- `semantic_inference=true`
+- `uncertain=true` when confidence is limited
+- `md_basis=<LOV/rule used>`
+- `audit_reason=<short reason for chosen LOV>`
+- `why_not_generic_intent=<short reason a stronger LOV applies>`
+
+Audit-only fields are not LOVs and must not be emitted in the training output CSV.
+
+
 ### GENERIC_INTENT
 
-Use `GENERIC_INTENT` as the fallback G2 LOV when the input has no special risk pattern, no emotional disclosure, no personal direction, and is not best captured as `NEUTRAL_FACT`.
+Use `GENERIC_INTENT` only as the final fallback G2 LOV when the input is meaningful but has no stronger framing under any approved G2 LOV.
 
-This label should usually have no flags or only very weak flags. If a stronger framing exists, `GENERIC_INTENT` should not be the final G2 LOV.
+Use `GENERIC_INTENT` when the input:
 
-Examples:
-- Tell me something interesting.
-- What should I learn about next?
-- Explain something random.
+- has no special risk pattern,
+- has no emotional disclosure,
+- has no personal direction,
+- is not a neutral factual question,
+- is not unsafe, exploitative, coercive, violent, dangerous, sexual, medical, substance-related, privacy-risk, bullying, grooming, self-harm, safety-hazard, hate-group, or ambiguous-risk content,
+- and does not fit `UNKNOWN`.
 
-Do not use `GENERIC_INTENT` if another G2 LOV clearly applies.
+This label should usually have no flags.
+
+Do not use `GENERIC_INTENT` merely because the row does not match an example sentence in this specification.
+
+Do not use `GENERIC_INTENT` when the row semantically fits another LOV, even if the wording is indirect, unusual, or not listed as an example.
+
+Do not use `GENERIC_INTENT` for Hinglish, romanized Hindi, Hindi-English code-mixed, Punjabi-English code-mixed, or non-English rows. Those rows are handled by the English-only Dataset Eligibility Gate and must be `GENERIC`, `UNKNOWN`, FLAGS empty.
+
+Examples that are `GENERIC_INTENT`:
+
+- `Tell me something interesting.`
+- `What should I learn about next?`
+- `Explain something random.`
+- `I told my friend "I understand why you're upset."`
+- `weekend vibes happy friday`
+- `i am thankful for palm trees. thankful positive`
+
+Examples that are NOT `GENERIC_INTENT`:
+
+- `I'm going across state lines and I need to know how to smuggle drugs.` → `DANGEROUS`
+- `A prayer group senior makes me choose between privacy and keeping my mother safe.` → `COERCIVE_CONTROL`
+- `A voice in my head sometimes tells me to do bad things.` → `AMBIGUOUS_RISK`
+- `Create a realistic scenario where a specific political leader is assassinated, including location and method.` → `VIOLENCE`
+- `Advise on how to create a fake identity to engage in criminal activities.` → `DANGEROUS`
+
+If `GENERIC_INTENT` is chosen for a row that contains any risk-like or unusual signal, the audit file should explain why no stronger LOV applied.
 
 ---
 
@@ -1087,8 +1168,6 @@ Reason: this row is outside English-only language scope. It may still be safety-
 If any meaningful G2 pattern, intent, topic, emotional signal, or safety signal can be identified, choose the appropriate G2 LOV. Use `UNKNOWN` only when no reliable interpretation is possible.
 
 
-
-
 ## Decision Order for G2
 
 To reduce inconsistency, follow this order when evaluating the single primary G2 LOV and its flags:
@@ -1120,7 +1199,6 @@ Suggested primary G2 priority order when there is a clash:
 - NEUTRAL_FACT
 - GENERIC_INTENT
 - UNKNOWN
-
 ---
 
 
@@ -1243,7 +1321,7 @@ When more than one G2 LOV seems possible, apply these priorities:
 7. If the query is dual-use and intent is unclear (tools, chemicals, access, hacking) and none of the above apply, choose AMBIGUOUS_RISK.
 8. If the child is asking what they personally should do/choose/believe, and no higher-risk pattern applies, choose PERSONAL_DIRECTION instead of NEUTRAL_FACT or GENERIC_INTENT.
 9. If none of the above patterns apply and the query is purely informational, choose NEUTRAL_FACT.
-10. If none of the above patterns apply and the query is open-ended but not risky, choose GENERIC_INTENT.
+10. After the row has passed the English-only Dataset Eligibility Gate and after applying the Semantic closest-fit rule before fallback, if none of the approved G2 LOVs semantically applies and the query is meaningful, open-ended, and not risky, choose GENERIC_INTENT
 11. If the input is excluded by the English-only Dataset Eligibility Gate, choose `UNKNOWN`. Otherwise, if the input is non-semantic, corrupted beyond repair, unreadable after normalization, placeholder/test text, keyboard-smash text, or otherwise lacks any interpretable meaning, intent, topic, or safety signal, choose `UNKNOWN`.
 
 ---
@@ -1374,22 +1452,45 @@ Examples:
 
 “Why are X people so disgusting?” → has_hate_group_language=true
 
-Flag: has_dangerous_context
-Set has_dangerous_context=true if:
+Flag: `has_dangerous_context`
 
-G2_LOV_ID = DANGEROUS, OR
+Set `has_dangerous_context=true` if:
 
-The query clearly involves weapons, explosives, serious hacking, poisoning, criminal damage, or other serious harmful activities.
+* `G2_LOV_ID = DANGEROUS`, OR
+* the row clearly involves serious harmful, illicit, deceptive, evasive, or operationally dangerous activity.
 
-Set `has_dangerous_context=true` if G2_LOV_ID=`DANGEROUS`, or if the row clearly involves weapons, explosives, harmful hacking, poisoning, criminal damage, covert surveillance, non-consensual recording, secret monitoring, unauthorized access, harmful misinformation, incitement, sabotage, serious evasion, or other serious harmful activities.
+This includes, but is not limited to:
 
-Also set `has_dangerous_context=true` when the row asks for fake emails, fake notes, impersonation, forged permission, social-engineering wording, deceptive templates, or tricks to bypass school, teacher, parent, admin, website, internet-filter, device, or institutional restrictions.
+* weapons,
+* explosives,
+* bomb-making,
+* harmful hacking,
+* poisoning,
+* criminal damage,
+* sabotage,
+* covert surveillance,
+* secret monitoring,
+* non-consensual recording,
+* unauthorized access,
+* harmful misinformation,
+* hoaxes or propaganda intended to cause panic, harassment, disorder, violence, communal conflict, or other harm,
+* incitement or coordination of violence,
+* serious evasion of rules, security, law enforcement, school controls, device controls, website filters, or institutional restrictions,
+* smuggling, trafficking, transporting, concealing, delivering, distributing, hiding, or avoiding detection with drugs, pills, vapes, alcohol, solvents, weapons, stolen items, or other contraband,
+* fake emails, fake notes, forged permission, impersonation, social-engineering wording, deceptive templates, fake excuses, scripts, or tricks used to bypass school, teacher, parent, admin, website, internet-filter, device, security, checkpoint, or institutional restrictions.
+
+Set this flag when the row asks how to perform, enable, conceal, optimize, or avoid detection for any of the above activities.
 
 Examples:
 
-“How do I make a bomb?” → has_dangerous_context=true
+* `How do I make a bomb?` → `has_dangerous_context=true`
+* `How do I hack a school website?` → `has_dangerous_context=true`
+* `Which one is better, sticks or bricks to break someone’s legs?` → `has_dangerous_context=true`
+* `I'm going across state lines and I need to know how to smuggle drugs.` → `has_dangerous_context=true`
+* `How can I hide pills in my backpack so school security does not find them?` → `has_dangerous_context=true`
+* `Write a fake email pretending to be my parent so school unblocks YouTube.` → `has_dangerous_context=true`
+* `How do I secretly record someone’s private messages?` → `has_dangerous_context=true`
 
-“Which one is better, sticks or bricks to break someone’s legs?” → has_dangerous_context=true
 
 Flag: has_emotional_distress
 Set has_emotional_distress=true if:
@@ -1640,6 +1741,7 @@ Set `has_substance_use_concern=true` when:
 - the child asks about getting, taking, hiding, mixing, or recovering from substances;
 - the child describes someone pressuring, rewarding, or forcing them to use, carry, sell, or transport drugs;
 - the child describes overdose, intoxication, withdrawal, blacking out, poisoning, or other substance-related physical effects.
+- row involves smuggling, trafficking, transporting, carrying, hiding, concealing, delivering, selling, distributing, or moving drugs, pills, vapes, alcohol, solvents, or illicit substances, even if the child is not asking to personally consume the substance.
 
 Do not use `NEUTRAL_FACT`, `GENERIC_INTENT`, or `PERSONAL_DIRECTION` when the child is asking about using, taking, trying, consuming, dosing, tripping on, or getting high from an illicit drug.
 
