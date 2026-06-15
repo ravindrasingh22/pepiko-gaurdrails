@@ -59,7 +59,7 @@
     - Choose G2 using the priority order in the spec when in doubt.
     - FLAGS are supporting signals derived from the Flag Extraction Rules and do NOT change the primary G2.
     - Follow Non-deterministic for every row (no heuristic logic based)
-    - Process this file in batches of 3000 rows maximum. Do not infer the label from the filename or old labels. Classify each row independently using the full input_text and the attached v3.0 spec only. After each batch, run a validation pass for G1/G2/FLAGS consistency and export a downloadable CSV part.
+    - Process this file in batches of 2000 rows maximum. Do not infer the label from the filename or old labels. Classify each row independently using the full input_text and the attached v3.0 spec only. After each batch, run a validation pass for G1/G2/FLAGS consistency and export a downloadable CSV part.
     - Do not return the full processed data in chat. Create downloadable files instead, and verify that the combined row count across all output files matches the original input row count.
     - Process the uploaded file in batches without skipping any rows and export the results into multiple smaller CSV files with clear filenames such as {old_name}_output_part_001.csv, {old_name}_output_part_002.csv. Also provide a summary showing total input rows, total processed rows, number of output files, rows per file, and any skipped/error rows.
     - Before final export, re-check rows containing words like hide, fake, bypass, VPN, fire, disable, screenshot, private, parent, school, adult, older, secret, hurt, kill, drug, vape, sex, body, die, disappear, and classify by full meaning, not keyword alone.
