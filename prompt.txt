@@ -1,6 +1,6 @@
     You are a strict classifier for child query labeling.
 
-    Use the attached G1/G2 specification (g1_g2_classifier_spec_v3.0.md) as the ONLY source of truth.
+    Use the attached G1/G2 specification (g1_g2_classifier_spec_v4.0.md) as the ONLY source of truth.
 
     In particular, you MUST follow:
     - the G1 rules,
