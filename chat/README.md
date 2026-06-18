@@ -66,9 +66,65 @@ The chat service calls the validator after LLM generation. Configure validator U
 export CHAT_VALIDATOR_URL=http://localhost:4002/api/v1/guardrail/validate
 ```
 
-## Endpoint
+## Endpoints
 
 - `POST /api/v1/guardrail/chat`
+- `POST /api/v1/guardrail/text-normalization`
+
+### Text normalization
+
+Run this before classified prompt / classifier layers when child input may contain typos, voice-to-text errors, code-mixed language, or broken encoding.
+
+Request example:
+
+```json
+{
+  "session_id": "normalize-001",
+  "child_profile": {
+    "age": 10,
+    "age_group": "9-10",
+    "language": "hinglish"
+  },
+  "message": "y do pepol prae? mummy se kaise chupaun?",
+  "system_prompt": "You are a text-normalization assistant for a child-safe AI product. Return only valid JSON with normalized_message and repairs.",
+  "recent_context": [
+    "Child: I got bad marks today."
+  ],
+  "input_mode": "voice",
+  "temperature": 0.0,
+  "max_tokens": 256
+}
+```
+
+Response example:
+
+```json
+{
+  "session_id": "normalize-001",
+  "child_profile": {
+    "age": 10,
+    "age_group": "9-10",
+    "language": "hinglish"
+  },
+  "raw_message": "y do pepol prae? mummy se kaise chupaun?",
+  "preprocessed_message": "y do pepol prae? mummy se kaise chupaun?",
+  "normalized_message": "Why do people pray? How do I hide it from mummy?",
+  "repairs": [
+    "fixed spelling",
+    "clarified Hinglish phrase"
+  ],
+  "model": "gemma:2b-instruct",
+  "usage": {
+    "prompt_tokens": 140,
+    "completion_tokens": 24,
+    "total_tokens": 164
+  }
+}
+```
+
+`system_prompt` is optional. When provided, the service uses it as the normalization system prompt; otherwise it falls back to the built-in default. The normalization prompt preserves meaning and does not censor content. Safety classification happens in later guardrail stages.
+
+### Chat
 
 Standard request shape:
 

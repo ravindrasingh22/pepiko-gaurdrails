@@ -8,6 +8,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel, Field, model_validator
 
 from app.model_service import DEFAULT_CHAT_MODEL, generate_chat_response
+from app.text_normalization_service import normalize_child_message
 from app.validator_client import validate_assistant_response
 
 router = APIRouter()
@@ -65,6 +66,35 @@ class ValidatorUsage(BaseModel):
     total_tokens: int
 
 
+class TextNormalizationRequest(BaseModel):
+    message: str = Field(min_length=1, max_length=4000)
+    system_prompt: str | None = Field(default=None, min_length=1)
+    session_id: str = Field(min_length=1)
+    child_profile: dict[str, Any] = Field(default_factory=dict)
+    recent_context: list[str] = Field(default_factory=list)
+    input_mode: Literal["text", "voice"] | None = None
+    model: str | None = None
+    temperature: float = Field(default=0.0, ge=0.0, le=1.0)
+    max_tokens: int = Field(default=256, ge=1, le=512)
+
+
+class TextNormalizationUsage(BaseModel):
+    prompt_tokens: int
+    completion_tokens: int
+    total_tokens: int
+
+
+class TextNormalizationResponse(BaseModel):
+    session_id: str
+    child_profile: dict[str, Any]
+    raw_message: str
+    preprocessed_message: str
+    normalized_message: str
+    repairs: list[str]
+    model: str
+    usage: TextNormalizationUsage
+
+
 class ChatResponse(BaseModel):
     id: str
     object: Literal["chat.completion"] = "chat.completion"
@@ -91,6 +121,35 @@ def _messages_from_legacy(payload: ChatRequest) -> list[dict[str, str]]:
     if payload.message:
         messages.append({"role": "user", "content": payload.message})
     return messages
+
+
+@router.post("/guardrail/text-normalization", response_model=TextNormalizationResponse)
+async def text_normalization(payload: TextNormalizationRequest) -> TextNormalizationResponse:
+    result = normalize_child_message(
+        raw_message=payload.message,
+        child_profile=dict(payload.child_profile),
+        recent_context=list(payload.recent_context),
+        input_mode=payload.input_mode,
+        system_prompt=payload.system_prompt,
+        model_name=payload.model,
+        temperature=payload.temperature,
+        max_tokens=payload.max_tokens,
+    )
+    usage = result.get("usage", {})
+    return TextNormalizationResponse(
+        session_id=payload.session_id,
+        child_profile=dict(payload.child_profile),
+        raw_message=str(result.get("raw_message", payload.message)),
+        preprocessed_message=str(result.get("preprocessed_message", payload.message)),
+        normalized_message=str(result.get("normalized_message", payload.message)),
+        repairs=[str(item) for item in result.get("repairs", [])],
+        model=str(result.get("model_name", payload.model or DEFAULT_CHAT_MODEL)),
+        usage=TextNormalizationUsage(
+            prompt_tokens=int(usage.get("prompt_tokens", 0)),
+            completion_tokens=int(usage.get("completion_tokens", 0)),
+            total_tokens=int(usage.get("total_tokens", 0)),
+        ),
+    )
 
 
 @router.post("/guardrail/chat", response_model=ChatResponse)

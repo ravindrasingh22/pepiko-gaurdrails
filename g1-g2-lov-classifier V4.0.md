@@ -208,7 +208,7 @@ Example:
 ---
 
 ## PERSONAL_DIRECTION
-**Definition:** Child asks/is asking what they personally should do, choose, say, believe, decide, or how to handle a personal/social situation.
+**Definition:** Child asks/is asking what they personally should do, choose, say, believe or decide
 **Severity Floor:** SV2
 
 **Families:**
@@ -237,12 +237,6 @@ Example:
 - which should I choose
 - tell me what I should do
 - is this the right choice for me
-- should I tell my teacher
-- should I tell my parents
-- how do I talk to my crush
-- how can I say hi without making it weird
-- am I dateable
-- do you think people like me
 
 **Examples:**
 - Should I tell my mom I lied?
@@ -455,7 +449,7 @@ Example:
 - rumour_spreading
 - physical_peer_mistreatment
 - intimidation_or_threats_by_peers
-- appearance_or_status_mocking
+- repeated_appearance_or_status_mocking
 - online_peer_harassment
 - deliberate_public_embarrassment
 
@@ -632,7 +626,6 @@ Use UNSAFE_SEXUAL_CONTENT only when the image request is explicitly sexualized, 
 - control_of_communication
 - control_of_school_or_medical_help
 - humiliation_by_authority
-- forced_obedience_to_protect_someone_or_something
 
 **Phrases:**
 - I get hurt if I don't obey
@@ -643,15 +636,12 @@ Use UNSAFE_SEXUAL_CONTENT only when the image request is explicitly sexualized, 
 - they always check my phone and messages
 - I am not allowed to go out or see friends
 - they decide everything for me and I can't say no
-- I am scared of my father
 - I am not allowed to talk to anyone
 - they always check my phone
-- they read my diary
 - private thoughts are not allowed
 - I need permission before choosing anything
 - they lock me in my room
 - they will punish me if I tell
-- I cannot talk to anyone
 - they take my phone when I ask for help
 - I am scared to tell because they will hurt me
 
@@ -700,7 +690,6 @@ Use UNSAFE_SEXUAL_CONTENT only when the image request is explicitly sexualized, 
 - they know my secret and use it against me
 - they will tell everyone if I say no
 - they threaten to share screenshots
-- only they understand me
 - they say I cannot leave the group
 - promise not to tell a trusted adult
 - do not tell a teacher about the rules
@@ -841,9 +830,7 @@ Use `DANGEROUS` when the child asks how to perform, optimize, choose, compare, c
 - weapon_use_or_weapon_choice
 - threat_or_attack
 - gang_or_criminal_violence
-- terrorism_or_war_violence
 - animal_harm
-- retaliation_or_hit_back
 - breaking_body_parts
 - violent_punishment
 - violent_scenario_request
@@ -916,7 +903,6 @@ Do not use GENERIC_INTENT when the row is factual, personal advice, emotional, u
 - okay thanks
 - make it more interesting
 - tell me a random idea
-- I understand why you are upset
 
 **Examples:**
 - Give me a fun idea for recess.
@@ -951,9 +937,6 @@ Do not use `AMBIGUOUS_RISK` for harmless vague input, pure gibberish, or rows wh
 - chemicals_or_reactions
 - access_or_bypass_requests
 - system_failure_or_disruption
-- vague_self_harm_thoughts
-- emotional_vague_safety_risk
-- early_eating_or_body_image_risk
 - unclear_object_or_place_risk
 - incomplete_with_risk_signal
 
@@ -1245,4 +1228,3 @@ The classifier must not output unapproved labels, hidden reasoning, or free-form
 ## Final Instruction to the Labeling LLM
 output only CSV rows using exactly these columns:
 row_id,input_text,G1_LOV_ID,G2_LOV_ID,FLAGS
-
