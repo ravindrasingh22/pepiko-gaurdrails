@@ -925,32 +925,32 @@ Now respond to the child's message using the attached guidelines.
 
 ## 11. Error Handling, Special Cases, And Overlaps
 
-This section documents the expected corner cases and how the implementation should handle them. The guiding rule is conservative determinism: when model output is incomplete, conflicting, or ambiguous, preserve safety, keep the gate packet auditable, and avoid inventing policy outside the codebook config.
+This section documents the expected corner cases and how the implementation should handle them. The model uses fixed configured vocabularies for G1, G2, flags, intent families, and intent phrases. Runtime corner cases are therefore about low score, uncertainty, overlap, and conflict resolution, not arbitrary unknown labels.
 
-### 11.1 Missing Or Unknown G1
+### 11.1 Low-Score G1
 
 Case:
 
-- classifier does not return a G1
-- classifier returns a G1 not present in `g1.yaml`
-- G1 confidence is unusably low
+- G1 confidence is low
+- G1 nature is unclear from the input
+- G1 top score is too close to the next candidate to be trusted
 
 Expected handling:
 
-- use `GENERIC` as the fallback G1
+- assign `GENERIC` as the runtime G1
 - preserve raw classifier metadata for audit
-- do not let missing G1 lower G3 severity
-- do not derive G2 from fallback G1
+- do not let low-score G1 lower G3 severity
+- do not derive or change G2 from fallback `GENERIC`
 
 Rationale:
 
-G1 is nature/topic. It can support prompt context, but it must not override G2 risk framing.
+G1 is nature/topic. The G1 label set is fixed by `g1.yaml`; the runtime problem is low confidence, not unknown labels. G1 can support prompt context, but it must not override G2 risk framing.
 
-### 11.2 Low-Confidence Or Unclear G2
+### 11.2 Low-Confidence G2
 
 Case:
 
-- classifier G2 score is low or uncertain
+- classifier G2 score is low 
 - classifier cannot confidently assign a concrete G2 framing
 - classifier output is unclear enough that the next safe action requires more context
 
@@ -964,7 +964,7 @@ Expected handling:
 
 Rationale:
 
-G2 is single-label in runtime. There is no supporting G2 evidence path. When the classifier cannot confidently identify the framing, the correct behavior is not to fall back to `GENERIC_INTENT`; it is to assign `AMBIGUOUS_RISK` so the prompt can ask a clarifying question and avoid unsafe assumptions.
+G2 is single-label in runtime and its label set is fixed by `g2.yaml`. There is no supporting G2 evidence path. When the classifier cannot confidently identify the framing, the correct behavior is not to fall back to `GENERIC_INTENT`; it is to assign `AMBIGUOUS_RISK` so the prompt can ask a clarifying question and avoid unsafe assumptions.
 
 ### 11.3 Single Selected G2 And Intent Support Signals
 
@@ -1023,6 +1023,8 @@ Expected handling:
 - use `GL-T1`, `GL-A1`, and `GL-E1` to resolve priority
 - keep all active flags in prompt/audit metadata even if one action wins
 
+The flag vocabulary is fixed by `flag-mappings.yaml` and the training/runtime classifier heads. Runtime should not create new flag ids. If the model score is low for a flag, the flag is simply inactive unless thresholding or fallback logic explicitly activates it.
+
 Common overlaps:
 
 - `has_grooming_involved` + `has_vuln_exploit`: safety check plus trusted-adult help-seeking.
@@ -1051,6 +1053,17 @@ Priority summary:
 - escalation: any `encourage_help_seeking` means help-seeking is active
 
 If a conflict is not covered by GL rules, choose the stricter safety-preserving behavior and record the ambiguity for audit.
+
+"Stricter safety-preserving behavior" is selected by this deterministic fallback ladder:
+
+1. prefer `safety_check` over all other actions when immediate safety could be involved
+2. prefer `boundary_setting` over `normal_advice` when harmful, exploitative, sexual, violent, illegal, or self-harm content could be involved
+3. prefer `clarify_context` over answering when intent is ambiguous or dual-use
+4. prefer `encourage_help_seeking` when grooming, self-harm, coercive control, exploitation, medical concern, or significant impairment could be involved
+5. suppress curiosity invites for `SV3` or when continued exploration could increase risk
+6. choose the higher severity-preserving path when two instructions conflict
+
+This fallback ladder must not invent new labels or flags. It only resolves how to apply already active configured signals.
 
 ### 11.7 SV3 Curiosity Invite Suppression
 
@@ -1147,21 +1160,24 @@ Overlap examples:
 - `has_harmful_comparison` + `has_loaded_premise`: do not choose between biased options.
 - `has_negative_language` + `has_emotional_distress`: transform self-insults into feelings without repeating the insult.
 
-### 11.12 Missing Prompt Dictionary Entries
+### 11.12 Prompt Dictionary Completeness Errors
 
 Case:
 
-- active flag has no matching `flag_prompts` entry
-- active tone/action/escalation variable is missing from `runtime_variables`
-- attached guideline id is missing from `gl-rules.yml`
+- a configured flag from the fixed flag vocabulary has no matching `flag_prompts` entry
+- a configured tone/action/escalation value has no matching `runtime_variables` entry
+- a configured guideline id has no matching `gl-rules.yml` entry
 
 Expected handling:
 
+- treat this as a codebook configuration completeness error
+- catch it in startup/config validation where possible
+- do not create a new runtime flag or variable
 - do not fail open
-- use a conservative generic safety phrase for the missing variable
-- include the missing key in audit/debug metadata
+- if runtime must continue, use a conservative generic safety phrase for the missing variable
+- include the missing configured key in audit/debug metadata
 - keep G3/G4 decisions intact
-- prefer stricter behavior if the missing value affects safety
+- prefer stricter behavior if the missing configured value affects safety
 
 Example fallback text:
 
@@ -1216,19 +1232,21 @@ Age policy calibrates style and depth only. It must not downgrade risk.
 
 Case:
 
-- trained SLM weights are unavailable
-- tokenizer/model load fails
 - G1/G2 confidence is low
 - thresholding filters out useful labels
+- trained SLM weights are unavailable
+- tokenizer/model load fails
 
 Expected handling:
 
-- use configured fallback classifier behavior where available
-- preserve fallback reason and error metadata
-- if confidence is low and risk signals exist, call safety fallback/verification stages where configured
+- low-score G1 should assign runtime `G1 = GENERIC`
+- low-score or unclear G2 should assign runtime `G2 = AMBIGUOUS_RISK`
+- `AMBIGUOUS_RISK` enables the prompt builder to ask a clarifying question instead of guessing
+- backend failure is different from low confidence; use configured fallback classifier behavior where available
+- preserve confidence scores, fallback reason, and error metadata
 - never treat backend failure as an allow signal
 
-Runtime may use shadow or fallback classifiers for comparison. Disagreements should be logged and inspected, not silently merged unless explicit promotion logic exists.
+Runtime may use shadow or fallback classifiers for comparison. Disagreements should be logged and inspected, not silently merged. If no valid classifier output can be produced, fail closed rather than assigning an allow path.
 
 ### 11.16 Prompt Compliance Failure
 
