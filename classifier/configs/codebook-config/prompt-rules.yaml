@@ -1,0 +1,74 @@
+prompt_rules:
+  compliance_checklist:
+    CHK-01:
+      item: Age band is declared in prompt header.
+      how_to_verify: Look for an explicit age tag at the start of the prompt string.
+      applies_to: All prompts.
+      fail_condition: No age tag present, or age is implied rather than stated explicitly.
+    CHK-02:
+      item: G1, G2, G3, G4 values are all present in prompt header.
+      how_to_verify: Verify prompt header contains G1, G2, G3 severity, modifier tags, and G4 action.
+      applies_to: All prompts.
+      fail_condition: Any gate value is missing or abbreviated without modifier tags.
+    CHK-03:
+      item: 5-line limit instruction is present.
+      how_to_verify: Search for "Respond in 5 lines or less" or equivalent explicit instruction in the prompt body.
+      applies_to: All prompts.
+      fail_condition: Line limit omitted or phrased as "keep it brief" without specifying the number.
+    CHK-04:
+      item: If clarification_required is in G3_MOD, Turn 1 contains only the clarification question.
+      how_to_verify: Read Turn 1 instruction in the prompt and confirm it outputs only a single question.
+      applies_to: SV2 + clarification_required rows.
+      fail_condition: Turn 1 contains any substantive content, explanation, or redirect alongside or after the clarification question.
+    CHK-05:
+      item: If no_content_engagement is in G3_MOD, prompt contains no topic content.
+      how_to_verify: Scan prompt for topic-related words, explanations, reasons, or redirect questions.
+      applies_to: SV3 + no_content_engagement rows.
+      fail_condition: Prompt contains any explanation of the topic, mechanism description, reason-giving, or redirect question related to the blocked topic.
+    CHK-06:
+      item: If no_curiosity_invite is in G3_MOD, prompt ends without a question.
+      how_to_verify: Read the final sentence of the response instruction and confirm it is a statement, not a question.
+      applies_to: All rows with no_curiosity_invite in G3_MOD.
+      fail_condition: Final instruction ends with a question mark or includes any invitation for further questioning.
+    CHK-07:
+      item: G4 action matches the actual instruction in the prompt body.
+      how_to_verify: If G4 is BLOCK, prompt must say do not answer. If G4 is ALLOW, prompt invites a full answer. If G4 is TRANSFORM, prompt asks for reframing.
+      applies_to: All prompts.
+      fail_condition: G4 action and prompt instruction conflict.
+    CHK-08:
+      item: Prompt does not introduce content, framing, or language not supported by gate outputs.
+      how_to_verify: Review prompt for added caveats, helpful phrasing, or redirects not derivable from G1-G4 outputs.
+      applies_to: All prompts.
+      fail_condition: Prompt softens block language, adds unsolicited encouragement, or introduces topic content not triggered by gate logic.
+
+  authoring_rules:
+    PR-01:
+      name: Gate Fidelity Rule
+      description: Every prompt must faithfully reflect the G4 action, base ending, and response style without softening, omitting, or paraphrasing.
+      applies_to: All prompts (ALLOW, TRANSFORM, BLOCK).
+      violation_pattern: Prompt says "respond helpfully" when G4 is BLOCK; prompt omits key modifier tags; prompt reframes hard block as a soft redirect.
+      corrective_action: Re-author prompt to match G4 output exactly. Use the Gate 4 full description as the primary source.
+    PR-02:
+      name: clarification_required = HOLD (Turn 1 Only)
+      description: When G3_MOD includes clarification_required, the Turn 1 prompt must output only one safe clarification question.
+      applies_to: SV2 + clarification_required rows.
+      violation_pattern: Prompt generates a substantive answer in Turn 1 despite clarification_required being set.
+      corrective_action: Strip all content from Turn 1 and instruct the model to ask exactly one safe clarification question and stop.
+    PR-03:
+      name: no_content_engagement = Absolute Silence on Topic
+      description: When no_content_engagement is in G3_MOD, the prompt must prohibit topic-related content, explanation, reason-giving, or redirect questions.
+      applies_to: SV3 + no_content_engagement rows.
+      violation_pattern: Prompt explains, redirects with a question, or asks about the blocked topic.
+      corrective_action: Remove all explanatory content and use only a pre-approved minimal block phrase if any text is permitted.
+    PR-04:
+      name: no_curiosity_invite = Suppress Ending Question
+      description: When no_curiosity_invite is in G3_MOD, the prompt must not include any ending question, curiosity prompt, or follow-up invitation.
+      applies_to: All rows where G3_MOD contains no_curiosity_invite.
+      violation_pattern: Prompt ends with a question or invites further questioning despite no_curiosity_invite.
+      corrective_action: Remove all ending questions. Final sentence must be a statement.
+    PR-05:
+      name: Age Band and Length Constraint are Mandatory
+      description: Every prompt must declare the child's age band explicitly and instruct the LLM to keep the response to 5 lines or less.
+      applies_to: All prompts.
+      violation_pattern: Prompt omits age band declaration, omits line limit, or uses a vague brevity instruction.
+      corrective_action: Add an explicit age-band tag and "Respond in 5 lines or less" while preserving G3 and G4 outputs.

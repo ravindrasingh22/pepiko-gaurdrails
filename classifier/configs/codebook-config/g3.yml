@@ -1,0 +1,23 @@
+g3:
+  block: "BLOCK C - G3 - GATE 3: SEVERITY COMPUTATION | GATE ENGINE"
+  gate: G3
+  name: Severity Computation
+  owner: GATE_ENGINE
+  question: "Given the single selected G2 LOV, what is the combined severity and modifier set for this query?"
+  note: Gate 3 does not add new LOVs. It aggregates the outputs from all matched G2 LOVs into a single G3 packet (G3_SV + G3_MOD) which Gate 4 then reads.
+  elements:
+    G3_SV:
+      name: Severity
+      computation_rule: G3_SV = Severity Floor of that G2
+      example: If GROOMING is fired in G2, then G3_SV = SV3
+      help_text: "A single SV3 LOV makes the whole query SV3, regardless of other LOVs. Severity only goes up, never down."
+    G3_MOD:
+      name: Modifier Packet
+      computation_rule: Active flags
+      example: "If EMOTIONAL emits [empathetic_tone] and BULLYING emits [empathetic_tone, no_curiosity_invite], G3_MOD = {empathetic_tone, no_curiosity_invite}"
+      help_text: "All unique modifier tags from all matched LOVs are collected. All modifier tags emitted from flags are collected as well. No priority within the set. Order does not matter."
+    G3_FORWARD:
+      name: Output to Gate 4
+      computation_rule: "Forward the pair: (G3_SV, G3_MOD) as the instruction packet"
+      example: "G3 packet: SV3 + {no_curiosity_invite, zero_engagement, safeguarding_concern}"
+      help_text: Gate 4 reads G3_SV to pick the base action, then reads G3_MOD to adjust response style, tone, ending, and escalation.

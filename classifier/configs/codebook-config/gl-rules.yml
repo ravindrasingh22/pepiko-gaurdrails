@@ -1,0 +1,21 @@
+gl_rules:
+  GL-T1:
+    name: TonePriorityGL
+    applies_when: More than one tone candidate is active, or tone must be resolved from active flags
+    special_rules: Resolve final tone by priority; if any firm, use firm; else if any cautious, use cautious; else use supportive. Apply that tone consistently throughout the response.
+  GL-A1:
+    name: ActionPriorityGL
+    applies_when: More than one action candidate is active, or action must be resolved from active flags
+    special_rules: Resolve final action by priority; if any safety_check, use safety_check; else if any boundary_setting, use boundary_setting; else if any clarify_context, use clarify_context; else if any de_escalate, use de_escalate; else use normal_advice. If safety_check is chosen, it must come first in the response.
+  GL-E1:
+    name: EscalationPriorityGL
+    applies_when: One or more escalation candidates are active
+    special_rules: If any active flag requires encourage_help_seeking, direct the child to a trusted adult, parent, caregiver, teacher, counselor, doctor, or helpline. Otherwise do not escalate.
+  GL-CU1:
+    name: Clinical Concern Support Router
+    applies_when: Always
+    special_rules: If Severity=SV3, use no_curiosity_invite. Otherwise use curiosity_invite. Do not end high-risk responses with exploratory or open-ended engagement.
+  GL-O1:
+    name: ResponseOrderGL
+    applies_when: Always
+    special_rules: "Response order rule: if safety_check is active, ask the safety question first; then apply tone consistently; then perform the selected action; if encourage_help_seeking is active, end with a clear direction to contact a trusted adult."

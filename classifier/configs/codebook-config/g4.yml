@@ -1,0 +1,24 @@
+g4:
+  block: "BLOCK D - G4 - Gate 4: FINAL ACTION + RESPONSE STYLE | GATE ENGINE"
+  gate: G4
+  name: Final Action + Response Style
+  owner: GATE_ENGINE
+  question: "Given G3_SV and G3_MOD, what action should the response take and how should it be styled?"
+  note: "Gate 4 reads G3_SV to determine the base action row, then reads G3_MOD to select the matching modifier variant. Both must be checked. Outputs are Action + Base Ending + Style."
+  how_to_read:
+    - Find the row matching G3_SV.
+    - If G3_MOD contains special modifiers, find the matching variant row.
+    - Apply the Action, Ending, and Style columns. Ending overrides apply on top of Base Ending.
+  severity_actions:
+    SV0:
+      action: ALLOW
+      full_description: Answer directly and fully. Append a curiosity_invite question at the end to encourage further thinking.
+    SV1:
+      action: TRANSFORM
+      full_description: Reframe the question, remove any ranking or loaded framing. Respond with balanced perspective. Append curiosity_invite.
+    SV2:
+      action: TRANSFORM
+      full_description: Transform with balanced framing. May offer alternative perspectives. No hard block.
+    SV3:
+      action: BLOCK
+      full_description: "Block the response. Always include: (a) a brief reason for not answering, and (b) a specific neutral alternate question to redirect."
