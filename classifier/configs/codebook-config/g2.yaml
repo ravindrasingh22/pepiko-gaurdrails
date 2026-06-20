@@ -11,19 +11,19 @@ g2_lovs:
     notes_for_classifier: "Look for: should I, which should I choose, what do I do, tell me what is right, decide for me."
   HATE_GROUP:
     name: Hate Group Language
-    definition: Uses derogatory or sweeping negative language about a protected group
+    definition: Protected-group hostility, including slurs, dehumanising language, identity-based insults, sweeping derogatory generalisations, exclusionary claims, discriminatory framing, or violent/eliminationist language targeting people because of religion, race, ethnicity, caste, nationality, immigration status, gender, sex, sexual orientation, disability, or similar protected identity traits.
     severity_floor: SV3
     associated_flags: [has_hate_group_language]
     notes_for_classifier: Look for slurs, derogatory generalisations, calls to exclude or harm groups. Do not use HATE_GROUP when the target is an individual or non-protected group.
   DANGEROUS:
     name: Dangerous Activity
-    definition: Requests or references illicit, harmful, or dangerous activities
+    definition: Clear request, endorsement, planning, or operational exploration of illicit, deceptive, evasive, malicious, or seriously harmful activity, including crime, harmful hacking, sabotage, drug misuse, poisoning, weaponisation, bypassing security, hiding wrongdoing, or practical instructions that would make harm or rule-breaking easier.
     severity_floor: SV3
     associated_flags: [has_dangerous_context]
     notes_for_classifier: "Look for: how to make weapons, how to make bombs or explosives, illegal drug-making, hacking or bypassing security, how to hurt others or cause serious damage, how to avoid getting caught. Do not consider claimed educational purpose if the operational harm is still present. Do not use DANGEROUS for ordinary experiments or curiosity where there is no clear illicit or harmful intent."
   EMOTIONAL:
     name: Emotional Distress
-    definition: Child appears distressed, upset, scared, or in emotional pain
+    definition: Child expresses sadness, fear, loneliness, distress, hopelessness, anxiety, shame, rejection, or emotional pain without clearer self-harm or another higher-priority safety pattern
     severity_floor: SV2
     associated_flags: [has_emotional_distress]
     notes_for_classifier: "Look for: crying, scared, alone, nobody cares, I feel sad, I want to run away, stomach pain from anxiety, not wanting to go to school, shame, rejection sensitivity. Do not use EMOTIONAL when there is clear self-harm language."
@@ -35,49 +35,49 @@ g2_lovs:
     notes_for_classifier: "Look for: kids are mean to me, left out, being called names, someone hurt me. Do not use BULLYING for self-directed 'I want to kill myself / kms'."
   GROOMING:
     name: Grooming
-    definition: Adult-child dynamic involving secrecy, gifts, hidden chats, or meeting requests
+    definition: Adult-child dynamic involving secrecy, gifts, or "don't tell anyone" requests, platform migration, delete chat, send streaks, or livestream requests
     severity_floor: SV3
     associated_flags: [has_grooming_involved]
     notes_for_classifier: "Look for: an adult told me to keep a secret, someone gave me gifts and wants to meet, platform migration, delete chat, send streaks, livestream requests, and you're mature for your age."
   UNSAFE_SEXUAL_CONTENT:
     name: Unsafe Sexual Content
-    definition: Unsafe, age-inappropriate, or exploitative sexual content
+    definition: Child references explicit sexual content, sexual acts, unsolicited obscene material, blackmail over images, or sexualised body parts in ways that are unsafe, age-inappropriate, or exploitative
     severity_floor: SV3
     associated_flags: [has_unsafe_sexual_content]
     notes_for_classifier: "Look for: exposure to pornography or adult sexual content, sexual talk with adults, requests to share private pictures, sexual dares, or pressure to do sexual things. Do not consider neutral anatomy or puberty education here."
   COERCIVE_CONTROL:
     name: Coercive Control
-    definition: Child is subject to threatening, fear-based, or controlling authority
+    definition: Child is subject to threatening, fear-based, or controlling authority, surveillance apps, forced isolation from school/friends, forced labor/crime, or forced religious/social compliance with threat
     severity_floor: SV3
     associated_flags: [has_coercive_control]
     notes_for_classifier: "Look for: I'm scared of an adult, I get hurt if I don't, they control everything. Do not consider ordinary parental rules."
   VULN_EXPLOIT:
     name: Vulnerability Exploitation
-    definition: Child is deliberately targeted or manipulated based on vulnerability
+    definition: Child is being deliberately targeted or manipulated based on vulnerability, loneliness exploitation, disability exploitation, language barrier, poverty, immigration status, caste/reputation threat, or financial sextortion
     severity_floor: SV3
     associated_flags: [has_vuln_exploit]
     notes_for_classifier: "Look for: someone knows my secret and uses it, someone says only they understand me."
   SELF_HARM:
     name: Self-Harm / Suicidal Ideation
-    definition: Child references self-harm, self-injury, body harm, or suicidal thoughts
+    definition: Child references self-harm, self-injury, body-harm, or suicidal thoughts
     severity_floor: SV3
     associated_flags: [has_self_harm]
     notes_for_classifier: "Look for: hurt myself, don't want to be here, want to die, no reason to live. High priority. Do not use SELF_HARM when the child is only sad or stressed but does not mention wanting to die, disappear, or hurt themselves."
   AMBIGUOUS_RISK:
     name: Ambiguous / Dual-Use Risk
-    definition: Query has benign and harmful interpretations; clarification is needed
+    definition: Query has benign and harmful interpretations; clarification needed before acting
     severity_floor: SV2
     associated_flags: [has_ambiguous_risk]
     notes_for_classifier: "Look for: questions about knives, tools, chemicals, access to restricted areas, hacking, or causing failures where the child's intent is unclear."
   SAFETY_HAZARD:
     name: Safety Hazard Framing
-    definition: Question about unsafe experiments, accidents, or hazardous interactions
+    definition: Question about unsafe physical experiments, accidents, or hazardous real-world interactions, medicine misuse, household chemicals, or risky food/allergy
     severity_floor: SV2
     associated_flags: [has_dangerous_context]
     notes_for_classifier: "Look for: dangerous, risk, hazard, safety, accident, shock, fire, burn, explosion, chemicals, poison, electricity, short circuit, medicine misuse, household chemicals, risky food or allergy. Do not use SAFETY_HAZARD when the child explicitly wants to cause major harm or serious illegal damage."
   VIOLENCE:
     name: Violence Framing
-    definition: Question framed around interpersonal harm, threats, weapons, crime, war, or extremism
+    definition: Question framed around interpersonal harm, threats, weapons, crime, war, or extremism, threats received by child, domestic violence witnessed, school fight planning, animal harm, or coercion to hurt others
     severity_floor: SV3
     associated_flags: [has_violence_possibility]
     notes_for_classifier: "Look for: kill, fight, weapon, bomb, terrorist, hurt someone, attack, war crimes, gang violence, school fights, animal harm."

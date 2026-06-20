@@ -16,3 +16,6 @@ flag_mappings:
   has_medical_concern: {tone: cautious, action: boundary_setting, escalation: encourage_help_seeking}
   has_substance_use_concern: {tone: cautious, action: boundary_setting, escalation: encourage_help_seeking}
   has_privacy_risk: {tone: firm, action: boundary_setting, escalation: encourage_help_seeking}
+  has_loaded_premise: {tone: cautious, action: boundary_setting, escalation: none}
+  has_harmful_comparison: {tone: firm, action: boundary_setting, escalation: none}
+  has_negative_language: {tone: supportive, action: boundary_setting, escalation: none}
