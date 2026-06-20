@@ -9,7 +9,7 @@ from urllib import request
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-LOCAL_CHAT_MODEL = "gemma:2b-instruct"
+LOCAL_CHAT_MODEL = "mistral"
 LOCAL_TRANSFORMERS_CHAT_MODEL = "google/gemma-2-2b-it"
 PRODUCTION_CHAT_MODEL = "google/gemma-4-12B"
 DEFAULT_CHAT_MODEL = LOCAL_CHAT_MODEL
