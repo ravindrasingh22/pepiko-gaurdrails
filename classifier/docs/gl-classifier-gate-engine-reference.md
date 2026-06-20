@@ -922,7 +922,346 @@ GUIDELINE APPLICATION RULES:
 Now respond to the child's message using the attached guidelines.
 ```
 
-## 11. Implementation Invariants
+## 11. Error Handling, Special Cases, And Overlaps
+
+This section documents the expected corner cases and how the implementation should handle them. The guiding rule is conservative determinism: when model output is incomplete, conflicting, or ambiguous, preserve safety, keep the gate packet auditable, and avoid inventing policy outside the codebook config.
+
+### 11.1 Missing Or Unknown G1
+
+Case:
+
+- classifier does not return a G1
+- classifier returns a G1 not present in `g1.yaml`
+- G1 confidence is unusably low
+
+Expected handling:
+
+- use `GENERIC` as the fallback G1
+- preserve raw classifier metadata for audit
+- do not let missing G1 lower G3 severity
+- do not derive G2 from fallback G1
+
+Rationale:
+
+G1 is nature/topic. It can support prompt context, but it must not override G2 risk framing.
+
+### 11.2 Missing Or Unknown G2
+
+Case:
+
+- classifier does not return a usable G2
+- classifier returns `UNKNOWN`
+- classifier returns a label not present in `g2.yaml`
+
+Expected handling:
+
+- do not train on `UNKNOWN`
+- in runtime, fall back to `GENERIC_INTENT` only when no stronger valid G2 is available
+- if risk flags are active while G2 is missing or generic, treat this as ambiguous and route through conservative safety handling
+- keep unknown/raw label metadata for audit
+
+Rationale:
+
+G2 is the main risk-framing signal. If it is missing but flags indicate risk, the system should not silently allow.
+
+### 11.3 Primary G2 Versus Supporting G2 Evidence
+
+Case:
+
+- SLM predicts a primary G2
+- additional G2 scores are close to threshold
+- intent families/phrases support a different G2
+
+Expected handling:
+
+- deterministic gates read the selected runtime G2 path
+- supporting G2 scores remain metadata unless promoted by explicit runtime logic
+- intent families and phrases may explain why a G2 was selected, but they do not directly compute G3/G4
+- if the selected G2 is low confidence and supporting evidence is risky, route to clarification or safety fallback rather than raw allow
+
+Overlap examples:
+
+- `PERSONAL_DIRECTION` plus `GROOMING`: severity should follow the higher-risk G2 if both are active in the runtime packet.
+- `EMOTIONAL` plus `SELF_HARM`: self-harm dominates severity if self-harm is active.
+- `NEUTRAL_FACT` plus risky flags: do not treat the query as pure neutral fact.
+
+### 11.4 Flag And G2 Disagreement
+
+Case:
+
+- G2 looks low risk but flags are risky
+- G2 is risky but no matching flag is active
+- flags suggest multiple behaviors such as `safety_check` and `boundary_setting`
+
+Expected handling:
+
+- G3 severity comes from G2 severity floor
+- G3 modifier candidates come from active flags via `flag-mappings.yaml`
+- do not discard flags only because G2 appears neutral
+- do not create new flags from G2 inside the gate engine
+- preserve disagreement in audit metadata
+
+Examples:
+
+- `G2 = NEUTRAL_FACT`, `has_ambiguous_risk = true`: clarify before giving operational detail.
+- `G2 = GROOMING`, no grooming flag: keep SV3 severity from G2, but attached prompt variables may be less specific unless a relevant flag prompt is available.
+- `has_self_harm` and `has_medical_concern`: `GL-A1` selects `safety_check`; `GL-E1` selects help-seeking.
+
+### 11.5 Multiple Active Flags
+
+Case:
+
+- several independent flags are active for one input
+
+Expected handling:
+
+- map every active flag through `flag-mappings.yaml`
+- collect all tone/action/escalation candidates
+- use `GL-T1`, `GL-A1`, and `GL-E1` to resolve priority
+- keep all active flags in prompt/audit metadata even if one action wins
+
+Common overlaps:
+
+- `has_grooming_involved` + `has_vuln_exploit`: safety check plus trusted-adult help-seeking.
+- `has_emotional_distress` + `has_self_harm`: supportive tone plus safety check and escalation.
+- `has_hate_group_language` + `has_loaded_premise`: firm boundary plus premise correction.
+- `has_harmful_comparison` + `has_negative_language`: refuse ranking and avoid repeating abusive wording.
+- `has_safety_hazard` + `has_dangerous_context`: safety check may come first, but harmful operational instructions must still be refused.
+
+### 11.6 Tone/Action/Escalation Conflicts
+
+Case:
+
+- mapped flags produce conflicting tone, action, or escalation candidates
+
+Expected handling:
+
+- tone conflict resolves through `GL-T1`
+- action conflict resolves through `GL-A1`
+- escalation conflict resolves through `GL-E1`
+- response order resolves through `GL-O1`
+
+Priority summary:
+
+- tone: `firm` > `cautious` > `supportive`
+- action: `safety_check` > `boundary_setting` > `clarify_context` > `de_escalate` > `normal_advice`
+- escalation: any `encourage_help_seeking` means help-seeking is active
+
+If a conflict is not covered by GL rules, choose the stricter safety-preserving behavior and record the ambiguity for audit.
+
+### 11.7 SV3 Curiosity Invite Suppression
+
+Case:
+
+- G3 severity is `SV3`
+- prompt builder would otherwise add an ending question or curiosity invite
+
+Expected handling:
+
+- apply `GL-CU1`
+- suppress curiosity invite
+- do not end high-risk responses with exploratory/open-ended engagement
+
+This applies even when the user asks a sensitive question conversationally.
+
+### 11.8 Ambiguous Risk And Clarification
+
+Case:
+
+- `G2 = AMBIGUOUS_RISK`
+- `has_ambiguous_risk` is active
+- intent is incomplete or dual-use
+
+Expected handling:
+
+- use `clarify_context`
+- ask exactly one brief clarifying question
+- do not provide a full answer before clarification
+- do not include operational details in the clarification turn
+
+Examples:
+
+- "How do I unlock this?"
+- "What happens if I mix these?"
+- "How do I get into the room?"
+
+### 11.9 Clinical, Medical, And Self-Harm Overlap
+
+Case:
+
+- medical or clinical concern appears with emotional distress or self-harm
+
+Expected handling:
+
+- do not diagnose
+- do not provide medical dosing, treatment, or self-treatment instructions
+- if `has_self_harm` is active, safety check and help-seeking take priority
+- if `has_medical_concern` is active without immediate safety concern, use cautious tone and direct to an adult or doctor
+
+Overlap examples:
+
+- `has_clinical_concern` + `has_significant_impairment`: supportive tone, serious-help framing.
+- `has_medical_concern` + `has_self_harm`: safety check and trusted adult direction.
+- `has_emotional_distress` without self-harm: supportive normal advice, no diagnosis.
+
+### 11.10 Grooming, Exploitation, And Coercive Control Overlap
+
+Case:
+
+- grooming, vulnerability exploitation, coercive control, unsafe sexual content, or privacy risk co-occur
+
+Expected handling:
+
+- prioritize immediate safety check if `safety_check` is active
+- use firm/supportive wording without blaming the child
+- activate help-seeking if any mapped flag requires it
+- avoid asking the child to investigate or confront the other person
+- avoid detailed discussion of exploitative content
+
+Overlap examples:
+
+- `has_grooming_involved` + `has_privacy_risk`: do not share information; tell a trusted adult.
+- `has_vuln_exploit` + `has_coercive_control`: boundary plus trusted-adult support.
+- `has_unsafe_sexual_content` + `has_grooming_involved`: safety check and help-seeking dominate.
+
+### 11.11 Hate, Loaded Premise, Harmful Comparison, And Negative Language
+
+Case:
+
+- the child uses biased framing, abusive language, or asks the assistant to rank harmful options
+
+Expected handling:
+
+- do not repeat slurs or abusive language in the assistant's own voice
+- do not rank groups or harmful options
+- correct the unfair premise before any safe factual explanation
+- use de-escalation when mapped by flags
+- keep the tone firm without shaming the child
+
+Overlap examples:
+
+- `has_hate_group_language` + `has_loaded_premise`: refuse hateful framing and neutralize premise.
+- `has_harmful_comparison` + `has_loaded_premise`: do not choose between biased options.
+- `has_negative_language` + `has_emotional_distress`: transform self-insults into feelings without repeating the insult.
+
+### 11.12 Missing Prompt Dictionary Entries
+
+Case:
+
+- active flag has no matching `flag_prompts` entry
+- active tone/action/escalation variable is missing from `runtime_variables`
+- attached guideline id is missing from `gl-rules.yml`
+
+Expected handling:
+
+- do not fail open
+- use a conservative generic safety phrase for the missing variable
+- include the missing key in audit/debug metadata
+- keep G3/G4 decisions intact
+- prefer stricter behavior if the missing value affects safety
+
+Example fallback text:
+
+```text
+Use safe, age-appropriate wording. Do not provide harmful instructions. If safety may be involved, ask a brief safety question or direct the child to a trusted adult.
+```
+
+### 11.13 Missing Or Invalid Master Template
+
+Case:
+
+- `prompt-master-template.yml` is missing
+- required placeholders are absent
+- template rendering fails
+
+Expected handling:
+
+- fail closed before model generation
+- return structured error metadata to the caller or audit log
+- do not call the LLM with a partially rendered prompt
+- optionally use a minimal hardcoded emergency fallback prompt only if the product contract explicitly allows it
+
+Required placeholders:
+
+- `{age}`
+- `{flag_context}`
+- `{tone_instructions}`
+- `{action_instructions}`
+- `{escalation_instructions}`
+- `{flag_guidance}`
+- `{flag_example_start}`
+- `{attached_guidelines}`
+
+### 11.14 Age Band Missing Or Out Of Range
+
+Case:
+
+- child profile has no age
+- age band cannot be resolved
+- age is outside configured `age-policy.yaml`
+
+Expected handling:
+
+- use a conservative default age band
+- keep language simple and age-safe
+- do not change G3/G4 severity because of age
+- record the fallback age-band decision
+
+Age policy calibrates style and depth only. It must not downgrade risk.
+
+### 11.15 Classifier Confidence And Backend Fallback
+
+Case:
+
+- trained SLM weights are unavailable
+- tokenizer/model load fails
+- G1/G2 confidence is low
+- thresholding filters out useful labels
+
+Expected handling:
+
+- use configured fallback classifier behavior where available
+- preserve fallback reason and error metadata
+- if confidence is low and risk signals exist, call safety fallback/verification stages where configured
+- never treat backend failure as an allow signal
+
+Runtime may use shadow or fallback classifiers for comparison. Disagreements should be logged and inspected, not silently merged unless explicit promotion logic exists.
+
+### 11.16 Prompt Compliance Failure
+
+Case:
+
+- rendered prompt fails `prompt-rules.yaml`
+- prompt includes a forbidden curiosity invite
+- prompt includes content not supported by gate outputs
+- prompt omits safety check or help-seeking where required
+
+Expected handling:
+
+- repair deterministically if the repair is simple and codebook-supported
+- otherwise fail closed or use a safe fallback response
+- record failed checklist ids
+- do not call the LLM with a non-compliant prompt
+
+### 11.17 Audit And Debug Requirements
+
+For every non-trivial path, audit metadata should include:
+
+- raw classifier labels and scores
+- selected G1/G2
+- active flags
+- intent families and phrases
+- G3 packet
+- G4 action
+- active GL notes
+- selected prompt variables
+- final template id
+- fallback reasons, if any
+- prompt compliance result
+
+This is required to debug overlaps and to distinguish classifier mistakes from deterministic gate or prompt-builder mistakes.
+
+## 12. Implementation Invariants
 
 - Classifier predicts `G1`, `G2`, flags, intent families, and intent phrases independently.
 - `G1` is nature/topic, not risk.
