@@ -63,7 +63,7 @@ G1 is topic/nature classification. It is not the safety decision.
 
 ### G2
 
-`G2` is the type/framing of the input.
+`G2` is the single-label type/framing of the input.
 
 It answers:
 
@@ -73,7 +73,7 @@ How is the question framed? What is the intent or risk pattern of this query?
 
 Examples of G2 framing categories include `NEUTRAL_FACT`, `PERSONAL_DIRECTION`, `DANGEROUS`, `EMOTIONAL`, `GROOMING`, `SELF_HARM`, and `AMBIGUOUS_RISK`.
 
-G2 is the main safety-framing prediction. The classifier may surface a primary selected G2 and supporting G2 evidence, but deterministic gates must read the selected active G2 path from the runtime classifier output.
+G2 is the main safety-framing prediction. The classifier returns exactly one selected runtime G2. G2 is not multi-label. Intent families and intent phrases may support that selection, but there is no second or supporting G2 path in deterministic gate logic.
 
 ### Flags
 
@@ -98,7 +98,7 @@ The meaning of active flags becomes deterministic only when the gate engine read
 
 `intent_families` and `intent_phrases` are classifier support signals.
 
-They help identify better G2 predictions by providing intent-pattern evidence. They do not directly decide G3, G4, or final prompt wording.
+They help identify the selected G2 by providing intent-pattern evidence. They do not directly decide G3, G4, or final prompt wording.
 
 Runtime uses them as explanation/support metadata, not as the authoritative gate decision.
 
@@ -134,7 +134,7 @@ It answers:
 Given the single selected G2 LOV, what is the combined severity and modifier set for this query?
 ```
 
-Gate 3 does not add new LOVs. It reads the selected active G2 path, the active flags, and codebook configuration, then produces the packet that Gate 4 consumes.
+Gate 3 does not add new LOVs. It reads the single selected G2, the active flags, and codebook configuration, then produces the packet that Gate 4 consumes.
 
 Gate 3 has three elements.
 
@@ -154,12 +154,13 @@ Computation rule:
 G3_SV = Severity Floor of that G2
 ```
 
-If more than one G2 is active in the runtime packet, severity is the highest severity floor among active G2s.
+Because runtime uses exactly one selected G2, severity is the severity floor of that selected G2. If the framing is unclear or confidence is too low, the selected G2 should be `AMBIGUOUS_RISK`.
 
 Example:
 
 ```text
-If PERSONAL_DIRECTION (SV2) and GROOMING (SV3) both fire, G3_SV = SV3.
+If selected G2 is GROOMING and GROOMING has severity floor SV3, then G3_SV = SV3.
+If selected G2 confidence is too low to assign a concrete framing, selected G2 becomes AMBIGUOUS_RISK and G3_SV follows the AMBIGUOUS_RISK severity floor.
 ```
 
 Help text:
@@ -367,7 +368,7 @@ Inputs:
 
 - child age
 - selected G1
-- selected G2
+- single selected G2
 - active flags
 - `G3_SV`
 - `G3_MOD`
@@ -945,45 +946,47 @@ Rationale:
 
 G1 is nature/topic. It can support prompt context, but it must not override G2 risk framing.
 
-### 11.2 Missing Or Unknown G2
+### 11.2 Low-Confidence Or Unclear G2
 
 Case:
 
-- classifier does not return a usable G2
-- classifier returns `UNKNOWN`
-- classifier returns a label not present in `g2.yaml`
+- classifier G2 score is low or uncertain
+- classifier cannot confidently assign a concrete G2 framing
+- classifier output is unclear enough that the next safe action requires more context
 
 Expected handling:
 
-- do not train on `UNKNOWN`
-- in runtime, fall back to `GENERIC_INTENT` only when no stronger valid G2 is available
-- if risk flags are active while G2 is missing or generic, treat this as ambiguous and route through conservative safety handling
-- keep unknown/raw label metadata for audit
+- assign `AMBIGUOUS_RISK` as the runtime G2
+- compute G3 from `AMBIGUOUS_RISK`
+- map `has_ambiguous_risk` through `flag-mappings.yaml`
+- prompt builder should ask one short clarifying question before giving a full answer
+- keep low-confidence scores and raw classifier metadata for audit
 
 Rationale:
 
-G2 is the main risk-framing signal. If it is missing but flags indicate risk, the system should not silently allow.
+G2 is single-label in runtime. There is no supporting G2 evidence path. When the classifier cannot confidently identify the framing, the correct behavior is not to fall back to `GENERIC_INTENT`; it is to assign `AMBIGUOUS_RISK` so the prompt can ask a clarifying question and avoid unsafe assumptions.
 
-### 11.3 Primary G2 Versus Supporting G2 Evidence
+### 11.3 Single Selected G2 And Intent Support Signals
 
 Case:
 
-- SLM predicts a primary G2
-- additional G2 scores are close to threshold
-- intent families/phrases support a different G2
+- SLM predicts exactly one selected G2
+- intent families and intent phrases provide supporting evidence for that selected G2
+- selected G2 confidence may be low
 
 Expected handling:
 
-- deterministic gates read the selected runtime G2 path
-- supporting G2 scores remain metadata unless promoted by explicit runtime logic
-- intent families and phrases may explain why a G2 was selected, but they do not directly compute G3/G4
-- if the selected G2 is low confidence and supporting evidence is risky, route to clarification or safety fallback rather than raw allow
+- deterministic gates read exactly one selected runtime G2
+- do not aggregate alternate G2 candidates
+- do not promote a second G2 in the gate engine
+- use intent families and phrases only as support metadata for explaining the selected G2
+- if selected G2 confidence is too low or the framing remains unclear, set selected G2 to `AMBIGUOUS_RISK`
 
-Overlap examples:
+Examples:
 
-- `PERSONAL_DIRECTION` plus `GROOMING`: severity should follow the higher-risk G2 if both are active in the runtime packet.
-- `EMOTIONAL` plus `SELF_HARM`: self-harm dominates severity if self-harm is active.
-- `NEUTRAL_FACT` plus risky flags: do not treat the query as pure neutral fact.
+- selected `G2 = EMOTIONAL`, supported by `sadness_or_low_mood` and `loneliness_or_isolation`
+- selected `G2 = GROOMING`, supported by `older_person_secrecy` and `adult_gifts_or_money`
+- selected `G2 = AMBIGUOUS_RISK`, used when the model cannot confidently distinguish benign from risky framing
 
 ### 11.4 Flag And G2 Disagreement
 
@@ -1263,9 +1266,9 @@ This is required to debug overlaps and to distinguish classifier mistakes from d
 
 ## 12. Implementation Invariants
 
-- Classifier predicts `G1`, `G2`, flags, intent families, and intent phrases independently.
+- Classifier predicts `G1`, one selected `G2`, flags, intent families, and intent phrases independently.
 - `G1` is nature/topic, not risk.
-- `G2` is type/framing/risk pattern.
+- `G2` is single-label type/framing/risk pattern.
 - Flags are independent predictive signals associated with the input.
 - Intent families and phrases support G2 identification; they do not drive deterministic gates directly.
 - `G3` is deterministic and comes from `g3.yml`, `g2.yaml`, and active flag mappings.
