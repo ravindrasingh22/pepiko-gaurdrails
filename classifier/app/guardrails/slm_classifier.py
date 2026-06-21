@@ -546,19 +546,10 @@ def classify_slm(normalized: dict[str, object], core: str | None = None, thresho
     return build_decision_from_slm(normalized, core=core, threshold=threshold)
 
 
-def classify_slm_pure(normalized: dict[str, object], core: str | None = None, threshold: float = G2_ACTIVATION_THRESHOLD) -> GuardrailDecision:
-    from training.slm_classifier.slm_backend import build_decision_from_slm_pure
-
-    return build_decision_from_slm_pure(normalized, core=core, threshold=threshold)
-
-
 def classify(normalized: dict[str, object]) -> GuardrailDecision:
     config = load_classifier_runtime_config()
     if config.selected_backend == "slm":
-        try:
-            return classify_slm(normalized)
-        except Exception:
-            return classify_heuristic(normalized)
+        return classify_slm(normalized)
     if config.selected_backend == "artifact":
         return classify_artifact(normalized)
     return classify_heuristic(normalized)

@@ -108,6 +108,15 @@ prompt_dictionary:
         - Let's find a way to calm down instead.
         - Sometimes it helps to write down what's bothering you.
         - You could try talking to someone you trust about this.
+    curiosity_invite:
+      definition: Default state of the prompt. Ensure that every question ends with an age appropriate and gentle curiosity question about the topic in question to invite further interest.
+      behavioral_rules:
+        - End safe, non-SV3 responses with one age-appropriate and gentle curiosity question.
+        - Keep the curiosity question directly related to the allowed topic.
+        - Do not use curiosity questions for SV3 or no_curiosity_invite responses.
+        - Do not add a curiosity question after a required safety check or clarification-only turn.
+      examples:
+        - Would you like to know more about how rainbows work?
 
   flag_prompts:
     has_emotional_distress:

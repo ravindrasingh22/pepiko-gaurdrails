@@ -91,6 +91,8 @@ def test_codebook_parses_g3_gate_engine_config() -> None:
     assert codebook.g3.gate == "G3"
     assert codebook.g3.owner == "GATE_ENGINE"
     assert codebook.g3.elements["G3_SV"].computation_rule == "G3_SV = Severity Floor of that G2"
+    assert codebook.g3.elements["G3_MOD"].computation_rule == "Active flags + Associated tags"
+    assert "has_emotional_distress" in codebook.g3.elements["G3_MOD"].example
     assert "Severity only goes up" in codebook.g3.elements["G3_SV"].help_text
     assert codebook.g3.elements["G3_FORWARD"].name == "Output to Gate 4"
 
@@ -127,6 +129,7 @@ def test_codebook_parses_prompt_dictionary_runtime_variables() -> None:
     )
     assert prompt_dictionary.runtime_variables["safety_check"].examples
     assert prompt_dictionary.runtime_variables["normal_advice"].key == "normal_advice"
+    assert prompt_dictionary.runtime_variables["curiosity_invite"].definition.startswith("Default state")
 
 
 def test_codebook_parses_prompt_dictionary_flag_prompts() -> None:

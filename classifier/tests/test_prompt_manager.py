@@ -1,4 +1,5 @@
 from app.guardrails.prompt_manager import _modifier_rules, build_safety_envelope, render_prompt
+from app.guardrails.runtime_contracts import classifier_output_from_decision
 from app.models.child_profile import ChildProfile
 from app.models.guardrail_decision import GuardrailDecision
 
@@ -30,7 +31,7 @@ def test_build_safety_envelope_uses_primary_g2_only_for_g3() -> None:
 
     assert envelope["g2"]["active_lovs"] == [{"id": "PERSONAL_DIRECTION"}]
     assert envelope["g3"]["severity"] == "SV2"
-    assert envelope["g3"]["modifiers"] == []
+    assert set(envelope["g3"]["modifiers"]) == {"curiosity_invite", "neutral", "none", "normal_advice"}
     assert envelope["g3"]["source_g2"] == ["PERSONAL_DIRECTION"]
 
 
@@ -71,14 +72,70 @@ def test_prompt_contract_exposes_codebook_flow_packet() -> None:
 
     assert envelope["g3_forward"] == {
         "severity": "SV3",
-        "modifiers": [],
+        "modifier_packet": {
+            "flags": [],
+            "modifier_tags": ["neutral", "no_curiosity_invite", "none", "normal_advice"],
+        },
+        "modifiers": ["neutral", "no_curiosity_invite", "none", "normal_advice"],
     }
     assert envelope["codebook_flow"]["block_c"]["G3_FORWARD"] == envelope["g3_forward"]
     assert envelope["codebook_flow"]["block_d"]["G4_ACTION"] == "BLOCK"
     assert payload["gates"]["codebook_flow"]["block_d"]["input"] == envelope["g3_forward"]
     assert "Codebook flow: Block C G3_FORWARD=SV3" not in rendered["prompt"]
     assert "[Age:" not in rendered["prompt"]
-    assert "The child is in age band 11-12" in rendered["prompt"]
-    assert "Active safety rules:" in rendered["prompt"]
+    assert "You are a child-safe assistant responding to a child aged 12" in rendered["prompt"]
+    assert "ACTIVE MODIFIERS:" in rendered["prompt"]
+    assert "ATTACHED GUIDELINES:" in rendered["prompt"]
     assert "Question:" not in rendered["prompt"]
     assert rendered["checklist"]["passed"] is True
+
+
+def test_prompt_contract_includes_curiosity_invite_runtime_variable_for_safe_prompt() -> None:
+    decision = GuardrailDecision(
+        input={"question": "test", "age_band": "11-12", "language": "en", "recent_context": "none"},
+        reason="test reason",
+        gl_signals={},
+        active_gls=[],
+        gates={"G1": "FACT", "G2": "NEUTRAL_FACT", "G3": "SV0", "G4": "ALLOW"},
+        decision={"allow_llm": True},
+        policy_bucket="allowed",
+        safety_category="NEUTRAL_FACT",
+        response_mode="answer",
+        risk_level="low",
+        parent_visible=False,
+        prompt_contract={},
+    )
+    child_profile = ChildProfile(age=12, age_group="11-12", language="en")
+
+    rendered = render_prompt(child_profile, "Why do rainbows happen?", decision)
+
+    assert "curiosity_invite" in rendered["safety_envelope"]["g3"]["modifiers"]
+    assert "Would you like to know more about how rainbows work?" in rendered["prompt"]
+
+
+def test_low_confidence_g2_routes_to_ambiguous_risk() -> None:
+    decision = GuardrailDecision(
+        input={"question": "test", "age_band": "11-12", "language": "en", "recent_context": "none"},
+        reason="test reason",
+        gl_signals={},
+        active_gls=[],
+        gates={"G1": "GENERIC", "G2": "PERSONAL_DIRECTION", "G3": "SV2", "G4": "TRANSFORM"},
+        decision={"allow_llm": True},
+        policy_bucket="allowed",
+        safety_category="PD",
+        response_mode="guide_or_redirect",
+        risk_level="medium",
+        parent_visible=False,
+        prompt_contract={},
+        classifier_metadata={
+            "g2_threshold": 0.7,
+            "head_confidences": {"G2_primary": {"PERSONAL_DIRECTION": 0.21}},
+        },
+    )
+    child_profile = ChildProfile(age=12, age_group="11-12", language="en")
+
+    classifier_output = classifier_output_from_decision("Which one should I choose?", child_profile, decision)
+    envelope = build_safety_envelope(child_profile, "Which one should I choose?", decision)
+
+    assert classifier_output["g2"] == [{"id": "AMBIGUOUS_RISK", "reason": "test reason"}]
+    assert envelope["g2"]["active_lovs"] == [{"id": "AMBIGUOUS_RISK"}]

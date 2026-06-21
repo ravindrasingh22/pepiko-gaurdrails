@@ -131,8 +131,9 @@ def test_classified_prompt_endpoint_returns_system_prompt_with_classifier_output
     assert list(payload) == ["prompts", "prompt_checklist", "classifier_output"]
     assert payload["prompts"][0]["role"] == "system"
     assert payload["prompts"][1]["role"] == "user"
-    assert "The child is in age band 11-12" in payload["prompts"][0]["content"]
-    assert "Active safety rules:" in payload["prompts"][0]["content"]
+    assert "You are a child-safe assistant responding to a child aged 12" in payload["prompts"][0]["content"]
+    assert "ACTIVE MODIFIERS:" in payload["prompts"][0]["content"]
+    assert "ATTACHED GUIDELINES:" in payload["prompts"][0]["content"]
     assert "Question:" not in payload["prompts"][0]["content"]
     assert payload["prompts"][1]["content"] == "An adult offered to help me with problems if I promise never to tell anyone about our talks."
     assert payload["prompt_checklist"]["passed"] is True
@@ -177,3 +178,20 @@ def test_classified_prompt_endpoint_nests_classification_metadata() -> None:
     assert classifier_output["g3"]["G3_FORWARD"]["severity"] == classifier_output["g3"]["G3_SV"]
     assert classifier_output["g4"]["action"] in {"ALLOW", "TRANSFORM", "BLOCK"}
     assert classifier_output["age_policy"]["age_band"]
+
+
+def test_classified_prompt_endpoint_resolves_unsupported_age_band() -> None:
+    response = client.post(
+        "/api/v1/guardrail/classified/prompt",
+        json={
+            "child_profile": {"age": 11, "age_group": "11-13", "language": "en"},
+            "session_id": "prompt-age-band-001",
+            "recent_context": [],
+            "message": "Why is the sky blue?",
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["classifier_output"]["age_policy"]["age_band"] == "11-12"
+    assert "child aged 11" in payload["prompts"][0]["content"]

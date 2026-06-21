@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import os
+import random
 import time
 from collections import Counter
 from dataclasses import dataclass
@@ -232,6 +233,7 @@ def _training_defaults(core: str | None = None) -> dict[str, Any]:
         "use_class_weights": False,
         "train_intent_heads": True,
         "cross_feature_fusion_version": 3,
+        "input_augmentation_probability": 0.15,
         "write_batch_debug": True,
         "batch_debug_loss_threshold": 9.0,
         "seed": 42,
@@ -348,7 +350,14 @@ def _build_epoch_train_loader(
     config: dict[str, Any],
     epoch_index: int,
 ) -> Any:
-    train_dataset = CanonicalSLMDataset(train_rows, tokenizer, label_vocab, config["max_length"])
+    train_dataset = CanonicalSLMDataset(
+        train_rows,
+        tokenizer,
+        label_vocab,
+        config["max_length"],
+        augmentation_probability=float(config.get("input_augmentation_probability", 0.0) or 0.0),
+        seed=int(config.get("seed", 42)) + int(epoch_index),
+    )
     sampler = None
     generator = torch.Generator()
     generator.manual_seed(int(config.get("seed", 42)) + int(epoch_index))
@@ -408,14 +417,47 @@ def _classifier_token_usage(encoded: dict[str, Any]) -> dict[str, int]:
     }
 
 
-def _format_classifier_input(row: dict[str, Any]) -> str:
+def _classifier_text_pair(row: dict[str, Any]) -> tuple[str, str]:
     context = str(row.get("context", row.get("recent_context", "none")) or "none").strip()
     question = str(row["question"]).strip()
-    return (
-        "Classify the PRIMARY QUESTION for child-safety gating.\n"
-        "Use BACKGROUND CONTEXT only when it changes the meaning of the primary question.\n"
-        f"PRIMARY QUESTION: {question}\n"
-        f"BACKGROUND CONTEXT: {context if context else 'none'}"
+    return question, context if context else "none"
+
+
+def _strip_leading_article(text: str) -> str:
+    for article in ("a ", "an ", "the "):
+        if text.lower().startswith(article):
+            return text[len(article):].lstrip()
+    return text
+
+
+def _augment_classifier_question(question: str, rng: random.Random) -> str:
+    augmented = question
+    if rng.random() < 0.5:
+        augmented = _strip_leading_article(augmented)
+    if rng.random() < 0.5:
+        augmented = augmented.lower()
+    return augmented.strip() or question
+
+
+def _encode_classifier_input(
+    tokenizer: Any,
+    row: dict[str, Any],
+    max_length: int,
+    *,
+    augmentation_probability: float = 0.0,
+    rng: random.Random | None = None,
+    return_tensors: str | None = "pt",
+) -> dict[str, Any]:
+    question, context = _classifier_text_pair(row)
+    if augmentation_probability > 0.0 and rng is not None and rng.random() < augmentation_probability:
+        question = _augment_classifier_question(question, rng)
+    return tokenizer(
+        text=question,
+        text_pair=context,
+        truncation=True,
+        padding="max_length",
+        max_length=max_length,
+        return_tensors=return_tensors,
     )
 
 
@@ -530,11 +572,22 @@ def _validate_rows_against_label_vocab(rows: list[dict[str, Any]], label_vocab: 
 
 
 class CanonicalSLMDataset(Dataset):  # pragma: no cover - exercised through training/inference path
-    def __init__(self, rows: list[dict[str, Any]], tokenizer: Any, label_vocab: dict[str, list[str]], max_length: int) -> None:
+    def __init__(
+        self,
+        rows: list[dict[str, Any]],
+        tokenizer: Any,
+        label_vocab: dict[str, list[str]],
+        max_length: int,
+        *,
+        augmentation_probability: float = 0.0,
+        seed: int = 42,
+    ) -> None:
         self.rows = rows
         self.tokenizer = tokenizer
         self.label_vocab = label_vocab
         self.max_length = max_length
+        self.augmentation_probability = max(0.0, min(float(augmentation_probability), 1.0))
+        self.rng = random.Random(seed)
         self.g1_index = _index_map(label_vocab["g1"])
         self.g2_index = _index_map(label_vocab["g2"])
         self.flag_vocab = list(label_vocab.get("flags", []))
@@ -547,12 +600,12 @@ class CanonicalSLMDataset(Dataset):  # pragma: no cover - exercised through trai
 
     def __getitem__(self, index: int) -> dict[str, Any]:
         row = self.rows[index]
-        encoded = self.tokenizer(
-            _format_classifier_input(row),
-            truncation=True,
-            padding="max_length",
-            max_length=self.max_length,
-            return_tensors="pt",
+        encoded = _encode_classifier_input(
+            self.tokenizer,
+            row,
+            self.max_length,
+            augmentation_probability=self.augmentation_probability,
+            rng=self.rng,
         )
         return {
             "input_ids": encoded["input_ids"].squeeze(0),
@@ -2038,90 +2091,27 @@ def build_decision_from_slm(
     resolved_dir = model_dir or (load_classifier_runtime_config().model_artifact_path if resolved_core is None else model_dir_for_core(resolved_core))
     package = load_slm_package(resolved_dir, core=resolved_core)
     if package is None:
-        try:
-            train_slm_classifier(model_dir=resolved_dir, core=resolved_core, enable_training=False)
-        except (FileNotFoundError, ValueError) as exc:
-            heuristic = heuristic_classifier.classify_heuristic(normalized)
-            fallback_reason = (
-                "canonical_dataset_not_available"
-                if isinstance(exc, FileNotFoundError)
-                else "canonical_dataset_not_trainable"
-            )
-            return heuristic.model_copy(
-                update={
-                    "classifier_metadata": {
-                        **heuristic.classifier_metadata,
-                        "backend": "slm",
-                        "backend_version": model_name_for_core(resolved_core),
-                        "core_model": resolved_core or DEFAULT_CORE,
-                        "rollout_mode": load_classifier_runtime_config().rollout_mode,
-                        "trained": False,
-                        "fallback_reason": fallback_reason,
-                        "fallback_error": str(exc),
-                        "label_vocab_path": str(resolved_dir / "label_vocab.json"),
-                        "thresholds_path": str(resolved_dir / "thresholds.json"),
-                    }
-                }
-            )
-        package = load_slm_package(resolved_dir, core=resolved_core)
-    if package is None:
-        raise FileNotFoundError("SLM model package not available.")
+        raise FileNotFoundError(f"SLM model package not available at {resolved_dir}")
     if not package.metadata.get("trained") or not (resolved_dir / "pytorch_model.bin").exists():
-        heuristic = heuristic_classifier.classify_heuristic(normalized)
-        return heuristic.model_copy(
-            update={
-                "classifier_metadata": {
-                    **heuristic.classifier_metadata,
-                    "backend": "slm",
-                    "backend_version": package.metadata.get("model_name", model_name_for_core(package.metadata.get("core_model"))),
-                    "core_model": package.metadata.get("core_model", resolved_core or DEFAULT_CORE),
-                    "rollout_mode": load_classifier_runtime_config().rollout_mode,
-                    "trained": False,
-                    "fallback_reason": "trained_weights_not_available",
-                    "label_vocab_path": str(resolved_dir / "label_vocab.json"),
-                    "thresholds_path": str(resolved_dir / "thresholds.json"),
-                }
-            }
-        )
+        raise FileNotFoundError(f"Trained SLM weights not available at {resolved_dir}")
     try:
         tokenizer, model = _load_trained_model(resolved_dir, package)
     except Exception as exc:
-        if bool(package.metadata.get("trained", False)):
-            message = str(exc)
-            if "must be retrained" in message or "cross-attention GLU feature fusion" in message:
-                raise RuntimeError(
-                    f"SLM artifact at {resolved_dir} is incompatible with the current model head: {message}"
-                ) from exc
-        heuristic = heuristic_classifier.classify_heuristic(normalized)
-        return heuristic.model_copy(
-            update={
-                "classifier_metadata": {
-                    **heuristic.classifier_metadata,
-                    "backend": "slm",
-                    "backend_version": package.metadata.get("model_name", model_name_for_core(package.metadata.get("core_model"))),
-                    "core_model": package.metadata.get("core_model", resolved_core or DEFAULT_CORE),
-                    "rollout_mode": load_classifier_runtime_config().rollout_mode,
-                    "trained": bool(package.metadata.get("trained", False)),
-                    "fallback_reason": "tokenizer_or_model_load_failed",
-                    "fallback_error": str(exc),
-                    "label_vocab_path": str(resolved_dir / "label_vocab.json"),
-                    "thresholds_path": str(resolved_dir / "thresholds.json"),
-                }
-            }
-        )
-    text = _format_classifier_input(
-        {
-            "question": str(normalized.get("text", "")).strip(),
-            "language": str(normalized.get("language", "en")),
-            "recent_context": " ".join(str(item) for item in normalized.get("recent_context", [])) or "none",
-        }
-    )
-    encoded = tokenizer(
-        text,
-        truncation=True,
-        padding="max_length",
-        max_length=int(package.training_config.get("max_length", 192)),
-        return_tensors="pt",
+        message = str(exc)
+        if "must be retrained" in message or "cross-attention GLU feature fusion" in message:
+            raise RuntimeError(
+                f"SLM artifact at {resolved_dir} is incompatible with the current model head: {message}"
+            ) from exc
+        raise RuntimeError(f"SLM tokenizer/model load failed for {resolved_dir}: {message}") from exc
+    classifier_row = {
+        "question": str(normalized.get("text", "")).strip(),
+        "language": str(normalized.get("language", "en")),
+        "recent_context": " ".join(str(item) for item in normalized.get("recent_context", [])) or "none",
+    }
+    encoded = _encode_classifier_input(
+        tokenizer,
+        classifier_row,
+        int(package.training_config.get("max_length", 192)),
     )
     usage = _classifier_token_usage(encoded)
     recent_context = " ".join(str(item) for item in normalized.get("recent_context", [])) or ""
@@ -2233,140 +2223,4 @@ def build_decision_from_slm(
                 },
             }
         }
-    )
-
-
-def build_decision_from_slm_pure(
-    normalized: dict[str, object],
-    model_dir: Path | None = None,
-    core: str | None = None,
-    threshold: float = DEFAULT_CLASSIFIER_THRESHOLD,
-) -> GuardrailDecision:
-    resolved_core = resolve_core(core) if core is not None else None
-    resolved_dir = model_dir or (
-        load_classifier_runtime_config().model_artifact_path
-        if resolved_core is None else model_dir_for_core(resolved_core)
-    )
-    package = load_slm_package(resolved_dir, core=resolved_core)
-    if package is None:
-        raise FileNotFoundError(f"SLM model package not available at {resolved_dir}")
-    if not package.metadata.get("trained") or not (resolved_dir / "pytorch_model.bin").exists():
-        raise FileNotFoundError(f"Trained SLM weights not available at {resolved_dir}")
-
-    tokenizer, model = _load_trained_model(resolved_dir, package)
-
-    text = _format_classifier_input(
-        {
-            "question": str(normalized.get("text", "")).strip(),
-            "language": str(normalized.get("language", "en")),
-            "recent_context": " ".join(str(item) for item in normalized.get("recent_context", [])) or "none",
-        }
-    )
-    encoded = tokenizer(
-        text,
-        truncation=True,
-        padding="max_length",
-        max_length=int(package.training_config.get("max_length", 192)),
-        return_tensors="pt",
-    )
-    usage = _classifier_token_usage(encoded)
-    recent_context = " ".join(str(item) for item in normalized.get("recent_context", [])) or ""
-    encoded["intent_rule_features"] = torch.tensor(
-        [
-            runtime_contracts.build_intent_family_rule_vector(
-                str(normalized.get("text", "")).strip(),
-                recent_context,
-                list(package.label_vocab.get("intent_families", [])),
-            )
-        ],
-        dtype=torch.float32,
-    )
-    encoded["phrase_trigger_features"] = torch.tensor(
-        [
-            runtime_contracts.build_g2_phrase_trigger_vector(
-                str(normalized.get("text", "")).strip(),
-                recent_context,
-                list(package.label_vocab.get("g2", [])),
-            )
-        ],
-        dtype=torch.float32,
-    )
-    inference_device = _device(
-        package.training_config.get("model_name"),
-        package.training_config.get("device", "auto"),
-    )
-    encoded = {key: value.to(inference_device) for key, value in encoded.items()}
-
-    model.eval()
-    with torch.no_grad():
-        outputs = model(**encoded)
-
-    g1_probs = torch.softmax(outputs["g1_logits"], dim=-1).squeeze(0).cpu().tolist()
-    g2_probs = torch.softmax(outputs["g2_logits"], dim=-1).squeeze(0).cpu().tolist()
-    flag_probs = torch.sigmoid(outputs["flag_logits"]).squeeze(0).cpu().tolist()
-    intent_family_probs = (
-        torch.sigmoid(outputs["intent_family_logits"]).squeeze(0).cpu().tolist()
-        if "intent_family_logits" in outputs else []
-    )
-    intent_phrase_probs = (
-        torch.sigmoid(outputs["intent_phrase_logits"]).squeeze(0).cpu().tolist()
-        if "intent_phrase_logits" in outputs else []
-    )
-    g1_idx = int(torch.argmax(outputs["g1_logits"], dim=-1).item())
-    g2_idx = int(torch.argmax(outputs["g2_logits"], dim=-1).item())
-    g1 = package.label_vocab["g1"][g1_idx]
-    g2 = package.label_vocab["g2"][g2_idx]
-
-    return GuardrailDecision(
-        input={
-            "question": str(normalized.get("text", "")).strip(),
-            "age_band": "11-12",
-            "language": str(normalized.get("language", "en")),
-            "recent_context": list(normalized.get("recent_context", [])),
-        },
-        gates={"G1": g1, "G2": g2},
-        gate_values={"G1": g1, "G2": g2},
-        policy_bucket="model_only",
-        safety_category=g2,
-        response_mode="model_only",
-        risk_level="model_only",
-        parent_visible=False,
-        confidence=max((float(score) for score in g2_probs), default=0.0),
-        signals={},
-        classifier_metadata={
-            "backend": "slm_pure",
-            "backend_version": package.metadata.get(
-                "model_name",
-                model_name_for_core(package.metadata.get("core_model")),
-            ),
-            "core_model": package.metadata.get("core_model", resolved_core or DEFAULT_CORE),
-            "trained": bool(package.metadata.get("trained", False)),
-            "flags_trained": bool(package.metadata.get("flags_trained", False)),
-            "inference_device": str(inference_device),
-            "usage": usage,
-            "g2_threshold": threshold,
-            "label_vocab_path": str(resolved_dir / "label_vocab.json"),
-            "head_confidences": {
-                "G2": {
-                    label: float(score)
-                    for label, score in zip(package.label_vocab["g2"], g2_probs)
-                },
-                "G1": {
-                    label: float(score)
-                    for label, score in zip(package.label_vocab["g1"], g1_probs)
-                },
-                "flags": {
-                    label: float(score)
-                    for label, score in zip(package.label_vocab["flags"], flag_probs)
-                },
-                "intent_families": {
-                    label: float(score)
-                    for label, score in zip(package.label_vocab.get("intent_families", []), intent_family_probs)
-                },
-                "intent_phrases": {
-                    label: float(score)
-                    for label, score in zip(package.label_vocab.get("intent_phrases", []), intent_phrase_probs)
-                },
-            },
-        },
     )

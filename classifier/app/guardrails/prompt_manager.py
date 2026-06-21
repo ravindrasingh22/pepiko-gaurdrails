@@ -29,6 +29,10 @@ RUNTIME_MODIFIER_RULES = {
     "zero_engagement": "Do not engage with the unsafe request beyond a brief safety boundary.",
 }
 
+TONE_PRIORITY = ("firm", "cautious", "supportive", "neutral")
+ACTION_PRIORITY = ("safety_check", "boundary_setting", "clarify_context", "de_escalate", "normal_advice")
+ESCALATION_PRIORITY = ("encourage_help_seeking", "none")
+
 
 def _codebook_modifier_descriptions() -> dict[str, str]:
     descriptions: dict[str, str] = {}
@@ -63,47 +67,9 @@ def build_safety_envelope(child_profile: ChildProfile, message: str, decision: G
 
 
 def _pick_template(envelope: dict[str, Any]) -> dict[str, str]:
-    g4 = envelope["g4"]["action"]
-    g3 = envelope["g3"]["severity"]
-    modifiers = set(envelope["g3"]["modifiers"])
-    g2 = {item["id"] for item in envelope["g2"]["active_lovs"]}
-    if g4 == "BLOCK_HARD" and "DANGEROUS" in g2 and "no_content_engagement" in modifiers:
-        return {
-            "id": "HBT-01",
-            "template": (
-                "You are PikuAI, a child-safe learning assistant.\n"
-                "The child is in age band {age_band}; use explanation depth {depth}, style {style}, and age-calibrated wording.\n"
-                "Respond in 5 lines or less.\n"
-                "Active safety rules: {modifier_rules}\n"
-                "{prompt_policy_instruction}\n"
-                "Do not explain the blocked topic.\n"
-                "Do not ask a follow-up question.\n"
-                "Context: {context}"
-            ),
-        }
-    if g4 == "TRANSFORM_HOLD" and "AMBIGUOUS_RISK" in g2:
-        return {
-            "id": "HBT-02",
-            "template": (
-                "You are PikuAI, a child-safe learning assistant.\n"
-                "The child is in age band {age_band}; use explanation depth {depth}, style {style}, and age-calibrated wording.\n"
-                "Active safety rules: {modifier_rules}\n"
-                "{prompt_policy_instruction}\n"
-                "Ask exactly one safe clarification question.\n"
-                "Do not answer before clarification.\n"
-                "Context: {context}"
-            ),
-        }
     return {
-        "id": "GENERIC_GATE_TEMPLATE",
-        "template": (
-            "You are PikuAI, a child-safe learning assistant.\n"
-            "The child is in age band {age_band}; use explanation depth {depth}, style {style}, and age-calibrated wording.\n"
-            "Respond in 5 lines or less.\n"
-            "Active safety rules: {modifier_rules}\n"
-            "{prompt_policy_instruction}\n"
-            "Context: {context}"
-        ),
+        "id": CODEBOOK.prompt_master_template.template_id,
+        "template": CODEBOOK.prompt_master_template.template,
     }
 
 
@@ -116,22 +82,83 @@ def _apply_prompt_rules(envelope: dict[str, Any], rendered: str) -> str:
 
 def _format_g3_forward(envelope: dict[str, Any]) -> str:
     g3_forward = envelope["g3_forward"]
-    modifiers = g3_forward["modifiers"]
+    modifiers = g3_forward.get("modifiers") or g3_forward.get("modifier_packet", {}).get("modifier_tags", [])
     modifier_text = ", ".join(modifiers) if modifiers else "none"
     return f"{g3_forward['severity']} + {{{modifier_text}}}"
+
+
+def _resolve_modifier(modifiers: set[str], priority: tuple[str, ...], fallback: str) -> str:
+    for item in priority:
+        if item in modifiers:
+            return item
+    return fallback
+
+
+def _runtime_variable_instruction(key: str) -> str:
+    spec = CODEBOOK.prompt_dictionary.runtime_variables.get(key)
+    if not spec:
+        return "No special runtime instruction."
+    rules = " ".join(rule.rstrip(".") + "." for rule in spec.behavioral_rules)
+    return f"{spec.definition.rstrip('.')}." + (f" {rules}" if rules else "")
+
+
+def _active_flag_ids(envelope: dict[str, Any]) -> list[str]:
+    return [str(flag) for flag in envelope["g3"].get("source_flags", []) if str(flag) in CODEBOOK.prompt_dictionary.flag_prompts]
+
+
+def _flag_priority(flag: str) -> tuple[int, int, int, str]:
+    mapping = CODEBOOK.flag_mappings.get(flag)
+    if not mapping:
+        return (len(ACTION_PRIORITY), len(TONE_PRIORITY), len(ESCALATION_PRIORITY), flag)
+    action_rank = ACTION_PRIORITY.index(mapping.action) if mapping.action in ACTION_PRIORITY else len(ACTION_PRIORITY)
+    tone_rank = TONE_PRIORITY.index(mapping.tone) if mapping.tone in TONE_PRIORITY else len(TONE_PRIORITY)
+    escalation_rank = ESCALATION_PRIORITY.index(mapping.escalation) if mapping.escalation in ESCALATION_PRIORITY else len(ESCALATION_PRIORITY)
+    return (action_rank, tone_rank, escalation_rank, flag)
+
+
+def _selected_flag_prompt(envelope: dict[str, Any]) -> dict[str, str]:
+    active_flags = sorted(_active_flag_ids(envelope), key=_flag_priority)
+    if active_flags:
+        spec = CODEBOOK.prompt_dictionary.flag_prompts[active_flags[0]]
+        return {
+            "context": spec.context,
+            "guidance": spec.guidance,
+            "example_start": spec.example_start,
+        }
+    return {
+        "context": "The child's message does not activate a specific risk flag.",
+        "guidance": "Give ordinary, age-appropriate help. Stay clear, practical, and safe.",
+        "example_start": "Here is a simple way to think about it...",
+    }
+
+
+def _attached_guidelines(envelope: dict[str, Any]) -> str:
+    guideline_lines: list[str] = []
+    for gl_id in envelope.get("gl", {}).get("active", []):
+        spec = CODEBOOK.gl_specs.get(str(gl_id))
+        if spec and spec.special_rules:
+            guideline_lines.append(f"- {spec.gl_id}: {spec.special_rules}")
+    modifiers = set(envelope["g3"].get("modifiers", []))
+    if "curiosity_invite" in modifiers:
+        curiosity = CODEBOOK.prompt_dictionary.runtime_variables.get("curiosity_invite")
+        example = f" Example: {curiosity.examples[0]}" if curiosity and curiosity.examples else ""
+        guideline_lines.append(f"- curiosity_invite: {_runtime_variable_instruction('curiosity_invite')}{example}")
+    if not guideline_lines:
+        return "- No additional GL rules are active."
+    return "\n".join(guideline_lines)
 
 
 def _checklist(envelope: dict[str, Any], rendered: str) -> dict[str, Any]:
     modifiers = set(envelope["g3"]["modifiers"])
     checks = {
-        "CHK-01": "You are PikuAI, a child-safe learning assistant." in rendered,
+        "CHK-01": "You are a child-safe assistant responding to a child aged" in rendered,
         "CHK-02": all(token not in rendered for token in ["[Age:", "G1:", "G2:", "G3:", "G4:", "Codebook flow:"]),
-        "CHK-03": "5 lines or less" in rendered or "exactly one safe clarification question" in rendered,
-        "CHK-04": ("Ask exactly one safe clarification question." in rendered) if "clarification_required" in modifiers else True,
-        "CHK-05": ("Do not explain the blocked topic." in rendered) if "no_content_engagement" in modifiers else True,
+        "CHK-03": "ACTIVE MODIFIERS:" in rendered,
+        "CHK-04": ("Ask one brief clarifying question" in rendered) if "clarify_context" in modifiers else True,
+        "CHK-05": ("Refuse harmful" in rendered or "Do not help" in rendered) if "boundary_setting" in modifiers else True,
         "CHK-06": (not rendered.rstrip().endswith("?")) if "no_curiosity_invite" in modifiers else True,
-        "CHK-07": f"The child is in age band {envelope['user_context']['age_band']}" in rendered,
-        "CHK-08": "Active safety rules:" in rendered,
+        "CHK-07": f"child aged {envelope['user_context'].get('age', envelope['user_context']['age_band'])}" in rendered,
+        "CHK-08": "ATTACHED GUIDELINES:" in rendered,
         "CHK-09": "Question:" not in rendered,
     }
     return {"passed": all(checks.values()), "checks": checks}
@@ -140,20 +167,20 @@ def _checklist(envelope: dict[str, Any], rendered: str) -> dict[str, Any]:
 def render_prompt(child_profile: ChildProfile, message: str, decision: GuardrailDecision) -> dict[str, Any]:
     envelope = build_safety_envelope(child_profile, message, decision)
     template = _pick_template(envelope)
-    g2_values = [item["id"] for item in envelope["g2"]["active_lovs"]]
+    modifiers = set(envelope["g3"]["modifiers"])
+    tone = _resolve_modifier(modifiers, TONE_PRIORITY, "neutral")
+    action = _resolve_modifier(modifiers, ACTION_PRIORITY, "normal_advice")
+    escalation = _resolve_modifier(modifiers, ESCALATION_PRIORITY, "none")
+    flag_prompt = _selected_flag_prompt(envelope)
     rendered = template["template"].format(
-        age_band=envelope["user_context"]["age_band"],
-        g1=envelope["g1"]["id"],
-        g2=";".join(g2_values),
-        g3=envelope["g3"]["severity"],
-        modifiers=", ".join(envelope["g3"]["modifiers"]) if envelope["g3"]["modifiers"] else "none",
-        g3_forward=_format_g3_forward(envelope),
-        g4=envelope["g4"]["action"],
-        depth=envelope["user_context"]["age_settings"]["depth"],
-        style=envelope["user_context"]["age_settings"]["style"],
-        modifier_rules=_modifier_rules(envelope["g3"]["modifiers"]),
-        prompt_policy_instruction=_prompt_policy_instruction(envelope),
-        context=str(decision.input.get("recent_context") or "none"),
+        age=child_profile.age,
+        flag_context=flag_prompt["context"],
+        tone_instructions=_runtime_variable_instruction(tone),
+        action_instructions=_runtime_variable_instruction(action),
+        escalation_instructions=_runtime_variable_instruction(escalation),
+        flag_guidance=flag_prompt["guidance"],
+        flag_example_start=flag_prompt["example_start"],
+        attached_guidelines=_attached_guidelines(envelope),
     )
     rendered = _apply_prompt_rules(envelope, rendered)
     checklist = _checklist(envelope, rendered)

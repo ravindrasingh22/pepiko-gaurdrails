@@ -182,10 +182,15 @@ g3.elements.G3_MOD
 Computation rule:
 
 ```text
-G3_MOD = all active flags array mapped through flag-mappings.yaml
+G3_MOD = Active flags + associated modifier tags
 ```
 
-The classifier predicts active flags. The gate engine reads `flag-mappings.yaml` and converts each active flag into tone/action/escalation candidates.
+The classifier predicts active flags. The gate engine reads `flag-mappings.yaml` and converts each active flag into tone/action/escalation candidates. `G3_MOD` keeps both parts of the packet:
+
+- active flag IDs emitted from the query
+- unique associated modifier tags emitted from those flags
+
+No priority is applied inside `G3_MOD`. It is a collection packet only. Priority and conflict resolution happen later in Block E GL rules.
 
 Example:
 
@@ -198,13 +203,16 @@ flag-mappings.yaml emits:
 - has_emotional_distress -> supportive / normal_advice / none
 - has_bullying_involved -> supportive / boundary_setting / none
 
-G3_MOD carries the active tone/action/escalation candidates forward.
+G3_MOD = {
+  flags: [has_emotional_distress, has_bullying_involved],
+  modifier_tags: [supportive, normal_advice, boundary_setting, none]
+}
 ```
 
 Help text:
 
 ```text
-All active classifier flags are collected. Their tone/action/escalation mappings are read from flag-mappings.yaml. Order does not matter; later GL priority rules resolve conflicts.
+All flags emitted from the query are collected. All unique modifier tags emitted from flags are collected as well. No priority within the set. Order does not matter.
 ```
 
 ### G3_FORWARD
@@ -223,15 +231,14 @@ Computation rule:
 Forward the pair: (G3_SV, G3_MOD) as the instruction packet.
 ```
 
-Gate 4 reads `g4.yml` using `G3_SV`, then applies modifier and GL behavior from `G3_MOD` and `gl-rules.yml`.
+Gate 4 reads `g4.yml` using `G3_SV`, then applies modifier and GL behavior from the `G3_MOD` packet and `gl-rules.yml`.
 
 Example:
 
 ```text
-G3_FORWARD = SV3 + {
-  tone: firm,
-  action: boundary_setting,
-  escalation: encourage_help_seeking
+G3_FORWARD = SV2 + {
+  flags: [has_emotional_distress, has_bullying_involved],
+  modifier_tags: [supportive, normal_advice, boundary_setting, none]
 }
 ```
 
@@ -349,6 +356,20 @@ If severity is `SV3`, use `no_curiosity_invite`.
 
 Otherwise use `curiosity_invite`.
 
+`curiosity_invite` is a prompt runtime variable from `prompt-dictionary.yaml`.
+
+Definition:
+
+```text
+Default state of the prompt. Ensure that every question ends with an age appropriate and gentle curiosity question about the topic in question to invite further interest.
+```
+
+Example:
+
+```text
+Would you like to know more about how rainbows work?
+```
+
 Do not end high-risk responses with exploratory or open-ended engagement.
 
 ### GL-O1: Response Order
@@ -401,6 +422,7 @@ Prompt dictionary provides:
 - `encourage_help_seeking`
 - `safety_check`
 - `normal_advice`
+- `curiosity_invite`
 
 `flag_prompts` define:
 
@@ -439,7 +461,7 @@ Required placeholders:
 2. Read G2 severity floor from `g2.yaml`.
 3. Compute `G3_SV` using `g3.yml`.
 4. Map active flags through `flag-mappings.yaml` to collect tone/action/escalation candidates.
-5. Build `G3_MOD` from those active mapped candidates.
+5. Build `G3_MOD` as `{flags, modifier_tags}` from active flags and their mapped candidates.
 6. Build `G3_FORWARD = (G3_SV, G3_MOD)`.
 7. Read `g4.yml` using `G3_SV` to select base G4 action.
 8. Apply GL rules from `gl-rules.yml`:
@@ -448,7 +470,7 @@ Required placeholders:
    - resolve escalation with `GL-E1`
    - resolve curiosity ending with `GL-CU1`
    - resolve ordering with `GL-O1`
-9. Read final variable text from `prompt-dictionary.yaml`.
+9. Read final variable text from `prompt-dictionary.yaml`, including `curiosity_invite` when GL-CU1 emits it.
 10. Select flag prompt fragments from `prompt_dictionary.flag_prompts`.
 11. Attach GL guideline notes as `{attached_guidelines}`.
 12. Render `prompt-master-template.yml`.

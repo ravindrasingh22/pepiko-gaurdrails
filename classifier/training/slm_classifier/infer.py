@@ -36,8 +36,6 @@ def _backend_for_auto_mode() -> str:
 
 
 def _classify(mode: str, normalized: dict[str, object], threshold: float, core: str | None = None):
-    if mode == "slm_pure":
-        return slm_classifier.classify_slm_pure(normalized, core=core, threshold=threshold)
     if mode == "slm":
         return slm_classifier.classify_slm(normalized, core=core, threshold=threshold)
     if mode == "artifact":
@@ -88,30 +86,6 @@ def _resolve_threshold(threshold: float | None, thresholds: dict[str, float] | N
     return float(next(iter(thresholds.values())))
 
 
-def _build_pure_g2_reason(
-    *,
-    g2_id: str,
-    g2_scores: dict[str, float],
-    flag_scores: dict[str, float],
-    threshold: float,
-) -> str:
-    if not g2_id:
-        return ""
-    ordered_g2 = sorted(g2_scores.items(), key=lambda item: float(item[1]), reverse=True)
-    top_score = float(g2_scores.get(g2_id, 0.0))
-    second_score = float(ordered_g2[1][1]) if len(ordered_g2) > 1 else 0.0
-    margin = top_score - second_score
-    active_flags = [
-        label for label, score in sorted(flag_scores.items(), key=lambda item: float(item[1]), reverse=True)
-        if float(score) >= threshold
-    ][:3]
-    reason = f"Selected {g2_id} from the highest G2 head score ({top_score:.3f})"
-    reason += f" with margin {margin:.3f} over the next label."
-    if active_flags:
-        reason += f" Supporting flags above threshold: {', '.join(active_flags)}."
-    return reason
-
-
 def _build_question_grounded_g2_reason(*, question: str, g1_id: str, g2_id: str) -> str:
     if not g2_id:
         return ""
@@ -134,61 +108,6 @@ def run_infer(
     effective_threshold = _resolve_threshold(threshold, thresholds)
     normalized = _normalize_input(question, age_band, language, context)
     decision = _classify(mode, normalized, effective_threshold, core=core)
-    if mode == "slm_pure":
-        classifier_metadata = dict(decision.classifier_metadata or {})
-        head_confidences = dict(classifier_metadata.get("head_confidences", {}))
-        flag_scores = _sorted_scores(head_confidences.get("flags", {}))
-        intent_family_scores = _sorted_scores(head_confidences.get("intent_families", {}))
-        active_flags = [
-            label for label, score in flag_scores.items()
-            if float(score) >= effective_threshold
-        ]
-        active_intent_families = [
-            label for label, score in intent_family_scores.items()
-            if float(score) >= effective_threshold
-        ]
-        result = {
-            "question": question,
-            "user_input": question,
-            "context": context,
-            "language": language,
-            "backend": "slm_pure",
-            "core_model": str(classifier_metadata.get("core_model", core or "")),
-            "trained": bool(classifier_metadata.get("trained", False)),
-            "threshold": effective_threshold,
-            "g1": {
-                "id": str((decision.gates or decision.gate_values).get("G1", "")),
-                "scores": _sorted_scores(head_confidences.get("G1", {})),
-            },
-            "g2": {
-                "id": str((decision.gates or decision.gate_values).get("G2", "")),
-                "scores": _sorted_scores(head_confidences.get("G2", {})),
-                "reason": _build_question_grounded_g2_reason(
-                    question=question,
-                    g1_id=str((decision.gates or decision.gate_values).get("G1", "")),
-                    g2_id=str((decision.gates or decision.gate_values).get("G2", "")),
-                ),
-                "decision_basis": _build_pure_g2_reason(
-                    g2_id=str((decision.gates or decision.gate_values).get("G2", "")),
-                    g2_scores=_sorted_scores(head_confidences.get("G2", {})),
-                    flag_scores=flag_scores,
-                    threshold=effective_threshold,
-                ),
-            },
-            "flags": {
-                "active": active_flags,
-                "scores": flag_scores,
-            },
-            "intent_families": {
-                "active": active_intent_families,
-            },
-            "intent_phrases": {
-                "active": [],
-            },
-        }
-        if thresholds is not None:
-            result["thresholds"] = thresholds
-        return result
     gates = decision.gates or decision.gate_values
     classifier_metadata = dict(decision.classifier_metadata or {})
     head_confidences = dict(classifier_metadata.get("head_confidences", {}))
@@ -230,8 +149,8 @@ def run_infer(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Print pure classifier output.")
-    parser.add_argument("--mode", choices=["auto", "heuristic", "artifact", "slm", "slm_pure"], default="auto")
+    parser = argparse.ArgumentParser(description="Print classifier output.")
+    parser.add_argument("--mode", choices=["auto", "heuristic", "artifact", "slm"], default="auto")
     parser.add_argument("--core", choices=available_cores(), default=None)
     parser.add_argument("--question", default=None)
     parser.add_argument("--user-input", dest="user_input", default=None)

@@ -13,11 +13,11 @@ g3:
       help_text: "A single SV3 LOV makes the whole query SV3, regardless of other LOVs. Severity only goes up, never down."
     G3_MOD:
       name: Modifier Packet
-      computation_rule: Active flags
-      example: "If EMOTIONAL emits [empathetic_tone] and BULLYING emits [empathetic_tone, no_curiosity_invite], G3_MOD = {empathetic_tone, no_curiosity_invite}"
-      help_text: "All unique modifier tags from all matched LOVs are collected. All modifier tags emitted from flags are collected as well. No priority within the set. Order does not matter."
+      computation_rule: Active flags + Associated tags
+      example: "has_emotional_distress emits [supportive, normal_advice] and has_bullying_involved emits [supportive, boundary_setting], G3_MOD = {(has_emotional_distress, has_bullying_involved); (supportive, normal_advice, boundary_setting)}"
+      help_text: "All flags emitted from the query are collected. All unique modifier tags emitted from flags are collected as well. No priority within the set. Order does not matter."
     G3_FORWARD:
       name: Output to Gate 4
       computation_rule: "Forward the pair: (G3_SV, G3_MOD) as the instruction packet"
-      example: "G3 packet: SV3 + {no_curiosity_invite, zero_engagement, safeguarding_concern}"
+      example: "G3 packet: SV2 + {(has_emotional_distress, has_bullying_involved); (supportive, normal_advice, boundary_setting)}"
       help_text: Gate 4 reads G3_SV to pick the base action, then reads G3_MOD to adjust response style, tone, ending, and escalation.

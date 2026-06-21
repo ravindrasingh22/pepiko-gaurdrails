@@ -16,6 +16,21 @@ G2_ALIAS_MAP = {
     "PD": "PERSONAL_DIRECTION",
     "UNSAFE_CONTENT": "UNSAFE_SEXUAL_CONTENT",
 }
+AMBIGUOUS_RISK_G2 = "AMBIGUOUS_RISK"
+GENERIC_G1 = "GENERIC"
+
+TONE_PRIORITY = ("firm", "cautious", "supportive", "neutral")
+ACTION_PRIORITY = ("safety_check", "boundary_setting", "clarify_context", "de_escalate", "normal_advice")
+ESCALATION_PRIORITY = ("encourage_help_seeking", "none")
+AGE_RANGES = (
+    (5, 6, "5-6"),
+    (7, 8, "7-8"),
+    (9, 10, "9-10"),
+    (11, 12, "11-12"),
+    (13, 14, "13-14"),
+    (15, 16, "15-16"),
+    (17, 17, "17"),
+)
 
 PROTECTED_GROUP_TERMS = ("religion", "muslim", "hindu", "christian", "jew", "black", "white", "girl", "boy", "women", "men", "group", "people")
 NEGATIVE_LANGUAGE_TERMS = ("disgusting", "lazy", "bad", "stupid", "hate", "get rid of", "dont deserve", "don't deserve", "gross")
@@ -292,6 +307,76 @@ def canonicalize_g2_ids(raw_g2: list[str]) -> list[str]:
     return canonical
 
 
+def _canonicalize_single_g2(raw_g2: object) -> str:
+    mapped = G2_ALIAS_MAP.get(str(raw_g2), str(raw_g2))
+    if mapped in CODEBOOK.g2_specs:
+        return mapped
+    return AMBIGUOUS_RISK_G2
+
+
+def _score_map(metadata: dict[str, Any], *keys: str) -> dict[str, float]:
+    heads = metadata.get("head_confidences", {})
+    if not isinstance(heads, dict):
+        return {}
+    for key in keys:
+        raw = heads.get(key, {})
+        if isinstance(raw, dict):
+            return {str(label): float(score) for label, score in raw.items()}
+    return {}
+
+
+def _selected_runtime_g1(g1_id: str, metadata: dict[str, Any]) -> str:
+    g1_id = g1_id if g1_id in CODEBOOK.g1_specs else GENERIC_G1
+    score = _score_map(metadata, "G1").get(g1_id)
+    threshold = float(metadata.get("g1_threshold", metadata.get("g2_threshold", 0.5)))
+    if score is not None and score < threshold:
+        return GENERIC_G1
+    return g1_id
+
+
+def _selected_runtime_g2(g2_id: str, metadata: dict[str, Any]) -> str:
+    selected = _canonicalize_single_g2(g2_id)
+    scores = _score_map(metadata, "G2_primary", "G2")
+    score = scores.get(selected)
+    threshold = float(metadata.get("g2_threshold", 0.5))
+    if score is not None and score < threshold:
+        return AMBIGUOUS_RISK_G2
+    return selected
+
+
+def _single_g2_items(items: object) -> list[dict[str, str]]:
+    if isinstance(items, list):
+        for item in items:
+            if isinstance(item, dict):
+                g2_id = _canonicalize_single_g2(item.get("id", ""))
+                return [{"id": g2_id, "reason": str(item.get("reason", ""))}]
+    return [{"id": AMBIGUOUS_RISK_G2, "reason": "No usable G2 evidence; routed as ambiguous risk."}]
+
+
+def _age_band_from_age(age: int) -> str:
+    for low, high, band in AGE_RANGES:
+        if low <= age <= high and band in CODEBOOK.age_bands:
+            return band
+    return "11-12"
+
+
+def _lower_age_from_band(age_band: str) -> int | None:
+    match = re.match(r"^\s*(\d{1,2})(?:-(\d{1,2}))?\s*$", age_band)
+    if not match:
+        return None
+    return max(5, min(int(match.group(1)), 17))
+
+
+def _resolve_runtime_age_band(age: int, requested_age_band: object) -> str:
+    requested = str(requested_age_band or "").strip()
+    if requested in CODEBOOK.age_bands:
+        return requested
+    lower_age = _lower_age_from_band(requested)
+    if lower_age is not None:
+        return _age_band_from_age(lower_age)
+    return _age_band_from_age(age)
+
+
 def build_applies_when_flags(question: str, g1_id: str, g2_ids: list[str]) -> dict[str, bool]:
     lowered = question.lower()
     has_harmful_comparison = bool(
@@ -368,27 +453,32 @@ def classifier_output_from_decision(question: str, child_profile: ChildProfile, 
     precomputed = decision.classifier_metadata.get("runtime_classifier_output", {}) if isinstance(decision.classifier_metadata, dict) else {}
     if isinstance(precomputed, dict) and precomputed.get("question") == question:
         hydrated = dict(precomputed)
+        hydrated["g2"] = _single_g2_items(hydrated.get("g2", []))
+        resolved_age_band = _resolve_runtime_age_band(child_profile.age, hydrated.get("age_band", child_profile.age_group))
         hydrated.setdefault("schema_version", "2.0.0")
-        hydrated.setdefault("question_id", _question_id(question, child_profile.age_group, child_profile.language))
+        hydrated.setdefault("question_id", _question_id(question, resolved_age_band, child_profile.language))
         hydrated.setdefault("language", child_profile.language)
-        hydrated.setdefault("age_band", child_profile.age_group)
+        hydrated.setdefault("age", child_profile.age)
+        hydrated["age_band"] = resolved_age_band
         hydrated.setdefault("applies_when_flags", build_applies_when_flags(
             question,
-            str((hydrated.get("g1") or {}).get("id", "GENERIC")),
-            canonicalize_g2_ids([str(item.get("id", "")) for item in hydrated.get("g2", []) if isinstance(item, dict)]),
+            str((hydrated.get("g1") or {}).get("id", GENERIC_G1)),
+            [str(item.get("id", AMBIGUOUS_RISK_G2)) for item in hydrated.get("g2", []) if isinstance(item, dict)],
         ))
         hydrated.setdefault("intent_lexicon", match_intent_lexicon(
             question,
             str(decision.input.get("recent_context", "") or ""),
-            canonicalize_g2_ids([str(item.get("id", "")) for item in hydrated.get("g2", []) if isinstance(item, dict)]),
+            [str(item.get("id", AMBIGUOUS_RISK_G2)) for item in hydrated.get("g2", []) if isinstance(item, dict)],
         ))
         return hydrated
     gates = decision.gates or decision.gate_values
+    metadata = decision.classifier_metadata if isinstance(decision.classifier_metadata, dict) else {}
     topic = str(gates.get("topic") or decision.signals.get("topic") or "General Learning")
-    g1_id = str(gates.get("G1", "GENERIC"))
-    raw_g2 = [str(gates.get("G2", "GENERIC_INTENT"))]
-    g2_ids = canonicalize_g2_ids(raw_g2)
-    age_band = child_profile.age_group
+    g1_id = _selected_runtime_g1(str(gates.get("G1", GENERIC_G1)), metadata)
+    raw_g2 = str(gates.get("G2", AMBIGUOUS_RISK_G2))
+    g2_id = _selected_runtime_g2(raw_g2, metadata)
+    g2_ids = [g2_id]
+    age_band = _resolve_runtime_age_band(child_profile.age, child_profile.age_group)
     context = str(decision.input.get("recent_context", "") or "")
     flags = build_applies_when_flags(question, g1_id, g2_ids)
     intent_lexicon = match_intent_lexicon(question, context, g2_ids)
@@ -407,6 +497,7 @@ def classifier_output_from_decision(question: str, child_profile: ChildProfile, 
         "question": question,
         "topic": topic,
         "language": child_profile.language,
+        "age": child_profile.age,
         "age_band": age_band,
         "applies_when_flags": flags,
         "intent_lexicon": intent_lexicon,
@@ -417,12 +508,11 @@ def classifier_output_from_decision(question: str, child_profile: ChildProfile, 
         "g2": [
             {
                 "id": g2_id,
-                "reason": decision.g2_reasons.get(raw, decision.g2_reasons.get(g2_id, decision.reason))
+                "reason": decision.g2_reasons.get(raw_g2, decision.g2_reasons.get(g2_id, decision.reason))
                 if decision.g2_reasons
                 else decision.reason,
             }
-            for raw, g2_id in zip(raw_g2, g2_ids, strict=False)
-        ] or [{"id": "GENERIC_INTENT", "reason": decision.reason}],
+        ],
     }
 
 
@@ -441,28 +531,45 @@ def _flag_modifier_tags(flags: list[str]) -> list[str]:
     return sorted(modifiers)
 
 
+def _flag_modifier_candidates(flags: list[str]) -> dict[str, set[str]]:
+    candidates = {"tone": set(), "action": set(), "escalation": set()}
+    for flag in flags:
+        mapping = CODEBOOK.flag_mappings.get(flag)
+        if not mapping:
+            continue
+        candidates["tone"].add(mapping.tone)
+        candidates["action"].add(mapping.action)
+        candidates["escalation"].add(mapping.escalation)
+    return candidates
+
+
+def _resolve_priority(candidates: set[str], priority: tuple[str, ...], fallback: str) -> str:
+    for item in priority:
+        if item in candidates:
+            return item
+    return fallback
+
+
 def _predicted_flags(classifier_output: dict[str, Any]) -> list[str]:
     learned = classifier_output.get("intent_lexicon", {}).get("learned", {})
     if not isinstance(learned, dict):
         return []
-    return [str(flag) for flag in learned.get("predicted_flags", []) if str(flag).strip()]
+    return [str(flag) for flag in learned.get("predicted_flags", []) if str(flag).strip() in CODEBOOK.flag_mappings]
 
 
 def compute_g3(g2_ids: list[str], active_flags: list[str] | None = None) -> dict[str, Any]:
+    g2_id = _canonicalize_single_g2(g2_ids[0] if g2_ids else AMBIGUOUS_RISK_G2)
     severity = "SV0"
     modifiers: set[str] = set()
-    for g2_id in g2_ids:
-        spec = CODEBOOK.g2_specs.get(g2_id)
-        if not spec:
-            continue
-        if _severity_rank(spec.severity_floor) > _severity_rank(severity):
-            severity = spec.severity_floor
+    spec = CODEBOOK.g2_specs.get(g2_id)
+    if spec:
+        severity = spec.severity_floor
         modifiers.update(spec.modifiers)
     modifiers.update(_flag_modifier_tags(active_flags or []))
     return {
         "severity": severity,
         "modifiers": sorted(modifiers),
-        "source_g2": g2_ids,
+        "source_g2": [g2_id],
         "source_flags": sorted(active_flags or []),
     }
 
@@ -479,8 +586,13 @@ def _codebook_flow(classifier_output: dict[str, Any], g3: dict[str, Any], g4: di
             "severity_floor": spec.severity_floor,
             "modifiers": list(spec.modifiers),
         }
+    g3_mod = {
+        "flags": active_flags,
+        "modifier_tags": list(g3["modifiers"]),
+    }
     g3_forward = {
         "severity": g3["severity"],
+        "modifier_packet": g3_mod,
         "modifiers": list(g3["modifiers"]),
     }
     return {
@@ -495,7 +607,7 @@ def _codebook_flow(classifier_output: dict[str, Any], g3: dict[str, Any], g4: di
         },
         "block_c": {
             "G3_SV": g3["severity"],
-            "G3_MOD": list(g3["modifiers"]),
+            "G3_MOD": g3_mod,
             "G3_FORWARD": g3_forward,
         },
         "block_d": {
@@ -509,29 +621,10 @@ def _codebook_flow(classifier_output: dict[str, Any], g3: dict[str, Any], g4: di
 
 
 def _base_g4(severity: str, modifiers: list[str]) -> dict[str, str]:
-    mods = set(modifiers)
-    if "clarification_required" in mods:
-        return {"action": "TRANSFORM_HOLD", "ending": "safe_disambiguation_question", "style": "Neutral"}
-    if "zero_engagement" in mods or "no_content_engagement" in mods:
-        return {"action": "BLOCK_HARD", "ending": "(none)", "style": "None / Minimal"}
-    if severity == "SV0":
-        return {"action": "ALLOW", "ending": "curiosity_invite", "style": "Neutral, age-calibrated"}
-    if severity == "SV1":
-        ending = "(none)" if "no_curiosity_invite" in mods else "curiosity_invite"
-        return {"action": "TRANSFORM", "ending": ending, "style": "Neutral, balanced"}
-    if severity == "SV2":
-        if {"escalate", "empathetic_tone"}.issubset(mods):
-            return {"action": "TRANSFORM_ESCALATE", "ending": "curiosity_invite", "style": "Empathetic"}
-        if {"empathetic_tone", "emotional_support_required"}.issubset(mods):
-            return {"action": "TRANSFORM", "ending": "curiosity_invite", "style": "Empathetic, warm"}
-        return {"action": "TRANSFORM", "ending": "curiosity_invite", "style": "Neutral, balanced"}
-    if severity == "SV3":
-        if {"escalate", "empathetic_tone", "no_curiosity_invite"}.issubset(mods):
-            return {"action": "BLOCK_ESCALATE", "ending": "(none)", "style": "Empathetic"}
-        if {"empathetic_tone", "no_curiosity_invite"}.issubset(mods):
-            return {"action": "BLOCK", "ending": "(none)", "style": "Empathetic"}
-        return {"action": "BLOCK", "ending": "neutral_alternate_question", "style": "Neutral"}
-    return {"action": "TRANSFORM", "ending": "curiosity_invite", "style": "Neutral, balanced"}
+    base = CODEBOOK.g4.severity_actions.get(severity)
+    action = base.action if base else "TRANSFORM"
+    ending = "(none)" if severity == "SV3" or "no_curiosity_invite" in modifiers else "curiosity_invite"
+    return {"action": action, "ending": ending, "style": "neutral"}
 
 
 def _g1_allowed(allowed: list[str], g1_id: str) -> bool:
@@ -550,68 +643,57 @@ def _apply_gl_rules(
     g3: dict[str, Any],
     g4: dict[str, str],
 ) -> tuple[dict[str, Any], dict[str, str], list[str], list[str]]:
-    flags = classifier_output["applies_when_flags"]
-    g1_id = classifier_output["g1"]["id"]
-    g2_ids = [item["id"] for item in classifier_output["g2"]]
     active_gl: list[str] = []
     prompt_notes: list[str] = []
     modifiers = set(g3["modifiers"])
 
-    def activate(gl_id: str, notes: list[str]) -> None:
+    def activate(gl_id: str) -> None:
         if gl_id not in active_gl:
             active_gl.append(gl_id)
-        prompt_notes.extend(notes)
+        spec = CODEBOOK.gl_specs.get(gl_id)
+        if spec and spec.special_rules:
+            prompt_notes.append(spec.special_rules)
 
-    if flags["has_harmful_comparison"] and any(g2 in {"DANGEROUS", "VIOLENCE", "SELF_HARM", "HATE_GROUP", "UNSAFE_SEXUAL_CONTENT", "GROOMING"} for g2 in g2_ids):
+    predicted_flags = _predicted_flags(classifier_output)
+    candidates = _flag_modifier_candidates(predicted_flags)
+    final_tone = _resolve_priority(candidates["tone"], TONE_PRIORITY, "neutral")
+    final_action = _resolve_priority(candidates["action"], ACTION_PRIORITY, "normal_advice")
+    final_escalation = _resolve_priority(candidates["escalation"], ESCALATION_PRIORITY, "none")
+
+    activate("GL-T1")
+    activate("GL-A1")
+    activate("GL-CU1")
+    activate("GL-O1")
+    if final_escalation != "none":
+        activate("GL-E1")
+
+    modifiers.update({final_tone, final_action, final_escalation})
+    if g3["severity"] == "SV3":
         modifiers.add("no_curiosity_invite")
-        if g1_id == "BELIEF":
-            g4.update({"action": "TRANSFORM", "ending": "(none)", "style": "Neutral, balanced"})
-        else:
-            g4.update({"action": "BLOCK", "ending": "(none)", "style": "Neutral"})
-        activate("GL-C1", [
-            "Do not choose or rank harmful options.",
-            "Do not describe harmful options comparatively.",
-        ])
+        g4["ending"] = "(none)"
+    else:
+        modifiers.add("curiosity_invite")
+        g4["ending"] = "curiosity_invite"
 
-    if flags["has_loaded_premise"] and g1_id in {"BELIEF", "GENERIC", "FACT", "VIOLENCE"}:
-        modifiers.add("needs_debiasing")
-        activate("GL-L1", [
-            "Correct or neutralize the biased premise before any allowed answer.",
-            "Do not treat the biased premise as true.",
-        ])
-
-    if flags["has_negative_language"] and (g1_id in {"BELIEF", "GENERIC", "FACT", "VIOLENCE", "DEATH_GRIEF"}):
-        if flags["is_protected_group_target"]:
-            modifiers.add("flag_for_review")
-        activate("GL-N1", [
-            "Do not repeat abusive language in the model's own voice.",
-            "Do not endorse the abusive framing.",
-        ])
-
-    if flags["has_vuln_exploitation"] and (flags["has_blackmail_pattern"] or flags["has_dependency_pattern"]) and "VULN_EXPLOIT" in g2_ids:
-        modifiers.update({"escalate", "safeguarding_concern"})
-        if "GROOMING" in g2_ids or "UNSAFE_SEXUAL_CONTENT" in g2_ids:
-            g4.update({"action": "BLOCK_HARD", "ending": "(none)", "style": "None / Minimal"})
-        else:
-            g4.update({"action": "BLOCK_ESCALATE", "ending": "(none)", "style": "Empathetic"})
-        activate("GL-V1", [
-            "Acknowledge the child's feelings without blame.",
-            "Append a trusted-adult prompt where allowed by the gate path.",
-        ])
+    g4["style"] = final_tone
+    if final_action == "clarify_context" and g4["action"] == "ALLOW":
+        g4["action"] = "TRANSFORM"
+        g4["ending"] = "safe_disambiguation_question"
+    if final_action == "safety_check" and g4["action"] == "ALLOW":
+        g4["action"] = "TRANSFORM"
 
     g3["modifiers"] = sorted(modifiers)
     return g3, g4, active_gl, prompt_notes
 
 
 def gate_output_from_classifier(classifier_output: dict[str, Any]) -> dict[str, Any]:
+    classifier_output["g2"] = _single_g2_items(classifier_output.get("g2", []))
     g2_ids = [item["id"] for item in classifier_output["g2"]]
     g3 = compute_g3(g2_ids, _predicted_flags(classifier_output))
     g4 = _base_g4(g3["severity"], g3["modifiers"])
     g3, g4, active_gl, prompt_notes = _apply_gl_rules(classifier_output, g3, g4)
     if g3["modifiers"] != sorted(set(g3["modifiers"])):
         g3["modifiers"] = sorted(set(g3["modifiers"]))
-    if g4["action"] in {"BLOCK_ESCALATE", "TRANSFORM_ESCALATE"} and "escalate" not in g3["modifiers"]:
-        g3["modifiers"].append("escalate")
     return {
         "g3": g3,
         "g4": g4,
@@ -633,6 +715,7 @@ def safety_envelope_from_runtime(classifier_output: dict[str, Any], gate_output:
         },
         "applies_when_flags": classifier_output["applies_when_flags"],
         "user_context": {
+            "age": classifier_output.get("age"),
             "age_band": age_band,
             "age_settings": {
                 "max_words": age_settings.max_words,
