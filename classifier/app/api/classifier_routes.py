@@ -264,6 +264,7 @@ async def classify_guardrail(payload: ClassificationTestRequest) -> Classificati
 
 @router.post("/guardrail/classified/prompt", response_model=ClassificationPromptResponse)
 async def classify_guardrail_prompt(payload: ClassificationTestRequest) -> ClassificationPromptResponse:
+    print(f"payload: {payload}")
     classification, decision = await _classification_payload(payload)
     final_prompt = prompt_contract.build(payload.child_profile, payload.message, decision, [])
     return ClassificationPromptResponse(
