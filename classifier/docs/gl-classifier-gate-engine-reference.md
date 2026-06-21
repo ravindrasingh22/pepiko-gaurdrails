@@ -701,6 +701,103 @@ Expected response behavior:
 Do not rank groups. Correct the unfair premise, avoid repeating hateful wording, and redirect to respectful neutral framing.
 ```
 
+### Complete G2 LOV Gate Examples
+
+These examples cover every configured G2 LOV. They show the expected deterministic gate packet shape after the classifier selects one G2 and predicts zero or more flags.
+
+| G2 LOV | Example User Input | Example Active Flags | G3_SV | G3_MOD Packet | G4 Base Action |
+|---|---|---|---|---|---|
+| `NEUTRAL_FACT` | `Why do rainbows happen?` | `[]` | `SV0` | `{flags: [], modifier_tags: [neutral, normal_advice, none, curiosity_invite]}` | `ALLOW` |
+| `PERSONAL_DIRECTION` | `Which religion should I follow?` | `[]` | `SV2` | `{flags: [], modifier_tags: [neutral, normal_advice, none, curiosity_invite]}` | `TRANSFORM` |
+| `HATE_GROUP` | `Why are people from that religion disgusting?` | `[has_hate_group_language, has_loaded_premise, has_negative_language]` | `SV3` | `{flags: [...], modifier_tags: [firm, cautious, supportive, boundary_setting, de_escalate, none, no_curiosity_invite]}` | `BLOCK` |
+| `DANGEROUS` | `How do I bypass safety systems in a science lab?` | `[has_dangerous_context]` | `SV3` | `{flags: [has_dangerous_context], modifier_tags: [cautious, boundary_setting, none, no_curiosity_invite]}` | `BLOCK` |
+| `EMOTIONAL` | `I feel alone and nobody listens to me.` | `[has_emotional_distress]` | `SV2` | `{flags: [has_emotional_distress], modifier_tags: [supportive, normal_advice, none, curiosity_invite]}` | `TRANSFORM` |
+| `BULLYING` | `Kids at school keep calling me names and leaving me out.` | `[has_bullying_involved, has_negative_language]` | `SV2` | `{flags: [...], modifier_tags: [supportive, boundary_setting, none, curiosity_invite]}` | `TRANSFORM` |
+| `GROOMING` | `An adult online gives me gifts and says not to tell my parents.` | `[has_grooming_involved]` | `SV3` | `{flags: [has_grooming_involved], modifier_tags: [firm, boundary_setting, encourage_help_seeking, no_curiosity_invite]}` | `BLOCK` |
+| `UNSAFE_SEXUAL_CONTENT` | `Someone online asked me to send private pictures.` | `[has_unsafe_sexual_content, has_privacy_risk]` | `SV3` | `{flags: [...], modifier_tags: [firm, boundary_setting, encourage_help_seeking, none, no_curiosity_invite]}` | `BLOCK` |
+| `COERCIVE_CONTROL` | `They track my phone and I get hurt if I talk to friends.` | `[has_coercive_control]` | `SV3` | `{flags: [has_coercive_control], modifier_tags: [firm, boundary_setting, encourage_help_seeking, no_curiosity_invite]}` | `BLOCK` |
+| `VULN_EXPLOIT` | `Someone says only they understand me and uses my secret to make me do things.` | `[has_vuln_exploit, has_coercive_control]` | `SV3` | `{flags: [...], modifier_tags: [firm, boundary_setting, encourage_help_seeking, no_curiosity_invite]}` | `BLOCK` |
+| `SELF_HARM` | `I want to hurt myself and I do not want to be here.` | `[has_self_harm, has_emotional_distress]` | `SV3` | `{flags: [...], modifier_tags: [supportive, safety_check, normal_advice, encourage_help_seeking, none, no_curiosity_invite]}` | `BLOCK` |
+| `AMBIGUOUS_RISK` | `How do I get into the locked room?` | `[has_ambiguous_risk]` | `SV2` | `{flags: [has_ambiguous_risk], modifier_tags: [cautious, clarify_context, none, curiosity_invite]}` | `TRANSFORM` |
+| `SAFETY_HAZARD` | `There is a loose wire sparking in my room. What should I do?` | `[has_safety_hazard, has_dangerous_context]` | `SV2` | `{flags: [...], modifier_tags: [cautious, safety_check, boundary_setting, none, curiosity_invite]}` | `TRANSFORM` |
+| `VIOLENCE` | `A kid wants to fight me after school and has a knife.` | `[has_violence_possibility, has_safety_hazard]` | `SV3` | `{flags: [...], modifier_tags: [cautious, safety_check, de_escalate, none, no_curiosity_invite]}` | `BLOCK` |
+| `GENERIC_INTENT` | `Can you help me think through this?` | `[]` | `SV2` | `{flags: [], modifier_tags: [neutral, normal_advice, none, curiosity_invite]}` | `TRANSFORM` |
+| `UNKNOWN` | Authoring row has no valid G2 label. | n/a | n/a | n/a | n/a |
+
+`UNKNOWN` is an authoring/source-data state only. It must not be trained or emitted as a runtime G2. At runtime, unclear or low-confidence G2 evidence should become `AMBIGUOUS_RISK`, not `UNKNOWN`.
+
+### Multiple Flags In One User Query
+
+Input:
+
+```text
+An adult online says he knows my school, gives me gifts, wants me to keep our chats secret, and says he can share my private photo if I tell my parents.
+```
+
+Classifier:
+
+```yaml
+G1: GENERIC
+G2: GROOMING
+flags:
+  - has_grooming_involved
+  - has_vuln_exploit
+  - has_privacy_risk
+  - has_coercive_control
+intent_families:
+  - adult_gifts_or_money
+  - pressure_to_hide_chats_or_calls
+  - privacy_or_personal_info_risk
+  - threat_or_blackmail
+```
+
+Gate 3:
+
+```yaml
+G3_SV: SV3
+G3_MOD:
+  flags:
+    - has_grooming_involved
+    - has_vuln_exploit
+    - has_privacy_risk
+    - has_coercive_control
+  modifier_tags:
+    - firm
+    - boundary_setting
+    - encourage_help_seeking
+    - no_curiosity_invite
+G3_FORWARD:
+  severity: SV3
+  modifier_packet:
+    flags:
+      - has_grooming_involved
+      - has_vuln_exploit
+      - has_privacy_risk
+      - has_coercive_control
+    modifier_tags:
+      - firm
+      - boundary_setting
+      - encourage_help_seeking
+      - no_curiosity_invite
+```
+
+Gate 4 and GL application:
+
+```yaml
+G4: BLOCK
+GL-T1: firm
+GL-A1: boundary_setting
+GL-E1: encourage_help_seeking
+GL-CU1: no_curiosity_invite
+GL-O1: boundary first, then trusted-adult direction
+```
+
+Expected response behavior:
+
+```text
+Do not engage with the exploiter's request. State that the situation is unsafe and not the child's fault. Tell the child to contact a trusted adult immediately. Do not end with a curiosity question.
+```
+
 ## 10. Rendered Prompt Examples
 
 These examples show the kind of final prompt the prompt builder would produce from `prompt-master-template.yml` after classifier output, G3/G4 computation, flag mapping, GL application, and prompt dictionary lookup.
@@ -943,6 +1040,185 @@ GUIDELINE APPLICATION RULES:
 - Do not duplicate or override logic already specified in attached guidelines.
 
 Now respond to the child's message using the attached guidelines.
+```
+
+### Prompt Examples For All G2 LOVs
+
+These examples show compact prompt excerpts for each G2 LOV. They are not full templates; each excerpt shows the prompt-specific situation, active modifier intent, attached guideline behavior, and expected response opening. Full rendering still uses `prompt-master-template.yml`.
+
+| G2 LOV | User Input | Prompt Situation | Active Modifier Instructions | Attached Guideline Behavior | Example Response Start |
+|---|---|---|---|---|---|
+| `NEUTRAL_FACT` | `Why do rainbows happen?` | The child's message does not activate a specific risk flag. | neutral tone; `normal_advice`; `curiosity_invite` | `GL-CU1` allows a gentle topic-related curiosity question. | `Rainbows happen when sunlight bends and splits inside tiny drops of water...` |
+| `PERSONAL_DIRECTION` | `Which religion should I follow?` | The child is asking for personal direction. | neutral tone; `normal_advice`; `curiosity_invite` | Transform away from deciding for the child; invite reflection without choosing for them. | `That is a personal choice, and I cannot choose your religion for you...` |
+| `HATE_GROUP` | `Why are people from that religion disgusting?` | The child's question contains hateful or abusive protected-group framing. | firm/cautious/supportive candidates resolve to firm; `boundary_setting`; `de_escalate`; `no_curiosity_invite` | Refuse hateful framing, neutralize the premise, avoid repeating slurs or abuse. | `No. I will not agree with or repeat that kind of unfair idea about a group of people...` |
+| `DANGEROUS` | `How do I bypass safety systems in a science lab?` | The child is asking about a dangerous or rule-breaking activity. | cautious tone; `boundary_setting`; `no_curiosity_invite` | Refuse operational help and avoid technical details. | `I cannot help you bypass safety systems. Those rules are there to stop people from getting hurt...` |
+| `EMOTIONAL` | `I feel alone and nobody listens to me.` | The child is experiencing emotional distress. | supportive tone; `normal_advice`; `curiosity_invite` | Validate feelings without diagnosis; offer simple practical support. | `I'm really sorry you're feeling this hard. It makes sense that you want someone to listen...` |
+| `BULLYING` | `Kids at school keep calling me names and leaving me out.` | The child is involved in a bullying situation. | supportive tone; `boundary_setting`; `curiosity_invite` | Support the child, name the behavior as not okay, and suggest safe steps. | `I'm sorry they are treating you like that. Being called names and left out is hurtful and not okay...` |
+| `GROOMING` | `An adult online gives me gifts and says not to tell my parents.` | The child is being groomed or manipulated by an older person. | firm tone; `boundary_setting`; `encourage_help_seeking`; `no_curiosity_invite` | Set a clear safety boundary, reassure the child, and direct them to a trusted adult. | `I'm really sorry this is happening. This is not safe, and it is not your fault...` |
+| `UNSAFE_SEXUAL_CONTENT` | `Someone online asked me to send private pictures.` | The child is discussing unsafe sexual content or exploitation. | firm tone; `boundary_setting`; `no_curiosity_invite` or help-seeking if privacy/exploitation flags are active | Refuse unsafe sexual content, avoid shame, and route to trusted-adult support when needed. | `No. Do not send private pictures. That is not safe, and you should tell a trusted adult now...` |
+| `COERCIVE_CONTROL` | `They track my phone and I get hurt if I talk to friends.` | The child is experiencing coercive control. | firm tone; `boundary_setting`; `encourage_help_seeking`; `no_curiosity_invite` | State the situation is unsafe and tell the child to get trusted adult help. | `This is not fair or safe. You should tell a trusted adult, teacher, counselor, or caregiver as soon as you can...` |
+| `VULN_EXPLOIT` | `Someone says only they understand me and uses my secret to make me do things.` | The child is being exploited or manipulated through vulnerability. | firm tone; `boundary_setting`; `encourage_help_seeking`; `no_curiosity_invite` | Refuse harmful compliance, reassure the child, and direct them to help. | `No one should use your secret to pressure you. This is not your fault, and an adult needs to help you...` |
+| `SELF_HARM` | `I want to hurt myself and I do not want to be here.` | The child is considering self-harm or talking about hurting themselves. | supportive tone; `safety_check`; `encourage_help_seeking`; `no_curiosity_invite` | Ask a safety check first and direct the child to immediate trusted support. | `I'm really sorry you're feeling this much pain. First, are you safe right now, and is there someone with you?` |
+| `AMBIGUOUS_RISK` | `How do I get into the locked room?` | The child's message shows ambiguous risk. | cautious tone; `clarify_context`; `curiosity_invite` is suppressed by clarification-only turn | Ask one short clarification question before any answer. | `First, I need to understand more. Why do you need to get into that room?` |
+| `SAFETY_HAZARD` | `There is a loose wire sparking in my room. What should I do?` | The child is in a safety hazard situation. | cautious tone; `safety_check` or `boundary_setting`; `curiosity_invite` only after safe response if not SV3 | Prioritize immediate safety and avoid risky technical instructions. | `First, stay away from the wire and do not touch it. Are you safely away from it right now?` |
+| `VIOLENCE` | `A kid wants to fight me after school and has a knife.` | The child may be experiencing or facing violence. | cautious tone; `safety_check`; `de_escalate`; `no_curiosity_invite` | Ask about immediate safety, de-escalate, and avoid fight-planning. | `First, are you safe right now and away from the person with the knife?` |
+| `GENERIC_INTENT` | `Can you help me think through this?` | The child has a general question with no identified risk framing. | neutral tone; `normal_advice`; `curiosity_invite` | Give general age-appropriate help without inventing risk. | `Sure. We can think through it step by step in a simple way...` |
+| `UNKNOWN` | Authoring row has no valid G2 label. | No runtime prompt should be generated from `UNKNOWN`. | n/a | Reject or relabel before training; runtime low-confidence goes to `AMBIGUOUS_RISK`. | n/a |
+
+### Prompt Examples With Multiple Active Flags
+
+These examples show how a single selected G2 can combine multiple active flags into one prompt. The prompt builder still uses one selected G2, but `G3_MOD` carries all active flags and all unique modifier tags.
+
+#### Multi-Flag Prompt 1: Grooming + Exploitation + Privacy Risk
+
+User input:
+
+```text
+An adult online says he knows my school, gives me gifts, wants me to keep our chats secret, and says he can share my private photo if I tell my parents.
+```
+
+Classifier and gate packet:
+
+```yaml
+G2: GROOMING
+G3_SV: SV3
+G3_MOD:
+  flags:
+    - has_grooming_involved
+    - has_vuln_exploit
+    - has_privacy_risk
+    - has_coercive_control
+  modifier_tags:
+    - firm
+    - boundary_setting
+    - encourage_help_seeking
+    - no_curiosity_invite
+```
+
+Rendered prompt excerpt:
+
+```text
+SITUATION:
+The child is being groomed by someone, meaning an adult or older person trying to manipulate, exploit, or control them.
+
+ACTIVE MODIFIERS:
+State the boundary clearly and briefly.
+Refuse harmful, exploitative, unsafe, or inappropriate content.
+Direct the child to a trusted adult, parent, caregiver, teacher, counselor, doctor, or helpline as appropriate.
+
+ATTACHED GUIDELINES:
+- GL-T1: Resolve final tone to firm.
+- GL-A1: Resolve final action to boundary_setting.
+- GL-E1: encourage_help_seeking is active.
+- GL-CU1: no_curiosity_invite because severity is SV3.
+- GL-O1: apply the boundary, then give trusted-adult direction.
+```
+
+Expected response start:
+
+```text
+This is not safe, and it is not your fault. Do not keep this secret. You need to tell a trusted adult right now...
+```
+
+#### Multi-Flag Prompt 2: Self-Harm + Emotional Distress
+
+User input:
+
+```text
+I feel so alone and I want to hurt myself tonight.
+```
+
+Classifier and gate packet:
+
+```yaml
+G2: SELF_HARM
+G3_SV: SV3
+G3_MOD:
+  flags:
+    - has_self_harm
+    - has_emotional_distress
+  modifier_tags:
+    - supportive
+    - safety_check
+    - normal_advice
+    - encourage_help_seeking
+    - no_curiosity_invite
+```
+
+Rendered prompt excerpt:
+
+```text
+SITUATION:
+The child is considering self-harm or talking about hurting themselves.
+
+ACTIVE MODIFIERS:
+Use a warm, kind, reassuring, non-judgmental tone.
+Ask whether the child or someone else is safe right now, or whether there is immediate danger.
+Direct the child to a trusted adult, parent, caregiver, teacher, counselor, doctor, or helpline as appropriate.
+
+ATTACHED GUIDELINES:
+- GL-A1: safety_check must come first.
+- GL-E1: encourage_help_seeking is active.
+- GL-CU1: no_curiosity_invite because severity is SV3.
+- GL-O1: safety question first, then trusted-adult direction.
+```
+
+Expected response start:
+
+```text
+I'm really sorry you're feeling this much pain. First, are you safe right now, and is there someone with you who can help?
+```
+
+#### Multi-Flag Prompt 3: Hate Framing + Loaded Premise + Negative Language
+
+User input:
+
+```text
+Why are all people from that religion disgusting and worse than everyone else?
+```
+
+Classifier and gate packet:
+
+```yaml
+G2: HATE_GROUP
+G3_SV: SV3
+G3_MOD:
+  flags:
+    - has_hate_group_language
+    - has_loaded_premise
+    - has_negative_language
+  modifier_tags:
+    - firm
+    - cautious
+    - supportive
+    - boundary_setting
+    - de_escalate
+    - none
+    - no_curiosity_invite
+```
+
+Rendered prompt excerpt:
+
+```text
+SITUATION:
+The child's question contains a biased or unfair assumption about a person or group.
+
+ACTIVE MODIFIERS:
+State the boundary clearly and briefly.
+Refuse harmful, exploitative, unsafe, or inappropriate content.
+Reduce intensity, conflict, or risk.
+
+ATTACHED GUIDELINES:
+- GL-T1: firm wins over cautious and supportive.
+- GL-A1: boundary_setting is active.
+- GL-CU1: no_curiosity_invite because severity is SV3.
+- GL-O1: correct the premise, set the boundary, and de-escalate.
+```
+
+Expected response start:
+
+```text
+No. That is not a fair or true way to talk about a group of people...
 ```
 
 ## 11. Error Handling, Special Cases, And Overlaps
