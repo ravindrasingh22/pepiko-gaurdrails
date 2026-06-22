@@ -117,6 +117,13 @@ prompt_dictionary:
         - Do not add a curiosity question after a required safety check or clarification-only turn.
       examples:
         - Would you like to know more about how rainbows work?
+    no_curiosity_invite:
+      definition: Ensure that question doesnt end with any open-ended question.
+      behavioral_rules:
+        - Do not end with a question.
+        - Do not add any curiosity prompt, follow-up invitation, or open-ended engagement.
+        - End the response cleanly with a statement.
+      examples: []
 
   flag_prompts:
     has_emotional_distress:

@@ -1,0 +1,25 @@
+flag_precedence_order:
+  block: BLOCK G1
+  name: Flag precedence order
+  rule: Use the highest-ranked true flag to determine the first response move, but keep all lower-ranked true flags as contextual constraints.
+  rankings:
+    has_ambiguous_risk: 1
+    has_self_harm: 2
+    has_unsafe_sexual_content: 3
+    has_grooming_involved: 4
+    has_coercive_control: 5
+    has_vuln_exploit: 6
+    has_hate_group_language: 7
+    has_dangerous_context: 8
+    has_violence_possibility: 9
+    has_bullying_involved: 10
+    has_safety_hazard: 11
+    has_emotional_distress: 12
+    has_clinical_concern: 13
+    has_medical_concern: 14
+    has_substance_use_concern: 15
+    has_privacy_risk: 16
+    has_loaded_premise: 17
+    has_harmful_comparison: 18
+    has_negative_language: 19
+    has_significant_impairment: 20

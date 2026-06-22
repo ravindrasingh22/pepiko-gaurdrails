@@ -1,4 +1,4 @@
-from app.guardrails.prompt_manager import _modifier_rules, build_safety_envelope, render_prompt
+from app.guardrails.prompt_manager import _modifier_rules, _selected_flag_prompt, build_safety_envelope, render_prompt
 from app.guardrails.runtime_contracts import classifier_output_from_decision
 from app.models.child_profile import ChildProfile
 from app.models.guardrail_decision import GuardrailDecision
@@ -86,6 +86,8 @@ def test_prompt_contract_exposes_codebook_flow_packet() -> None:
     assert "You are a child-safe assistant responding to a child aged 12" in rendered["prompt"]
     assert "ACTIVE MODIFIERS:" in rendered["prompt"]
     assert "ATTACHED GUIDELINES:" in rendered["prompt"]
+    assert "no_curiosity_invite" in rendered["prompt"]
+    assert "Ensure that question doesnt end with any open-ended question" in rendered["prompt"]
     assert "Question:" not in rendered["prompt"]
     assert rendered["checklist"]["passed"] is True
 
@@ -111,6 +113,52 @@ def test_prompt_contract_includes_curiosity_invite_runtime_variable_for_safe_pro
 
     assert "curiosity_invite" in rendered["safety_envelope"]["g3"]["modifiers"]
     assert "Would you like to know more about how rainbows work?" in rendered["prompt"]
+
+
+def test_selected_flag_prompt_uses_codebook_flag_precedence_order() -> None:
+    envelope = {
+        "g3": {
+            "source_flags": [
+                "has_significant_impairment",
+                "has_emotional_distress",
+                "has_self_harm",
+            ]
+        }
+    }
+
+    selected = _selected_flag_prompt(envelope)
+
+    assert "self-harm" in selected["context"]
+
+
+def test_multiple_runtime_flags_activate_flag_precedence_gl() -> None:
+    decision = GuardrailDecision(
+        input={"question": "test", "age_band": "11-12", "language": "en", "recent_context": "none"},
+        reason="test reason",
+        gl_signals={},
+        active_gls=[],
+        gates={"G1": "GENERIC", "G2": "BULLYING", "G3": "SV2", "G4": "TRANSFORM"},
+        decision={"allow_llm": True},
+        policy_bucket="allowed",
+        safety_category="BULLYING",
+        response_mode="guide_or_redirect",
+        risk_level="medium",
+        parent_visible=False,
+        prompt_contract={},
+        classifier_metadata={
+            "head_confidences": {
+                "intent_lexicon_learned": {
+                    "predicted_flags": ["has_bullying_involved", "has_violence_possibility"]
+                }
+            }
+        },
+    )
+    child_profile = ChildProfile(age=12, age_group="11-12", language="en")
+
+    rendered = render_prompt(child_profile, "They keep threatening me at school.", decision)
+
+    assert "GL-FP1" in rendered["safety_envelope"]["gl"]["active"]
+    assert "Runtime flag-precedence order rule" in rendered["prompt"]
 
 
 def test_low_confidence_g2_routes_to_ambiguous_risk() -> None:

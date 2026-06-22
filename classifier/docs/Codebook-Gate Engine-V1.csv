@@ -1,0 +1,63 @@
+Codebook Practical,,,
+"Purpose: This sheet translates the GL Codebook into a flat, gate-by-gate reference. Read top to bottom. Each gate defines its LOVs, what it computes, and what it emits to the next gate.",,,
+BLOCK G1 - Flag precedence order:,,,
+"Use the highest-ranked true flag to determine the first response move, but keep all lower-ranked true flags as contextual constraints.",,,
+flag,rank,,
+has_ambiguous_risk,1,,
+has_self_harm,2,,
+has_unsafe_sexual_content,3,,
+has_grooming_involved,4,,
+has_coercive_control,5,,
+has_vuln_exploit,6,,
+has_hate_group_language,7,,
+has_dangerous_context,8,,
+has_violence_possibility,9,,
+has_bullying_involved,10,,
+has_safety_hazard,11,,
+has_emotional_distress,12,,
+has_clinical_concern,13,,
+has_medical_concern,14,,
+has_substance_use_concern,15,,
+has_privacy_risk,16,,
+has_loaded_premise,17,,
+has_harmful_comparison,18,,
+has_negative_language,19,,
+has_significant_impairment,20,,
+,,,
+BLOCK G2 -  SEVERITY COMPUTATION | GATE ENGINE,,,
+"Question this gate answers: Given the single selected G2 LOV, what is the combined severity and modifier set for this query?",,,
+NOTE: Gate 3 does not add new LOVs. It aggregates the outputs from ALL matched with G2 LOVs into a single G3 packet (G3_SV + G3_MOD) which Gate 4 then reads.,,,
+Element,Computation Rule,Example,Help Text
+G3_SV (Severity),G3_SV = Severity Floor of that G2,"If BULLYING is fired in g2 then, G3_SV = SV2","A single SV3 LOV makes the whole query SV3, regardless of other LOVs. Severity only goes up, never down."
+,,,
+G3_MOD (Modifier Packet),Active flags + Associated tags ,"has_emotional_distress emits [supportive, normal_advice] and has_bullying_involved emits [supportive, boundary_setting], G3_MOD = {(has_emotional_distress , has_bullying_involved); (supportive, normal_advice, boundary_setting)}",All flags emitted from the query are collected. All unique modifier tags emitted from flags are collected as well. No priority within the set. Order does not matter.
+G3_FORWARD (Output to Gate 4),"Forward the pair: (G3_SV, G3_MOD) as the instruction packet","G3 packet: SV2 + {(has_emotional_distress , has_bullying_involved); (supportive, normal_advice, boundary_setting)}","Gate 4 reads G3_SV to pick the base action, then reads G3_MOD to adjust response style, tone, ending, and escalation."
+,,,
+BLOCK G3  (GUIDELINE NOTES) | GATE ENGINE,,,
+GL_ID,GL_Name,Applies_When,What gets attached to the Prompt
+GL-T1,TonePriorityGL,"More than one tone candidate is active, or tone must be resolved from active flags","Resolve final tone by priority: if any  firm , use  firm ; else if any  cautious , use  cautious ; else use  supportive . Apply that tone consistently throughout the response."
+GL-A1,ActionPriorityGL,"More than one action candidate is active, or action must be resolved from active flags","Resolve final action by priority: if any  safety_check , use  safety_check ; else if any  boundary_setting , use  boundary_setting ; else if any  clarify_context , use  clarify_context ; else if any  de_escalate , use  de_escalate ; else use  normal_advice . If  safety_check  is chosen, it must come first in the response."
+GL-E1,EscalationPriorityGL,One or more escalation candidates are active,"If any active flag requires  encourage_help_seeking , direct the child to a trusted adult, parent, caregiver, teacher, counselor, doctor, or helpline. Otherwise do not escalate."
+GL-CU1,CuriosityInviteGL,Always,"If G3_SV=SV3, use  no_curiosity_invite . Otherwise use  curiosity_invite . Do not end high-risk responses with exploratory or open-ended engagement"
+GL-O1,ResponseOrderGL,Always,"Response order rule: if  safety_check  is active, ask the safety question first; then apply tone consistently; then perform the selected action; if  encourage_help_seeking  is active, end with a clear direction to contact a trusted adult."
+GL-FP1,FlagPrecedenceRuntimeGL,"Two or more flags are emitted, or  has_ambiguous_risk = true  is emitted","Runtime flag-precedence order rule: inspect only the emitted flags, reorder them by the configured precedence order from BLOCK G1, and attach only the relevant precedence instructions for the emitted combination. If  has_ambiguous_risk  is present and the child’s intent is still unclear, clarification-first behavior overrides all other first-response behaviors. For all other emitted combinations, generate explicit higher-vs-lower precedence instructions only for the relevant pairs (for example,  has_violence_possibility  over  has_bullying_involved , while preserving bullying as secondary context). Attach to the prompt: (1) the reordered emitted-flag list, (2) the relevant pairwise precedence instructions for the emitted set, and (3) the instruction: “Always follow the attached precedence rules and the reordered emitted-flag order when generating the response. Do not ignore lower-priority emitted flags; retain them as contextual constraints.”"
+,,,
+BLOCK G4 - AGE POLICY RUNTIME - Purpose: This block defines the age-band runtime settings consumed by the app. These rows are the source of truth for age-band aliases,,,
+AGE_BAND,Max_Answer_Style,Max_Words,Depth
+5-6,"Warm, concrete, one idea",90,CONCRETE_ONE_STEP
+7-8,"Friendly, simple examples",110,SIMPLE_EXAMPLE
+9-10,"Clear, cause-effect, brief steps",130,BASIC_REASONING
+11-12,"Balanced, plain definitions",160,GUIDED_REASONING
+13-14,"Structured, critical thinking",200,STRUCTURED_CONTEXT
+15-16,"Nuanced, teen-appropriate",240,TEEN_SAFE_DETAIL
+17,"Nuanced, responsible framing",280,NEAR_ADULT_MINOR_SAFE
+,,,
+BLOCK G4 -  FINAL ACTION + RESPONSE STYLE | GATE ENGINE,,,
+"Question this gate answers: Given G3_SV and G3_MOD, what action should the response take and how should it be styled?",,,
+"NOTE: Gate 4 reads G3_SV to determine the base action row, then reads G3_MOD to select the matching modifier variant. Both must be checked. Outputs are: Action + Base Ending + Style.",,,
+"HOW TO READ THIS TABLE: (1) Find the row matching G3_SV. (2) If G3_MOD contains special modifiers, find the matching variant row. (3) Apply the Action, Ending, and Style columns. Ending overrides apply on top of Base Ending.",,,
+G3_SV,G4_Action,Full Description,
+SV0,ALLOW,Answer directly and fully. Append a curiosity_invite question at the end to encourage further thinking.,
+SV1,TRANSFORM,"Reframe the question, remove any ranking or loaded framing. Respond with balanced perspective. Append curiosity_invite.",
+SV2,TRANSFORM,Transform with balanced framing. May offer alternative perspectives. No hard block.,
+SV3,BLOCK,"Block the response. Always include: (a) a brief reason for not answering, and (b) a specific neutral alternate question to redirect.",
