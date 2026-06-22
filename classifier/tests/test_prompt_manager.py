@@ -156,9 +156,54 @@ def test_multiple_runtime_flags_activate_flag_precedence_gl() -> None:
     child_profile = ChildProfile(age=12, age_group="11-12", language="en")
 
     rendered = render_prompt(child_profile, "They keep threatening me at school.", decision)
+    precedence = rendered["safety_envelope"]["gl"]["flag_precedence"]
 
     assert "GL-FP1" in rendered["safety_envelope"]["gl"]["active"]
+    assert precedence["ordered_flags"] == ["has_violence_possibility", "has_bullying_involved"]
+    assert precedence["primary_flag"] == "has_violence_possibility"
+    assert "supportive" not in rendered["safety_envelope"]["g3"]["modifiers"]
+    assert "boundary_setting" not in rendered["safety_envelope"]["g3"]["modifiers"]
+    assert "The child may be experiencing, perceiving, or considering violence." in rendered["prompt"]
+    assert "Secondary active flag constraints: has_bullying_involved" in rendered["prompt"]
+    assert 'Start your response like this (adapt to the situation):\n"First, I need to ask:' in rendered["prompt"]
     assert "Runtime flag-precedence order rule" in rendered["prompt"]
+    assert "GL-FP1 ordered emitted flags: has_violence_possibility, has_bullying_involved" in rendered["prompt"]
+    assert "has_violence_possibility takes precedence over has_bullying_involved" in rendered["prompt"]
+
+
+def test_ambiguous_risk_flag_forces_clarification_first_gl_behavior() -> None:
+    decision = GuardrailDecision(
+        input={"question": "test", "age_band": "11-12", "language": "en", "recent_context": "none"},
+        reason="test reason",
+        gl_signals={},
+        active_gls=[],
+        gates={"G1": "GENERIC", "G2": "AMBIGUOUS_RISK", "G3": "SV2", "G4": "TRANSFORM"},
+        decision={"allow_llm": True},
+        policy_bucket="allowed",
+        safety_category="AMBIGUOUS_RISK",
+        response_mode="guide_or_redirect",
+        risk_level="medium",
+        parent_visible=False,
+        prompt_contract={},
+        classifier_metadata={
+            "head_confidences": {
+                "intent_lexicon_learned": {
+                    "predicted_flags": ["has_self_harm", "has_ambiguous_risk"]
+                }
+            }
+        },
+    )
+    child_profile = ChildProfile(age=12, age_group="11-12", language="en")
+
+    rendered = render_prompt(child_profile, "I might do it tonight.", decision)
+    envelope = rendered["safety_envelope"]
+
+    assert envelope["g4"]["action"] == "TRANSFORM"
+    assert "clarify_context" in envelope["g3"]["modifiers"]
+    assert "safety_check" not in envelope["g3"]["modifiers"]
+    assert envelope["gl"]["flag_precedence"]["primary_flag"] == "has_ambiguous_risk"
+    assert "ResponseOrderGL: ask exactly one brief clarifying question" in rendered["prompt"]
+    assert "has_ambiguous_risk is present" in rendered["prompt"]
 
 
 def test_low_confidence_g2_routes_to_ambiguous_risk() -> None:

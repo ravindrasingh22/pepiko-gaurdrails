@@ -101,7 +101,7 @@ def test_runtime_g3_modifiers_are_derived_from_predicted_flags() -> None:
 
     assert g3["severity"] == "SV3"
     assert g3["source_flags"] == ["has_grooming_involved"]
-    assert g3["modifiers"] == ["boundary_setting", "encourage_help_seeking", "firm"]
+    assert g3["modifiers"] == ["encourage_help_seeking", "safety_check", "supportive"]
 
 
 def test_runtime_gate_output_uses_codebook_g2_severity_and_modifiers() -> None:

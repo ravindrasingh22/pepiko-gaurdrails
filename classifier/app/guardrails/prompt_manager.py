@@ -124,14 +124,82 @@ def _selected_flag_prompt(envelope: dict[str, Any]) -> dict[str, str]:
     if active_flags:
         spec = CODEBOOK.prompt_dictionary.flag_prompts[active_flags[0]]
         return {
+            "flag": active_flags[0],
             "context": spec.context,
             "guidance": spec.guidance,
             "example_start": spec.example_start,
         }
     return {
+        "flag": "",
         "context": "The child's message does not activate a specific risk flag.",
         "guidance": "Give ordinary, age-appropriate help. Stay clear, practical, and safe.",
         "example_start": "Here is a simple way to think about it...",
+    }
+
+
+def _secondary_flag_context(envelope: dict[str, Any], primary_flag: str) -> list[str]:
+    secondary: list[str] = []
+    for flag in _active_flag_ids(envelope):
+        if flag == primary_flag:
+            continue
+        spec = CODEBOOK.prompt_dictionary.flag_prompts.get(flag)
+        if spec:
+            secondary.append(f"{flag}: {spec.context}")
+    return secondary
+
+
+def _first_example_for(key: str) -> str:
+    spec = CODEBOOK.prompt_dictionary.runtime_variables.get(key)
+    if not spec or not spec.examples:
+        return ""
+    example = spec.examples[0]
+    if isinstance(example, dict) and len(example) == 1:
+        prefix, suffix = next(iter(example.items()))
+        return f"{prefix}: {suffix}"
+    return str(example)
+
+
+def _prompt_fields(envelope: dict[str, Any]) -> dict[str, str]:
+    modifiers = set(envelope["g3"].get("modifiers", []))
+    selected = _selected_flag_prompt(envelope)
+    primary_flag = selected["flag"]
+    context_lines = [selected["context"]]
+    secondary = _secondary_flag_context(envelope, primary_flag)
+    if secondary:
+        context_lines.append("Secondary active flag constraints: " + "; ".join(secondary))
+
+    guidance_parts = [selected["guidance"]]
+    example_start = selected["example_start"]
+
+    if "safety_check" in modifiers:
+        safety_example = _first_example_for("safety_check")
+        guidance_parts.insert(0, "ResponseOrderGL: start with a safety check before any explanation, refusal, or advice.")
+        if safety_example:
+            example_start = safety_example
+    elif "clarify_context" in modifiers:
+        clarify_example = _first_example_for("clarify_context")
+        guidance_parts.insert(0, "ResponseOrderGL: ask exactly one brief clarifying question before giving a full answer.")
+        if clarify_example:
+            example_start = clarify_example
+
+    if "boundary_setting" in modifiers:
+        guidance_parts.append("ActionPriorityGL: apply the boundary or refusal clearly after any required safety check.")
+    if "de_escalate" in modifiers:
+        guidance_parts.append("ActionPriorityGL: reduce conflict and steer away from escalation.")
+    if "encourage_help_seeking" in modifiers:
+        guidance_parts.append("EscalationPriorityGL: end with a clear direction to contact a trusted adult or appropriate professional.")
+
+    if "no_curiosity_invite" in modifiers:
+        guidance_parts.append(_runtime_variable_instruction("no_curiosity_invite"))
+    elif "curiosity_invite" in modifiers:
+        curiosity_example = _first_example_for("curiosity_invite")
+        suffix = f" Example curiosity ending: {curiosity_example}" if curiosity_example else ""
+        guidance_parts.append(_runtime_variable_instruction("curiosity_invite") + suffix)
+
+    return {
+        "flag_context": "\n".join(context_lines),
+        "flag_guidance": " ".join(part.strip() for part in guidance_parts if part.strip()),
+        "flag_example_start": example_start,
     }
 
 
@@ -141,6 +209,14 @@ def _attached_guidelines(envelope: dict[str, Any]) -> str:
         spec = CODEBOOK.gl_specs.get(str(gl_id))
         if spec and spec.special_rules:
             guideline_lines.append(f"- {spec.gl_id}: {spec.special_rules}")
+            if spec.gl_id == "GL-FP1":
+                precedence = envelope.get("gl", {}).get("flag_precedence", {})
+                ordered_flags = precedence.get("ordered_flags", [])
+                instructions = precedence.get("instructions", [])
+                if ordered_flags:
+                    guideline_lines.append(f"- GL-FP1 ordered emitted flags: {', '.join(ordered_flags)}")
+                for instruction in instructions:
+                    guideline_lines.append(f"- GL-FP1 precedence instruction: {instruction}")
     modifiers = set(envelope["g3"].get("modifiers", []))
     if "curiosity_invite" in modifiers:
         curiosity = CODEBOOK.prompt_dictionary.runtime_variables.get("curiosity_invite")
@@ -176,15 +252,15 @@ def render_prompt(child_profile: ChildProfile, message: str, decision: Guardrail
     tone = _resolve_modifier(modifiers, TONE_PRIORITY, "neutral")
     action = _resolve_modifier(modifiers, ACTION_PRIORITY, "normal_advice")
     escalation = _resolve_modifier(modifiers, ESCALATION_PRIORITY, "none")
-    flag_prompt = _selected_flag_prompt(envelope)
+    prompt_fields = _prompt_fields(envelope)
     rendered = template["template"].format(
         age=child_profile.age,
-        flag_context=flag_prompt["context"],
+        flag_context=prompt_fields["flag_context"],
         tone_instructions=_runtime_variable_instruction(tone),
         action_instructions=_runtime_variable_instruction(action),
         escalation_instructions=_runtime_variable_instruction(escalation),
-        flag_guidance=flag_prompt["guidance"],
-        flag_example_start=flag_prompt["example_start"],
+        flag_guidance=prompt_fields["flag_guidance"],
+        flag_example_start=prompt_fields["flag_example_start"],
         attached_guidelines=_attached_guidelines(envelope),
     )
     rendered = _apply_prompt_rules(envelope, rendered)

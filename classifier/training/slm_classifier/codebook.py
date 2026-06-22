@@ -38,7 +38,16 @@ def _read_yaml(path: Path) -> dict[str, Any]:
 def _list(value: object) -> list[str]:
     if not isinstance(value, list):
         return []
-    return [str(item).strip() for item in value if str(item).strip()]
+    normalized: list[str] = []
+    for item in value:
+        if isinstance(item, dict) and len(item) == 1:
+            prefix, suffix = next(iter(item.items()))
+            text = f"{prefix}: {suffix}"
+        else:
+            text = str(item)
+        if text.strip():
+            normalized.append(text.strip())
+    return normalized
 
 
 def codebook_config_paths(config_dir: Path = CODEBOOK_CONFIG_DIR) -> list[Path]:

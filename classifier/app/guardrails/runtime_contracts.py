@@ -543,6 +543,61 @@ def _flag_modifier_candidates(flags: list[str]) -> dict[str, set[str]]:
     return candidates
 
 
+def _modifier_category_values() -> dict[str, set[str]]:
+    return {
+        category: set(tags)
+        for category, tags in CODEBOOK.modifier_tags.items()
+    }
+
+
+def _resolve_modifier_packet(existing: set[str], tone: str, action: str, escalation: str) -> set[str]:
+    categories = _modifier_category_values()
+    resolved = set(existing)
+    for category in ("tone", "action", "escalation"):
+        resolved.difference_update(categories.get(category, set()))
+    resolved.update({tone, action, escalation})
+    return resolved
+
+
+def _flag_rank(flag: str) -> tuple[int, str]:
+    return (CODEBOOK.flag_precedence_order.rankings.get(flag, 10_000), flag)
+
+
+def _ordered_flags(flags: list[str]) -> list[str]:
+    unique_flags = {str(flag) for flag in flags if str(flag).strip() in CODEBOOK.flag_mappings}
+    return sorted(unique_flags, key=_flag_rank)
+
+
+def _flag_precedence_packet(flags: list[str]) -> dict[str, Any]:
+    ordered = _ordered_flags(flags)
+    active = len(ordered) >= 2 or "has_ambiguous_risk" in ordered
+    if not active:
+        return {"active": False, "ordered_flags": ordered, "primary_flag": ordered[0] if ordered else None, "instructions": []}
+
+    instructions: list[str] = []
+    if "has_ambiguous_risk" in ordered:
+        instructions.append(
+            "has_ambiguous_risk is present; if the child's intent is still unclear, ask one clarification question before other response moves."
+        )
+
+    primary = ordered[0] if ordered else None
+    if primary:
+        for lower in ordered[1:]:
+            instructions.append(
+                f"{primary} takes precedence over {lower} for the first response move; keep {lower} as a contextual constraint."
+            )
+        instructions.append(
+            "Always follow the reordered emitted-flag order. Do not ignore lower-priority emitted flags; retain them as contextual constraints."
+        )
+
+    return {
+        "active": True,
+        "ordered_flags": ordered,
+        "primary_flag": primary,
+        "instructions": instructions,
+    }
+
+
 def _resolve_priority(candidates: set[str], priority: tuple[str, ...], fallback: str) -> str:
     for item in priority:
         if item in candidates:
@@ -554,7 +609,7 @@ def _predicted_flags(classifier_output: dict[str, Any]) -> list[str]:
     learned = classifier_output.get("intent_lexicon", {}).get("learned", {})
     if not isinstance(learned, dict):
         return []
-    return [str(flag) for flag in learned.get("predicted_flags", []) if str(flag).strip() in CODEBOOK.flag_mappings]
+    return _ordered_flags([str(flag) for flag in learned.get("predicted_flags", [])])
 
 
 def compute_g3(g2_ids: list[str], active_flags: list[str] | None = None) -> dict[str, Any]:
@@ -570,13 +625,13 @@ def compute_g3(g2_ids: list[str], active_flags: list[str] | None = None) -> dict
         "severity": severity,
         "modifiers": sorted(modifiers),
         "source_g2": [g2_id],
-        "source_flags": sorted(active_flags or []),
+        "source_flags": _ordered_flags(active_flags or []),
     }
 
 
 def _codebook_flow(classifier_output: dict[str, Any], g3: dict[str, Any], g4: dict[str, str]) -> dict[str, Any]:
     g2_ids = [item["id"] for item in classifier_output["g2"]]
-    active_flags = sorted(_predicted_flags(classifier_output))
+    active_flags = _predicted_flags(classifier_output)
     block_b: dict[str, dict[str, Any]] = {}
     for g2_id in g2_ids:
         spec = CODEBOOK.g2_specs.get(g2_id)
@@ -642,7 +697,7 @@ def _apply_gl_rules(
     classifier_output: dict[str, Any],
     g3: dict[str, Any],
     g4: dict[str, str],
-) -> tuple[dict[str, Any], dict[str, str], list[str], list[str]]:
+) -> tuple[dict[str, Any], dict[str, str], list[str], list[str], dict[str, Any]]:
     active_gl: list[str] = []
     prompt_notes: list[str] = []
     modifiers = set(g3["modifiers"])
@@ -655,21 +710,25 @@ def _apply_gl_rules(
             prompt_notes.append(spec.special_rules)
 
     predicted_flags = _predicted_flags(classifier_output)
+    flag_precedence = _flag_precedence_packet(predicted_flags)
     candidates = _flag_modifier_candidates(predicted_flags)
     final_tone = _resolve_priority(candidates["tone"], TONE_PRIORITY, "neutral")
     final_action = _resolve_priority(candidates["action"], ACTION_PRIORITY, "normal_advice")
     final_escalation = _resolve_priority(candidates["escalation"], ESCALATION_PRIORITY, "none")
+    if "has_ambiguous_risk" in predicted_flags:
+        final_action = "clarify_context"
 
+    if flag_precedence["active"]:
+        activate("GL-FP1")
+        prompt_notes.extend(flag_precedence["instructions"])
     activate("GL-T1")
     activate("GL-A1")
-    activate("GL-CU1")
-    activate("GL-O1")
     if final_escalation != "none":
         activate("GL-E1")
-    if len(predicted_flags) >= 2 or "has_ambiguous_risk" in predicted_flags:
-        activate("GL-FP1")
+    activate("GL-CU1")
+    activate("GL-O1")
 
-    modifiers.update({final_tone, final_action, final_escalation})
+    modifiers = _resolve_modifier_packet(modifiers, final_tone, final_action, final_escalation)
     if g3["severity"] == "SV3":
         modifiers.add("no_curiosity_invite")
         g4["ending"] = "(none)"
@@ -685,7 +744,7 @@ def _apply_gl_rules(
         g4["action"] = "TRANSFORM"
 
     g3["modifiers"] = sorted(modifiers)
-    return g3, g4, active_gl, prompt_notes
+    return g3, g4, active_gl, prompt_notes, flag_precedence
 
 
 def gate_output_from_classifier(classifier_output: dict[str, Any]) -> dict[str, Any]:
@@ -693,14 +752,14 @@ def gate_output_from_classifier(classifier_output: dict[str, Any]) -> dict[str, 
     g2_ids = [item["id"] for item in classifier_output["g2"]]
     g3 = compute_g3(g2_ids, _predicted_flags(classifier_output))
     g4 = _base_g4(g3["severity"], g3["modifiers"])
-    g3, g4, active_gl, prompt_notes = _apply_gl_rules(classifier_output, g3, g4)
+    g3, g4, active_gl, prompt_notes, flag_precedence = _apply_gl_rules(classifier_output, g3, g4)
     if g3["modifiers"] != sorted(set(g3["modifiers"])):
         g3["modifiers"] = sorted(set(g3["modifiers"]))
     return {
         "g3": g3,
         "g4": g4,
         "codebook_flow": _codebook_flow(classifier_output, g3, g4),
-        "gl": {"active": active_gl},
+        "gl": {"active": active_gl, "flag_precedence": flag_precedence},
         "prompt_policy_notes": prompt_notes,
     }
 

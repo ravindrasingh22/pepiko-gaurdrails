@@ -362,6 +362,29 @@ classifier/configs/codebook-config/gl-rules.yml
 
 GL notes are deterministic gate-engine rules. They resolve tone/action/escalation priority and response order after flags have been mapped.
 
+Runtime application model:
+
+1. Build candidate modifier tags from all active flags.
+2. If `GL-FP1` applies, run it first and reorder emitted flags by `flag-precendence-order.yml`.
+3. Resolve the final tone with `GL-T1`.
+4. Resolve the final action with `GL-A1`.
+5. Resolve final escalation with `GL-E1`.
+6. Resolve curiosity ending with `GL-CU1`.
+7. Apply response-order shaping with `GL-O1`.
+8. Render prompt placeholders from the resolved state.
+
+After GL resolution, `g3.modifiers` is not just the raw candidate set. Runtime removes lower-priority tone/action/escalation candidates and keeps the resolved final packet:
+
+```yaml
+g3.modifiers:
+  - <resolved_tone>
+  - <resolved_action>
+  - <resolved_escalation>
+  - <curiosity_invite | no_curiosity_invite>
+```
+
+All classifier-fired flags remain preserved in `g3.source_flags` and `g3_forward.modifier_packet.flags`. Lower-priority flags are not deleted; they become contextual constraints for the prompt.
+
 Active GL notes:
 
 - `GL-T1`: TonePriorityGL
@@ -381,6 +404,32 @@ When more than one tone candidate is active:
 
 Apply the final tone consistently throughout the response.
 
+What it changes:
+
+- resolves all tone candidates into one final tone tag
+- removes lower-priority tone tags from final `g3.modifiers`
+- selects `{tone_instructions}` from `prompt-dictionary.runtime_variables[resolved_tone]`
+
+Example:
+
+```yaml
+active_flags:
+  - has_unsafe_sexual_content
+  - has_bullying_involved
+candidate_tones:
+  - firm
+  - supportive
+GL-T1_result: firm
+final_g3_modifier_tone: firm
+```
+
+Prompt shaping:
+
+```text
+{tone_instructions} =
+State the boundary clearly and briefly. Do not sound angry, shaming, or conversationally open-ended...
+```
+
 ### GL-A1: Action Priority
 
 When more than one action candidate is active:
@@ -393,11 +442,72 @@ When more than one action candidate is active:
 
 If `safety_check` is chosen, it must come first in the response.
 
+What it changes:
+
+- resolves all action candidates into one final action tag
+- removes lower-priority action tags from final `g3.modifiers`
+- selects `{action_instructions}` from `prompt-dictionary.runtime_variables[resolved_action]`
+- if final action is `safety_check`, forces `GL-O1` to make the prompt start with a safety check
+- if final action is `clarify_context`, forces the prompt to ask exactly one clarifying question before a full answer
+
+Example:
+
+```yaml
+active_flags:
+  - has_violence_possibility
+  - has_bullying_involved
+candidate_actions:
+  - safety_check
+  - boundary_setting
+GL-A1_result: safety_check
+final_g3_modifier_action: safety_check
+removed_action_candidate: boundary_setting
+```
+
+Prompt shaping:
+
+```text
+{action_instructions} =
+Ask whether the child or someone else is safe right now, or whether there is immediate danger...
+
+{flag_example_start} =
+First, I need to ask: are you safe right now, and is there anyone with you?
+```
+
 ### GL-E1: Escalation Priority
 
 If any active flag requires `encourage_help_seeking`, direct the child to a trusted adult, parent, caregiver, teacher, counselor, doctor, or helpline.
 
 Otherwise do not escalate.
+
+What it changes:
+
+- resolves escalation candidates into one final escalation tag
+- keeps `encourage_help_seeking` if any active flag emits it
+- otherwise resolves to `none`
+- selects `{escalation_instructions}` from `prompt-dictionary.runtime_variables[resolved_escalation]`
+- appends trusted-adult direction into `{flag_guidance}` when help-seeking is active
+
+Example:
+
+```yaml
+active_flags:
+  - has_grooming_involved
+  - has_privacy_risk
+candidate_escalations:
+  - encourage_help_seeking
+GL-E1_result: encourage_help_seeking
+```
+
+Prompt shaping:
+
+```text
+{escalation_instructions} =
+Direct the child to a trusted adult, parent, caregiver, teacher, counselor, doctor, or helpline as appropriate...
+
+{flag_guidance} includes =
+EscalationPriorityGL: end with a clear direction to contact a trusted adult or appropriate professional.
+```
 
 ### GL-CU1: Curiosity Invite Routing
 
@@ -421,6 +531,45 @@ Would you like to know more about how rainbows work?
 
 Do not end high-risk responses with exploratory or open-ended engagement.
 
+What it changes:
+
+- adds `no_curiosity_invite` to final `g3.modifiers` when `G3_SV = SV3`
+- otherwise adds `curiosity_invite`
+- appends the selected curiosity behavior into `{flag_guidance}`
+- attaches the selected runtime variable to `{attached_guidelines}`
+- blocks open-ended curiosity endings for SV3 and clarification-only turns
+
+Example A: safe factual response
+
+```yaml
+G2: NEUTRAL_FACT
+G3_SV: SV0
+GL-CU1_result: curiosity_invite
+```
+
+Prompt shaping:
+
+```text
+{flag_guidance} includes =
+Ensure that every question ends with an age appropriate and gentle curiosity question...
+Example curiosity ending: Would you like to know more about how rainbows work?
+```
+
+Example B: high-risk response
+
+```yaml
+G2: GROOMING
+G3_SV: SV3
+GL-CU1_result: no_curiosity_invite
+```
+
+Prompt shaping:
+
+```text
+{flag_guidance} includes =
+Ensure that question doesnt end with any open-ended question. Do not end with a question...
+```
+
 ### GL-O1: Response Order
 
 Response order:
@@ -429,6 +578,37 @@ Response order:
 2. apply tone consistently
 3. perform the selected action
 4. if `encourage_help_seeking` is active, end with a clear direction to contact a trusted adult
+
+What it changes:
+
+- rearranges `{flag_guidance}` so required first moves are explicit
+- overrides `{flag_example_start}` when final action is `safety_check` or `clarify_context`
+- keeps the selected primary flag context, but enforces the correct response order
+- ensures escalation appears after safety check/action when help-seeking is active
+
+Example:
+
+```yaml
+resolved_modifiers:
+  - firm
+  - safety_check
+  - encourage_help_seeking
+  - no_curiosity_invite
+primary_flag: has_grooming_involved
+```
+
+Prompt shaping:
+
+```text
+{flag_context} =
+The child is being groomed by someone, meaning an adult or older person trying to manipulate, exploit, or control them.
+
+{flag_guidance} starts with =
+ResponseOrderGL: start with a safety check before any explanation, refusal, or advice.
+
+{flag_example_start} =
+First, I need to ask: are you safe right now, and is there anyone with you?
+```
 
 ### GL-FP1: Flag Precedence Runtime
 
@@ -440,6 +620,64 @@ Special case:
 
 ```text
 If has_ambiguous_risk is present and the child's intent is still unclear, clarification-first behavior overrides other first-response behaviors.
+```
+
+What it changes:
+
+- runs before the other GLs
+- reorders emitted flags using `flag-precendence-order.yml`
+- selects the highest-ranked emitted flag as the primary prompt flag
+- builds secondary flag constraints from all lower-ranked emitted flags
+- attaches ordered emitted flags and pairwise precedence instructions to `{attached_guidelines}`
+- if `has_ambiguous_risk` is present, forces `clarify_context` as the final action
+
+Example A: violence + bullying
+
+```yaml
+raw_active_flags:
+  - has_bullying_involved
+  - has_violence_possibility
+ordered_flags:
+  - has_violence_possibility
+  - has_bullying_involved
+primary_flag: has_violence_possibility
+secondary_constraints:
+  - has_bullying_involved
+```
+
+Prompt shaping:
+
+```text
+{flag_context} =
+The child may be experiencing, perceiving, or considering violence.
+Secondary active flag constraints: has_bullying_involved: The child is involved in a bullying situation.
+
+{attached_guidelines} includes =
+- GL-FP1 ordered emitted flags: has_violence_possibility, has_bullying_involved
+- GL-FP1 precedence instruction: has_violence_possibility takes precedence over has_bullying_involved for the first response move; keep has_bullying_involved as a contextual constraint.
+```
+
+Example B: ambiguous risk + self-harm signal
+
+```yaml
+raw_active_flags:
+  - has_self_harm
+  - has_ambiguous_risk
+ordered_flags:
+  - has_ambiguous_risk
+  - has_self_harm
+GL-FP1_result: clarification-first
+GL-A1_final_action: clarify_context
+```
+
+Prompt shaping:
+
+```text
+{flag_guidance} starts with =
+ResponseOrderGL: ask exactly one brief clarifying question before giving a full answer.
+
+{attached_guidelines} includes =
+- GL-FP1 precedence instruction: has_ambiguous_risk is present; if the child's intent is still unclear, ask one clarification question before other response moves.
 ```
 
 ## 8. Prompt Builder
@@ -521,23 +759,31 @@ Required placeholders:
 1. Read classifier output: `G1`, `G2`, flags, intent support metadata.
 2. Read G2 severity floor from `g2.yaml`.
 3. Compute `G3_SV` using `g3.yml`.
-4. Map active flags through `flag-mappings.yaml` to collect tone/action/escalation candidates.
-5. Build `G3_MOD` as `{flags, modifier_tags}` from active flags and their mapped candidates.
-6. Build `G3_FORWARD = (G3_SV, G3_MOD)`.
-7. Reorder emitted flags by `flag-precendence-order.yml` for first-response move selection.
-8. Read `g4.yml` using `G3_SV` to select base G4 action.
-9. Apply GL rules from `gl-rules.yml`:
-   - resolve tone with `GL-T1`
-   - resolve action with `GL-A1`
-   - resolve escalation with `GL-E1`
+4. Map active flags through `flag-mappings.yaml` to collect candidate tone/action/escalation tags.
+5. Build the pre-GL `G3_MOD` candidate packet as `{flags, modifier_tags}`.
+6. Read `g4.yml` using `G3_SV` to select base G4 action.
+7. Apply GL rules from `gl-rules.yml` in runtime order:
+   - run `GL-FP1` first when multiple flags or `has_ambiguous_risk` are active
+   - resolve final tone with `GL-T1`
+   - resolve final action with `GL-A1`
+   - resolve final escalation with `GL-E1`
    - resolve curiosity ending with `GL-CU1`
-   - resolve ordering with `GL-O1`
-   - attach flag-precedence runtime instructions with `GL-FP1` when multiple flags or `has_ambiguous_risk` are active
-10. Read final variable text from `prompt-dictionary.yaml`, including `curiosity_invite` or `no_curiosity_invite` when GL-CU1 emits it.
-11. Select flag prompt fragments from `prompt_dictionary.flag_prompts`.
-12. Attach GL guideline notes as `{attached_guidelines}`.
-13. Render `prompt-master-template.yml`.
-14. Validate prompt with `prompt-rules.yaml`.
+   - resolve placeholder order with `GL-O1`
+8. Build the final resolved `G3_MOD` packet:
+   - `flags`: all emitted flags, ordered by precedence
+   - `modifier_tags`: final resolved tone/action/escalation plus curiosity/no-curiosity ending
+9. Build `G3_FORWARD = (G3_SV, resolved G3_MOD)`.
+10. Select primary flag prompt fragments from `prompt_dictionary.flag_prompts` using the GL-FP1-ordered emitted flag list.
+11. Add secondary active flags into `{flag_context}` as contextual constraints.
+12. Shape `{flag_guidance}` using resolved action, escalation, curiosity, and response-order rules.
+13. Shape `{flag_example_start}` using `GL-O1`:
+   - if final action is `safety_check`, use a safety-check opening
+   - if final action is `clarify_context`, use a clarification opening
+   - otherwise use the selected primary flag prompt example
+14. Read final variable text from `prompt-dictionary.yaml` for `{tone_instructions}`, `{action_instructions}`, and `{escalation_instructions}`.
+15. Attach GL guideline notes, ordered flags, and pairwise precedence instructions as `{attached_guidelines}`.
+16. Render `prompt-master-template.yml`.
+17. Validate prompt with `prompt-rules.yaml`.
 
 ## 9. Prompt Builder Examples
 
