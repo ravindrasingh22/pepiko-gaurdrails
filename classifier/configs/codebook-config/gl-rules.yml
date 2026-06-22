@@ -12,10 +12,14 @@ gl_rules:
     applies_when: One or more escalation candidates are active
     special_rules: If any active flag requires encourage_help_seeking, direct the child to a trusted adult, parent, caregiver, teacher, counselor, doctor, or helpline. Otherwise do not escalate.
   GL-CU1:
-    name: Clinical Concern Support Router
+    name: CuriosityInviteGL
     applies_when: Always
-    special_rules: If Severity=SV3, use no_curiosity_invite. Otherwise use curiosity_invite. Do not end high-risk responses with exploratory or open-ended engagement.
+    special_rules: If G3_SV=SV3, use no_curiosity_invite. Otherwise use curiosity_invite. Do not end high-risk responses with exploratory or open-ended engagement.
   GL-O1:
     name: ResponseOrderGL
     applies_when: Always
     special_rules: "Response order rule: if safety_check is active, ask the safety question first; then apply tone consistently; then perform the selected action; if encourage_help_seeking is active, end with a clear direction to contact a trusted adult."
+  GL-FP1:
+    name: FlagPrecedenceRuntimeGL
+    applies_when: Two or more flags are emitted, or has_ambiguous_risk = true is emitted
+    special_rules: "Runtime flag-precedence order rule: inspect only the emitted flags, reorder them by the configured precedence order from BLOCK G1, and attach only the relevant precedence instructions for the emitted combination. If has_ambiguous_risk is present and the child's intent is still unclear, clarification-first behavior overrides all other first-response behaviors. For all other emitted combinations, generate explicit higher-vs-lower precedence instructions only for the relevant pairs, while preserving lower-priority flags as secondary context. Attach to the prompt: (1) the reordered emitted-flag list, (2) the relevant pairwise precedence instructions for the emitted set, and (3) the instruction: Always follow the attached precedence rules and the reordered emitted-flag order when generating the response. Do not ignore lower-priority emitted flags; retain them as contextual constraints."

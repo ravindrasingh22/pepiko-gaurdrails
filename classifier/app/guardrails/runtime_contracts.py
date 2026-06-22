@@ -666,6 +666,8 @@ def _apply_gl_rules(
     activate("GL-O1")
     if final_escalation != "none":
         activate("GL-E1")
+    if len(predicted_flags) >= 2 or "has_ambiguous_risk" in predicted_flags:
+        activate("GL-FP1")
 
     modifiers.update({final_tone, final_action, final_escalation})
     if g3["severity"] == "SV3":

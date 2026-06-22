@@ -107,6 +107,9 @@ def _active_flag_ids(envelope: dict[str, Any]) -> list[str]:
 
 
 def _flag_priority(flag: str) -> tuple[int, int, int, str]:
+    precedence = CODEBOOK.flag_precedence_order.rankings.get(flag)
+    if precedence is not None:
+        return (precedence, 0, 0, flag)
     mapping = CODEBOOK.flag_mappings.get(flag)
     if not mapping:
         return (len(ACTION_PRIORITY), len(TONE_PRIORITY), len(ESCALATION_PRIORITY), flag)
@@ -143,6 +146,8 @@ def _attached_guidelines(envelope: dict[str, Any]) -> str:
         curiosity = CODEBOOK.prompt_dictionary.runtime_variables.get("curiosity_invite")
         example = f" Example: {curiosity.examples[0]}" if curiosity and curiosity.examples else ""
         guideline_lines.append(f"- curiosity_invite: {_runtime_variable_instruction('curiosity_invite')}{example}")
+    if "no_curiosity_invite" in modifiers:
+        guideline_lines.append(f"- no_curiosity_invite: {_runtime_variable_instruction('no_curiosity_invite')}")
     if not guideline_lines:
         return "- No additional GL rules are active."
     return "\n".join(guideline_lines)

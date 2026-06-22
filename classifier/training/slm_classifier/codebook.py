@@ -19,6 +19,7 @@ CODEBOOK_CONFIG_FILES = (
     "age-policy.yaml",
     "intent-lexicon.yaml",
     "flag-mappings.yaml",
+    "flag-precendence-order.yml",
     "modifier-tags.yaml",
     "prompt-dictionary.yaml",
     "prompt-master-template.yml",
@@ -165,6 +166,14 @@ class FlagModifierSpec:
 
 
 @dataclass
+class FlagPrecedenceOrderSpec:
+    block: str
+    name: str
+    rule: str
+    rankings: dict[str, int]
+
+
+@dataclass
 class PromptRuntimeVariableSpec:
     key: str
     definition: str
@@ -236,6 +245,7 @@ class CodebookSpec:
     age_bands: dict[str, AgeBandSpec]
     intent_lexicon: dict[str, IntentLexiconSpec]
     flag_mappings: dict[str, FlagModifierSpec]
+    flag_precedence_order: FlagPrecedenceOrderSpec
     modifier_tags: dict[str, dict[str, ModifierTagSpec]]
     prompt_dictionary: PromptDictionarySpec
     prompt_master_template: PromptMasterTemplateSpec
@@ -256,6 +266,7 @@ def parse_codebook(config_dir: Path = CODEBOOK_CONFIG_DIR) -> CodebookSpec:
     age_raw = _read_yaml(config_dir / "age-policy.yaml")
     intent_raw = _read_yaml(config_dir / "intent-lexicon.yaml").get("intent_lexicon", {})
     flags_raw = _read_yaml(config_dir / "flag-mappings.yaml").get("flag_mappings", {})
+    flag_precedence_raw = _read_yaml(config_dir / "flag-precendence-order.yml").get("flag_precedence_order", {})
     modifier_tags_raw = _read_yaml(config_dir / "modifier-tags.yaml").get("modifier_tags", {})
     prompt_dictionary_raw = _read_yaml(config_dir / "prompt-dictionary.yaml").get("prompt_dictionary", {})
     prompt_master_template_raw = _read_yaml(config_dir / "prompt-master-template.yml").get("prompt_master_template", {})
@@ -360,6 +371,16 @@ def parse_codebook(config_dir: Path = CODEBOOK_CONFIG_DIR) -> CodebookSpec:
             )
             for flag, spec in flags_raw.items()
         },
+        flag_precedence_order=FlagPrecedenceOrderSpec(
+            block=str(flag_precedence_raw.get("block", "")),
+            name=str(flag_precedence_raw.get("name", "")),
+            rule=str(flag_precedence_raw.get("rule", "")),
+            rankings={
+                str(flag): int(rank)
+                for flag, rank in flag_precedence_raw.get("rankings", {}).items()
+                if str(flag).strip()
+            },
+        ),
         modifier_tags={
             str(category): {
                 str(tag): ModifierTagSpec(

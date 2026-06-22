@@ -20,10 +20,13 @@ def test_codebook_drives_training_flag_vocab() -> None:
     assert FLAG_VOCAB == list(codebook.flag_mappings)
     assert codebook.flag_mappings["has_self_harm"].action == "safety_check"
     assert codebook.flag_mappings["has_self_harm"].escalation == "encourage_help_seeking"
+    assert codebook.flag_mappings["has_grooming_involved"].tone == "supportive"
+    assert codebook.flag_mappings["has_grooming_involved"].action == "safety_check"
     assert codebook.flag_mappings["has_clinical_concern"].action == "boundary_setting"
     assert codebook.flag_mappings["has_significant_impairment"].action == "safety_check"
     assert codebook.flag_mappings["has_medical_concern"].escalation == "encourage_help_seeking"
     assert codebook.flag_mappings["has_substance_use_concern"].tone == "cautious"
+    assert "has_subsatance_use_concern" not in FLAG_VOCAB
     assert codebook.flag_mappings["has_privacy_risk"].tone == "firm"
     assert "has_personal_direction" not in FLAG_VOCAB
 
@@ -53,6 +56,15 @@ def test_flag_modifier_mapping_references_known_block_k_tags() -> None:
         assert mapping.escalation in codebook.modifier_tags["escalation"]
 
 
+def test_codebook_parses_flag_precedence_order() -> None:
+    codebook = parse_codebook()
+
+    assert codebook.flag_precedence_order.block == "BLOCK G1"
+    assert codebook.flag_precedence_order.rankings["has_ambiguous_risk"] == 1
+    assert codebook.flag_precedence_order.rankings["has_significant_impairment"] == 20
+    assert set(codebook.flag_precedence_order.rankings) == set(codebook.flag_mappings)
+
+
 def test_g2_specs_do_not_emit_legacy_modifiers() -> None:
     codebook = parse_codebook()
 
@@ -68,6 +80,7 @@ def test_codebook_is_loaded_from_yaml_config_directory() -> None:
     assert "g4.yml" in config_names
     assert "gl-rules.yml" in config_names
     assert "gl-rules.yaml" not in config_names
+    assert "flag-precendence-order.yml" in config_names
     assert "prompt-dictionary.yaml" in config_names
     assert "prompt-master-template.yml" in config_names
     assert "prompt-rules.yaml" in config_names
@@ -111,10 +124,13 @@ def test_codebook_parses_g4_gate_engine_config() -> None:
 def test_codebook_parses_block_e_guideline_notes() -> None:
     codebook = parse_codebook()
 
-    assert list(codebook.gl_specs) == ["GL-T1", "GL-A1", "GL-E1", "GL-CU1", "GL-O1"]
+    assert list(codebook.gl_specs) == ["GL-T1", "GL-A1", "GL-E1", "GL-CU1", "GL-O1", "GL-FP1"]
     assert codebook.gl_specs["GL-A1"].name == "ActionPriorityGL"
     assert "safety_check" in codebook.gl_specs["GL-A1"].special_rules
+    assert codebook.gl_specs["GL-CU1"].name == "CuriosityInviteGL"
     assert codebook.gl_specs["GL-CU1"].applies_when == "Always"
+    assert codebook.gl_specs["GL-FP1"].name == "FlagPrecedenceRuntimeGL"
+    assert "reordered emitted-flag list" in codebook.gl_specs["GL-FP1"].special_rules
     assert "trusted adult" in codebook.gl_specs["GL-O1"].special_rules
 
 
@@ -130,6 +146,7 @@ def test_codebook_parses_prompt_dictionary_runtime_variables() -> None:
     assert prompt_dictionary.runtime_variables["safety_check"].examples
     assert prompt_dictionary.runtime_variables["normal_advice"].key == "normal_advice"
     assert prompt_dictionary.runtime_variables["curiosity_invite"].definition.startswith("Default state")
+    assert prompt_dictionary.runtime_variables["no_curiosity_invite"].definition.startswith("Ensure that question")
 
 
 def test_codebook_parses_prompt_dictionary_flag_prompts() -> None:
