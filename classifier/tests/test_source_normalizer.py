@@ -25,6 +25,7 @@ def test_source_normalizer_expands_authoring_sheet_into_canonical_rows(tmp_path:
     assert set(CANONICAL_COLUMNS).issubset(rows[0].keys())
     assert len(rows) == 2
     assert rows[0]["g2"] == ["PERSONAL_DIRECTION"]
+    assert rows[0]["is_actor"] is False
     assert "what should I do" in rows[0]["intent_phrases"]
     assert rows[0]["intent_phrases_present"] is True
     assert "guideline_tags" not in rows[0]
@@ -48,6 +49,22 @@ def test_source_normalizer_accepts_training_column_aliases(tmp_path: Path) -> No
     assert parsed[0]["question"] == "Why is the sky blue?"
     assert parsed[0]["g1"] == "SCIENCE"
     assert parsed[0]["g2"] == ["NEUTRAL_FACT"]
+
+
+def test_source_normalizer_accepts_is_actor_column(tmp_path: Path) -> None:
+    source_path = tmp_path / "role-reversed.csv"
+    rows = [
+        ["input_text", "G1_LOV_ID", "G2_LOV_ID", "FLAGS", "is_actor"],
+        ["I made another kid send me a private photo", "GENERIC", "UNSAFE_SEXUAL_CONTENT", "has_unsafe_sexual_content=true", "true"],
+    ]
+    with source_path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerows(rows)
+
+    parsed = expand_authoring_rows(source_path)
+
+    assert parsed[0]["is_actor"] is True
+    assert parsed[0]["flags"]["has_unsafe_sexual_content"] is True
 
 
 def test_source_normalizer_parses_exported_flags_without_deriving_g2(tmp_path: Path) -> None:
@@ -161,6 +178,7 @@ def test_canonical_jsonl_writes_split_and_vocab_metadata(tmp_path: Path) -> None
     vocab = json.loads(vocab_path.read_text(encoding="utf-8"))
     assert "train_ids" in splits
     assert "flags" in vocab
+    assert vocab["is_actor"] == ["false", "true"]
     assert "UNKNOWN" not in vocab["g2"]
     assert "has_clinical_concern" in vocab["flags"]
     assert "intent_families" in vocab

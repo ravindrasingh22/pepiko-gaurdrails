@@ -191,11 +191,19 @@ class PromptRuntimeVariableSpec:
 
 
 @dataclass
+class FlagPromptVariantSpec:
+    context: str
+    guidance: str
+    example_start: str
+
+
+@dataclass
 class FlagPromptSpec:
     flag: str
     context: str
     guidance: str
     example_start: str
+    role_reversed: FlagPromptVariantSpec | None = None
 
 
 @dataclass
@@ -420,6 +428,15 @@ def parse_codebook(config_dir: Path = CODEBOOK_CONFIG_DIR) -> CodebookSpec:
                     context=str(spec.get("context", "")),
                     guidance=str(spec.get("guidance", "")),
                     example_start=str(spec.get("example_start", "")),
+                    role_reversed=(
+                        FlagPromptVariantSpec(
+                            context=str(spec.get("role_reversed", {}).get("context", "")),
+                            guidance=str(spec.get("role_reversed", {}).get("guidance", "")),
+                            example_start=str(spec.get("role_reversed", {}).get("example_start", "")),
+                        )
+                        if isinstance(spec.get("role_reversed"), dict)
+                        else None
+                    ),
                 )
                 for flag, spec in prompt_dictionary_raw.get("flag_prompts", {}).items()
                 if isinstance(spec, dict)

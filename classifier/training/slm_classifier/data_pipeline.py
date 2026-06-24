@@ -40,6 +40,7 @@ G2_PRIORITY = [
     "GENERIC_INTENT",
 ]
 FLAG_VOCAB = list(CODEBOOK.flag_mappings.keys())
+IS_ACTOR_VOCAB = ["false", "true"]
 
 
 @dataclass
@@ -142,6 +143,7 @@ def dataset_fingerprint(rows: list[dict[str, object]]) -> str:
             "g1": row.get("g1"),
             "g2": row.get("g2"),
             "flags": row.get("flags", {}),
+            "is_actor": bool(row.get("is_actor", False)),
         }
         for row in rows
     ]
@@ -195,6 +197,8 @@ def validate_dataset_rows(rows: list[dict[str, object]]) -> None:
         invalid_flags = [key for key, value in flags.items() if not isinstance(value, bool)]
         if invalid_flags:
             raise ValueError(f"Non-boolean flags in row {row.get('sample_id')}: {sorted(invalid_flags)}")
+        if "is_actor" in row and not isinstance(row.get("is_actor"), bool):
+            raise ValueError(f"is_actor must be boolean in row {row.get('sample_id')}")
         intent_families = row.get("intent_families", [])
         if intent_families is None:
             continue
@@ -245,6 +249,7 @@ def write_label_vocab(rows: list[dict[str, object]] | None = None, target_path: 
         "g1": G1_VOCAB,
         "g2": G2_VOCAB,
         "flags": FLAG_VOCAB,
+        "is_actor": IS_ACTOR_VOCAB,
         "intent_families": intent_family_vocab,
         "intent_phrases": intent_phrase_vocab,
         "age_bands": list(CODEBOOK.age_bands.keys()),

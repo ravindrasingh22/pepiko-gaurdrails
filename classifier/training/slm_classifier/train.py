@@ -45,7 +45,9 @@ def main() -> None:
     parser.add_argument("--g1-loss-weight", type=float, default=None)
     parser.add_argument("--g2-loss-weight", type=float, default=None)
     parser.add_argument("--flag-loss-weight", type=float, default=None)
+    parser.add_argument("--is-actor-loss-weight", type=float, default=None)
     parser.add_argument("--flag-max-pos-weight", type=float, default=None)
+    parser.add_argument("--is-actor-max-pos-weight", type=float, default=None)
     parser.add_argument("--intent-family-max-pos-weight", type=float, default=None)
     parser.add_argument("--intent-phrase-max-pos-weight", type=float, default=None)
     parser.add_argument("--g2-focal-gamma", type=float, default=None)
@@ -117,7 +119,9 @@ def main() -> None:
         g1_loss_weight=args.g1_loss_weight,
         g2_loss_weight=args.g2_loss_weight,
         flag_loss_weight=args.flag_loss_weight,
+        is_actor_loss_weight=args.is_actor_loss_weight,
         flag_max_pos_weight=args.flag_max_pos_weight,
+        is_actor_max_pos_weight=args.is_actor_max_pos_weight,
         intent_family_max_pos_weight=args.intent_family_max_pos_weight,
         intent_phrase_max_pos_weight=args.intent_phrase_max_pos_weight,
         g2_focal_gamma=args.g2_focal_gamma,

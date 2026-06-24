@@ -470,6 +470,7 @@ def classifier_output_from_decision(question: str, child_profile: ChildProfile, 
             str(decision.input.get("recent_context", "") or ""),
             [str(item.get("id", AMBIGUOUS_RISK_G2)) for item in hydrated.get("g2", []) if isinstance(item, dict)],
         ))
+        hydrated.setdefault("role", {"is_actor": _is_actor_role(hydrated)})
         return hydrated
     gates = decision.gates or decision.gate_values
     metadata = decision.classifier_metadata if isinstance(decision.classifier_metadata, dict) else {}
@@ -499,6 +500,7 @@ def classifier_output_from_decision(question: str, child_profile: ChildProfile, 
         "language": child_profile.language,
         "age": child_profile.age,
         "age_band": age_band,
+        "role": {"is_actor": _is_actor_role(metadata)},
         "applies_when_flags": flags,
         "intent_lexicon": intent_lexicon,
         "g1": {
@@ -514,6 +516,18 @@ def classifier_output_from_decision(question: str, child_profile: ChildProfile, 
             }
         ],
     }
+
+
+def _is_actor_role(metadata: dict[str, Any]) -> bool:
+    role = metadata.get("role", {}) if isinstance(metadata, dict) else {}
+    learned = metadata.get("head_confidences", {}).get("intent_lexicon_learned", {}) if isinstance(metadata, dict) else {}
+    values = [
+        metadata.get("is_actor") if isinstance(metadata, dict) else None,
+        role.get("is_actor") if isinstance(role, dict) else None,
+        learned.get("is_actor") if isinstance(learned, dict) else None,
+        metadata.get("role") == "actor" if isinstance(metadata, dict) else None,
+    ]
+    return any(value is True or str(value).lower() == "true" for value in values)
 
 
 def _severity_rank(severity: str) -> int:
@@ -784,6 +798,7 @@ def safety_envelope_from_runtime(classifier_output: dict[str, Any], gate_output:
                 "style": age_settings.max_answer_style,
             },
         },
+        "role": classifier_output.get("role", {"is_actor": False}),
         "g1": {"id": classifier_output["g1"]["id"]},
         "g2": {"active_lovs": [{"id": item["id"]} for item in classifier_output["g2"]]},
         "g3": gate_output["g3"],

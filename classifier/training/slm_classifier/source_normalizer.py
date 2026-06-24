@@ -37,6 +37,7 @@ G1_HEADER_CANDIDATES = ("g1", "g_1", "g1_lov_id")
 G2_HEADER_CANDIDATES = ("g2", "g_2", "g2_lov_id")
 CONTEXT_HEADER_CANDIDATES = ("context", "recent_context")
 FLAGS_HEADER_CANDIDATES = ("flags",)
+IS_ACTOR_HEADER_CANDIDATES = ("is_actor", "actor", "role_is_actor")
 INTENT_FAMILIES_HEADER_CANDIDATES = ("intent_families", "intent_family", "intentfamily", "intentfamilies")
 INTENT_PHRASES_HEADER_CANDIDATES = ("intent_phrases", "intent_phrase", "intentphrase", "intentphrases")
 CANONICAL_COLUMNS = [
@@ -46,6 +47,7 @@ CANONICAL_COLUMNS = [
     "g1",
     "g2",
     "flags",
+    "is_actor",
     "intent_families",
     "intent_families_present",
     "intent_phrases",
@@ -64,6 +66,7 @@ class AuthoringRow:
     g1: str
     g2: list[str]
     flags: dict[str, bool]
+    is_actor: bool
     intent_families: list[str]
     intent_families_present: bool
     intent_phrases: list[str]
@@ -77,6 +80,7 @@ class SheetSchema:
     g2_idx: int
     context_idx: int | None = None
     flags_idx: int | None = None
+    is_actor_idx: int | None = None
     intent_families_idx: int | None = None
     intent_phrases_idx: int | None = None
     header_row_index: int = 0
@@ -196,6 +200,7 @@ def _detect_schema(path: Path) -> SheetSchema:
         g2_idx = _find_header_index(row, G2_HEADER_CANDIDATES)
         context_idx = _find_header_index(row, CONTEXT_HEADER_CANDIDATES)
         flags_idx = _find_header_index(row, FLAGS_HEADER_CANDIDATES)
+        is_actor_idx = _find_header_index(row, IS_ACTOR_HEADER_CANDIDATES)
         intent_families_idx = _find_header_index(row, INTENT_FAMILIES_HEADER_CANDIDATES)
         intent_phrases_idx = _find_header_index(row, INTENT_PHRASES_HEADER_CANDIDATES)
         if None not in {question_idx, g1_idx, g2_idx}:
@@ -205,6 +210,7 @@ def _detect_schema(path: Path) -> SheetSchema:
                 g2_idx=int(g2_idx),
                 context_idx=int(context_idx) if context_idx is not None else None,
                 flags_idx=int(flags_idx) if flags_idx is not None else None,
+                is_actor_idx=int(is_actor_idx) if is_actor_idx is not None else None,
                 intent_families_idx=int(intent_families_idx) if intent_families_idx is not None else None,
                 intent_phrases_idx=int(intent_phrases_idx) if intent_phrases_idx is not None else None,
                 header_row_index=idx,
@@ -231,6 +237,17 @@ def _parse_jsonish_list(raw: str) -> list[str] | None:
 
 def _default_flags() -> dict[str, bool]:
     return {flag: False for flag in FLAG_VOCAB}
+
+
+def _parse_bool_cell(raw: str, *, default: bool = False, field_name: str = "value") -> bool:
+    text = str(raw or "").strip().lower()
+    if not text:
+        return default
+    if text in {"true", "1", "yes", "y"}:
+        return True
+    if text in {"false", "0", "no", "n"}:
+        return False
+    raise ValueError(f"{field_name} must be boolean.")
 
 
 def _resolve_intent_families(g2_values: list[str], raw_intent_families: list[str] | None) -> list[str]:
@@ -351,6 +368,8 @@ def _load_authoring_rows_with_rejections(path: Path = DEFAULT_SOURCE) -> Authori
                 g2 = _clean_g2_values(raw_g2, first_only=True)
                 raw_flags = row[schema.flags_idx] if schema.flags_idx is not None and len(row) > schema.flags_idx else ""
                 flags = _parse_flags(raw_flags)
+                raw_is_actor = row[schema.is_actor_idx] if schema.is_actor_idx is not None and len(row) > schema.is_actor_idx else ""
+                is_actor = _parse_bool_cell(raw_is_actor, default=False, field_name="is_actor")
                 g2, flags = _normalize_g2_and_flags(list(g2), flags)
                 raw_intent_families = (
                     row[schema.intent_families_idx]
@@ -389,6 +408,7 @@ def _load_authoring_rows_with_rejections(path: Path = DEFAULT_SOURCE) -> Authori
                     g1=g1,
                     g2=g2,
                     flags=flags,
+                    is_actor=is_actor,
                     intent_families=intent_families,
                     intent_families_present=intent_families_present,
                     intent_phrases=intent_phrases,
@@ -450,6 +470,7 @@ def expand_authoring_rows(path: Path = DEFAULT_SOURCE) -> list[dict[str, object]
                 "g1": row.g1,
                 "g2": row.g2,
                 "flags": row.flags,
+                "is_actor": row.is_actor,
                 "intent_families": row.intent_families,
                 "intent_families_present": row.intent_families_present,
                 "intent_phrases": row.intent_phrases,

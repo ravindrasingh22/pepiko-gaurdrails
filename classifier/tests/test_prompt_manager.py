@@ -206,6 +206,39 @@ def test_ambiguous_risk_flag_forces_clarification_first_gl_behavior() -> None:
     assert "has_ambiguous_risk is present" in rendered["prompt"]
 
 
+def test_actor_role_uses_role_reversed_flag_prompt() -> None:
+    decision = GuardrailDecision(
+        input={"question": "test", "age_band": "11-12", "language": "en", "recent_context": "none"},
+        reason="test reason",
+        gl_signals={},
+        active_gls=[],
+        gates={"G1": "GENERIC", "G2": "BULLYING", "G3": "SV2", "G4": "TRANSFORM"},
+        decision={"allow_llm": True},
+        policy_bucket="allowed",
+        safety_category="BULLYING",
+        response_mode="guide_or_redirect",
+        risk_level="medium",
+        parent_visible=False,
+        prompt_contract={},
+        classifier_metadata={
+            "is_actor": True,
+            "head_confidences": {
+                "intent_lexicon_learned": {
+                    "predicted_flags": ["has_bullying_involved"]
+                }
+            },
+        },
+    )
+    child_profile = ChildProfile(age=12, age_group="11-12", language="en")
+
+    rendered = render_prompt(child_profile, "How do I embarrass someone in class?", decision)
+
+    assert rendered["safety_envelope"]["role"]["is_actor"] is True
+    assert "The child is bullying someone else" in rendered["prompt"]
+    assert "I cannot help you bully or be mean to someone" in rendered["prompt"]
+    assert "Do not help the child plan or continue bullying" in rendered["prompt"]
+
+
 def test_low_confidence_g2_routes_to_ambiguous_risk() -> None:
     decision = GuardrailDecision(
         input={"question": "test", "age_band": "11-12", "language": "en", "recent_context": "none"},

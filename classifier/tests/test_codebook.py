@@ -155,6 +155,10 @@ def test_codebook_parses_prompt_dictionary_flag_prompts() -> None:
 
     assert len(flag_prompts) == len(codebook.flag_mappings)
     assert "unsafe sexual content" in flag_prompts["has_unsafe_sexual_content"].context
+    assert flag_prompts["has_unsafe_sexual_content"].role_reversed is not None
+    assert "pressure someone" in flag_prompts["has_unsafe_sexual_content"].role_reversed.guidance
+    assert flag_prompts["has_bullying_involved"].role_reversed is not None
+    assert "bullying someone else" in flag_prompts["has_bullying_involved"].role_reversed.context
     assert "substance use" in flag_prompts["has_substance_use_concern"].context
     assert "has_subsatance_use_concern" not in flag_prompts
     assert "biased or unfair assumption" in flag_prompts["has_loaded_premise"].context

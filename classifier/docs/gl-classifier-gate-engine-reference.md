@@ -690,6 +690,7 @@ Inputs:
 - selected G1
 - single selected G2
 - active flags
+- role metadata such as `role.is_actor`
 - `G3_SV`
 - `G3_MOD`
 - `G4`
@@ -729,6 +730,50 @@ Prompt dictionary provides:
 - `{flag_guidance}`
 - `{flag_example_start}`
 
+Some `flag_prompts` also define a `role_reversed` variant for actor-side prompts. This comes from the `ROLE REVERSED {is_actor=true}` block in `Prompts-Dictionary.csv`.
+
+Runtime selection rule:
+
+```yaml
+if role.is_actor == true and selected_flag.role_reversed exists:
+  use selected_flag.role_reversed.context
+  use selected_flag.role_reversed.guidance
+  use selected_flag.role_reversed.example_start
+else:
+  use the default victim/subject-side flag prompt
+```
+
+Current role-reversed prompt variants are configured for:
+
+- `has_unsafe_sexual_content`
+- `has_vuln_exploit`
+- `has_bullying_involved`
+- `has_violence_possibility`
+- `has_dangerous_context`
+- `has_hate_group_language`
+- `has_coercive_control`
+
+Example:
+
+```yaml
+selected_flag: has_bullying_involved
+role:
+  is_actor: true
+```
+
+Prompt shaping:
+
+```text
+{flag_context} =
+The child is bullying someone else or asking how to be mean, exclude, embarrass, or harass another person.
+
+{flag_example_start} =
+I cannot help you bully or be mean to someone. Hurting people on purpose, even as a joke, is not okay...
+
+{flag_guidance} =
+Do not help the child plan or continue bullying. Gently but clearly say that bullying, mocking, excluding, or embarrassing someone on purpose is not okay...
+```
+
 ### Prompt Master Template
 
 Config source:
@@ -756,7 +801,7 @@ Required placeholders:
 
 ### Prompt Builder Algorithm
 
-1. Read classifier output: `G1`, `G2`, flags, intent support metadata.
+1. Read classifier output: `G1`, `G2`, flags, role metadata, and intent support metadata.
 2. Read G2 severity floor from `g2.yaml`.
 3. Compute `G3_SV` using `g3.yml`.
 4. Map active flags through `flag-mappings.yaml` to collect candidate tone/action/escalation tags.
@@ -774,16 +819,17 @@ Required placeholders:
    - `modifier_tags`: final resolved tone/action/escalation plus curiosity/no-curiosity ending
 9. Build `G3_FORWARD = (G3_SV, resolved G3_MOD)`.
 10. Select primary flag prompt fragments from `prompt_dictionary.flag_prompts` using the GL-FP1-ordered emitted flag list.
-11. Add secondary active flags into `{flag_context}` as contextual constraints.
-12. Shape `{flag_guidance}` using resolved action, escalation, curiosity, and response-order rules.
-13. Shape `{flag_example_start}` using `GL-O1`:
+11. If `role.is_actor=true` and the selected flag has `role_reversed`, use the role-reversed `{flag_context}`, `{flag_guidance}`, and `{flag_example_start}`.
+12. Add secondary active flags into `{flag_context}` as contextual constraints, using role-reversed secondary context when available and `role.is_actor=true`.
+13. Shape `{flag_guidance}` using resolved action, escalation, curiosity, and response-order rules.
+14. Shape `{flag_example_start}` using `GL-O1`:
    - if final action is `safety_check`, use a safety-check opening
    - if final action is `clarify_context`, use a clarification opening
    - otherwise use the selected primary flag prompt example
-14. Read final variable text from `prompt-dictionary.yaml` for `{tone_instructions}`, `{action_instructions}`, and `{escalation_instructions}`.
-15. Attach GL guideline notes, ordered flags, and pairwise precedence instructions as `{attached_guidelines}`.
-16. Render `prompt-master-template.yml`.
-17. Validate prompt with `prompt-rules.yaml`.
+15. Read final variable text from `prompt-dictionary.yaml` for `{tone_instructions}`, `{action_instructions}`, and `{escalation_instructions}`.
+16. Attach GL guideline notes, ordered flags, and pairwise precedence instructions as `{attached_guidelines}`.
+17. Render `prompt-master-template.yml`.
+18. Validate prompt with `prompt-rules.yaml`.
 
 ## 9. Prompt Builder Examples
 

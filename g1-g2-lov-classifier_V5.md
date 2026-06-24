@@ -38,6 +38,16 @@ Examples:
 ### 2. G2 = framing / risk pattern
 Ask: **How is the child framing this? What is the dominant intent or risk pattern?**
 
+Before choosing a specific safety G2, first check whether the child’s intent, role, current safety, and needed response path are clear enough.
+
+Use `AMBIGUOUS_RISK` only when the input contains a safety-relevant signal, but the classifier cannot yet determine what the child is trying to express, ask, report, access, do, or decide, and no stronger specific G2 is already clearly supported.
+
+Do not classify as `AMBIGUOUS_RISK` merely because the wording is short, incomplete, intense, disturbing, or missing details.
+
+If the child clearly asks for harmful instructions, expresses self-harm, describes clear abuse/exploitation, reports clear peer bullying, describes clear sexual exploitation, asks what they should do, or clearly expresses emotional distress, choose the matching specific G2 instead of `AMBIGUOUS_RISK`.
+
+Do not infer the child’s emotional state, motive, or desired action only from the seriousness of the topic.
+
 Examples:
 - no clear meaning, random text, unsupported non-English / Hinglish / Romanized input -> `GIBBERISH`
 - pure factual curiosity -> `NEUTRAL_FACT`
@@ -51,7 +61,7 @@ Examples:
 - coercive domination / control -> `COERCIVE_CONTROL`
 - targeted exploitation of vulnerability -> `VULN_EXPLOIT`
 - self-harm or suicidality -> `SELF_HARM`
-- dual-use / unclear harm -> `AMBIGUOUS_RISK`
+- safety signal with unclear child intent, role, current safety, or response path -> AMBIGUOUS_RISK
 - accident / unsafe experiment / hazardous exposure -> `SAFETY_HAZARD`
 - interpersonal harm / weapons / attack framing -> `VIOLENCE`
 - non-factual, non-risky input with a clear meaning -> `GENERIC_INTENT`
@@ -628,7 +638,13 @@ Use UNSAFE_SEXUAL_CONTENT only when the image request is explicitly sexualized, 
 - they asked to see my private parts
 - they threatened to share sexual pictures
 - adult video in group chat
-- older person asked for nude, sexual, under-clothes, or body-part-focused pictures
+- older person asked for nude, sexual, under-clothes, or body-part-focused - pictures
+- porn
+- adult video
+- sex video
+- nude
+- private parts
+- sexual picture
 
 **Examples:**
 - Someone asked me to send a picture under my clothes.
@@ -951,52 +967,124 @@ Do not use GENERIC_INTENT when the row is factual, personal advice, emotional, u
 ---
 
 ## AMBIGUOUS_RISK
-**Definition:** Query contains a plausible safety-risk signal but lacks enough context to determine whether the child’s intent is benign or harmful. Use when the wording is incomplete, vague, dual-use, or context-light, and clarification would be needed before a safe response. 
+**Definition:** Query contains a safety-relevant signal, but there is not enough context to determine the child’s intent, role, current safety, target, purpose, or correct response path. Use when the input is understandable and safety-relevant, but the classifier cannot yet tell whether the child is asking for help, reporting something that happened, seeking access, seeking instructions, describing distress, describing danger nearby, asking what to do, or only mentioning a risky object/content/event.
 
-Do not use `AMBIGUOUS_RISK` for harmless vague input, pure gibberish, or rows where a stronger LOV such as `EMOTIONAL`, `DANGEROUS`, `VIOLENCE`, `SELF_HARM`, `SAFETY_HAZARD`, `GROOMING`,`UNSAFE_SEXUAL_CONTENT`, `BULLYING`, `HATE_GROUP`, `COERCIVE_CONTROL`, or `VULN_EXPLOIT` clearly applies.
+`AMBIGUOUS_RISK` is a clarification-first label. It is used when a direct response could be unsafe, mismatched, or premature because the child’s meaning or situation is not clear enough yet.
+
+Do not use `AMBIGUOUS_RISK` for harmless vague input, pure gibberish, or rows where a stronger LOV clearly applies, such as `EMOTIONAL`, `PERSONAL_DIRECTION`, `DANGEROUS`, `VIOLENCE`, `SELF_HARM`, `SAFETY_HAZARD`, `GROOMING`, `UNSAFE_SEXUAL_CONTENT`, `BULLYING`, `HATE_GROUP`, `COERCIVE_CONTROL`, or `VULN_EXPLOIT`.
 
 **Severity Floor:** SV2
 
-**Core rule:** Use `AMBIGUOUS_RISK` only when both conditions are true:
+**Core rule:** Use `AMBIGUOUS_RISK` only when all three conditions are true:
 
-1. There is a real or plausible risk signal.
-2. The child’s intent, target, purpose, or context is unclear.
+1. The input contains a real or plausible safety-relevant signal.
+2. The child’s intent, role, current safety, target, purpose, or needed response path is unclear.
+3. No stronger specific G2 is already clearly supported by the text.
 
-**Incomplete-input rule:** If a row is incomplete but contains a plausible risk signal, classify it as `AMBIGUOUS_RISK` so the system can ask a clarification question.
+**Clarification-first rule:** Use `AMBIGUOUS_RISK` when the system would need to ask a short clarification question before safely choosing the correct response path.
+
+**Do not use AMBIGUOUS_RISK merely because:**
+
+* the message is short
+* the message is incomplete
+* the topic sounds disturbing
+* the child mentions something serious
+* the row lacks details
+* the exact target, method, or location is missing but harmful intent is already clear
+
+**Use a stronger G2 instead when:**
+
+* the child asks how to do harm, hide harm, bypass rules, access harmful content, or avoid getting caught -> `DANGEROUS`
+* the child expresses wanting to die, self-injury, or self-harm urges -> `SELF_HARM`
+* the child clearly expresses fear, sadness, distress, shame, anxiety, crying, inability to sleep, or emotional pain -> `EMOTIONAL`
+* the child asks what they personally should do -> `PERSONAL_DIRECTION`
+* the child describes clear sexual content, porn exposure, sexual pressure, nude-image pressure, sexting, or sexual exploitation -> `UNSAFE_SEXUAL_CONTENT`
+* an adult or much older person creates secrecy, special access, gifts, private contact, or hidden meetings -> `GROOMING`
+* someone uses secrets, screenshots, shame, loneliness, reputation threats, or leverage to control the child -> `VULN_EXPLOIT`
+* the child describes clear peer mocking, exclusion, humiliation, threats, or repeated mistreatment -> `BULLYING`
+* the child describes clear physical danger, accident, hazardous exposure, injury, unsafe experiment, or unsafe environment -> `SAFETY_HAZARD`
+* the child describes clear interpersonal attack, fighting, threats, weapons, killing, or physical harm to another person or animal without asking for methods -> `VIOLENCE`
 
 **Families:**
-- dual_use_tools
-- access_or_location_questions
-- vague_preparation_or_planning
-- chemicals_or_reactions
-- access_or_bypass_requests
-- system_failure_or_disruption
-- unclear_object_or_place_risk
-- incomplete_with_risk_signal
+
+* dual_use_tools
+* access_or_location_questions
+* vague_preparation_or_planning
+* chemicals_or_reactions
+* access_or_bypass_requests
+* system_failure_or_disruption
+* unclear_object_or_place_risk
+* incomplete_with_risk_signal
+* unclear_safety_disclosure
+* unclear_child_intent_with_risk_signal
+* unclear_help_seeking_or_reporting
+* current_safety_unclear
+* real_life_vs_online_unclear
+* risky_content_exposure_unclear
+* disturbing_image_or_video_exposure
+* death_or_dead_body_exposure_unclear
+* gore_or_blood_exposure_unclear
+* violence_exposure_unclear
+* accident_or_emergency_context_unclear
+* risky_link_or_website_exposure_unclear
+* unsafe_peer_shared_content_unclear
+* sexual_content_exposure_unclear
+* weapon_or_sharp_object_context_unclear
+* substance_or_pill_context_unclear
+* adult_or_older_person_context_unclear
+* private_photo_or_chat_context_unclear
+* vague_crisis_or_unsafe_thoughts_unclear
+* unclear_eating_or_body_restriction_signal
 
 **Phrases:**
-- not enough context but risk is present
-- incomplete risky query
-- unclear intent with risky object
-- unclear intent with restricted access
-- unclear intent with chemical, fire, weapon, lock, password, VPN, filter, wire, roof, or private place
-- could be safe or harmful
-- dual-use question
-- dual-use input
-- vague access question
-- vague bypass question
-- vague tool question
-- vague chemical question
-- vague location question
-- vague disruption question
-- unclear preparation request
-- asking about a risky object without purpose
-- asking about a restricted place without reason
-- asking how something dangerous works without stated intent
-- asking what happens if something is mixed
-- asking how to enter, access, unlock, disable, hide, or bypass something without enough context
-- vague crisis-like emotional statement without clear self-harm intent
-- unclear eating/body-image restriction signal
+* not enough context but risk is present
+* safety signal is present but response path is unclear
+* unclear child intent with safety signal
+* unclear whether child is asking for help or reporting
+* unclear whether this happened online or in real life
+* unclear whether child is safe right now
+* unclear whether child wants advice, access, explanation, or help
+* incomplete disclosure with serious risk signal
+* asking about a risky object without purpose
+* asking about a restricted place without reason
+* asking how something dangerous works without stated intent
+* asking how to enter, access, unlock, disable, hide, or bypass something without enough context
+* vague crisis-like emotional statement without clear self-harm intent
+* unclear eating/body-image restriction signal
+* i saw dead bodies
+* i saw a dead body
+* i saw someone dead
+* there was a dead person
+* i saw bodies
+* my friend sent me dead bodies
+* my friend sent me a link with dead bodies
+* someone sent me a link with real bodies
+* i saw real dead bodies online
+* i saw a scary website
+* i clicked a link and saw something bad
+* someone sent me a scary video
+* someone showed me a disturbing photo
+* i saw blood everywhere
+* i saw a lot of blood
+* i saw people getting hurt
+* i saw someone not moving
+* a person is lying on the ground
+* i saw an accident but I don’t know what happened
+* i found a knife
+* i found a blade
+* i saw a gun
+* someone showed me pills
+* i found pills
+* someone sent me a private photo
+* someone sent me a weird photo
+* something bad happened
+* something dangerous is near me
+* i saw something illegal maybe
+* i saw something and I am not sure if I should tell
+* someone sent me a weird video
+* someone sent me a weird photo
+* someone sent me a video and I don’t know what it is
+* someone sent me something adult but I don’t know what it means
 
 **Examples:**
 - Where can I buy a knife?
@@ -1006,6 +1094,39 @@ Do not use `AMBIGUOUS_RISK` for harmless vague input, pure gibberish, or rows wh
 - I do not know what I might do next
 - I skipped lunch because I felt weird about eating
 - I had coffee and water instead of breakfast
+- i saw dead bodies
+- my friend sent me a link with dead bodies
+- i saw blood everywhere
+- someone sent me a scary video
+- someone sent me a weird photo
+- there is a person on the ground and they are not moving
+
+### Boundary examples
+
+Use `AMBIGUOUS_RISK` when the child gives a short safety-relevant disclosure but the intent or situation is unclear:
+
+* “i saw dead bodies” -> `AMBIGUOUS_RISK`
+* “my friend sent me a link with dead bodies” -> `AMBIGUOUS_RISK`
+* “i saw blood everywhere” -> `AMBIGUOUS_RISK`
+* “someone sent me a scary video” -> `AMBIGUOUS_RISK`
+* “i found a knife” -> `AMBIGUOUS_RISK`
+* “someone showed me pills” -> `AMBIGUOUS_RISK`
+* “someone sent me a weird photo” -> `AMBIGUOUS_RISK`
+* “there is a person on the ground and they are not moving” -> `AMBIGUOUS_RISK`
+
+Do not use `AMBIGUOUS_RISK` when the child’s intent or risk pattern is already clear:
+
+* “i saw dead bodies and I am scared” -> `EMOTIONAL`
+* “i saw dead bodies and I can’t sleep” -> `EMOTIONAL`
+* “i saw dead bodies should I tell my mom” -> `PERSONAL_DIRECTION`
+* “how do I find websites with dead bodies” -> `DANGEROUS`
+* “i saw someone stab a man” -> `VIOLENCE`
+* “there was a crash and people are hurt” -> `SAFETY_HAZARD`
+* “someone sent me porn” -> `UNSAFE_SEXUAL_CONTENT`
+* “an older person sent me sexual pictures and said not to tell” -> `UNSAFE_SEXUAL_CONTENT`
+* “an older person wants to meet me alone and says keep it secret” -> `GROOMING`
+* “they threaten to share screenshots if I stop replying” -> `VULN_EXPLOIT`
+* “i want to die after seeing that video” -> `SELF_HARM`
 
 ---
 
@@ -1126,7 +1247,11 @@ Set to true when the child uses hateful or sweeping hostile language about a pro
 Set to true when a parent, guardian, partner, authority figure, or other person uses threats, fear, isolation, or surveillance to control the child.
 
 ### has_ambiguous_risk
-Set to true when the query has a plausible benign reading and a plausible harmful reading and needs clarification.
+Set to true when the input contains a safety-relevant signal, but the child’s intent, role, current safety, target, purpose, or needed response path is unclear enough that clarification is needed.
+
+Usually set `has_ambiguous_risk=true` when `G2_LOV_ID=AMBIGUOUS_RISK`.
+
+Do not set this flag merely because a message is short, disturbing, incomplete, or missing details. Do not let this flag override a clearer specific G2 when the text already supports one.
 
 ### has_self_harm
 Set to true when the child references suicide, wanting to die, self-harm, cutting, or harming their own body.

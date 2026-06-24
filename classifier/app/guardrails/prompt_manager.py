@@ -106,6 +106,18 @@ def _active_flag_ids(envelope: dict[str, Any]) -> list[str]:
     return [str(flag) for flag in envelope["g3"].get("source_flags", []) if str(flag) in CODEBOOK.prompt_dictionary.flag_prompts]
 
 
+def _is_actor(envelope: dict[str, Any]) -> bool:
+    role = envelope.get("role", {})
+    return isinstance(role, dict) and bool(role.get("is_actor"))
+
+
+def _flag_prompt_variant(flag: str, envelope: dict[str, Any]) -> Any:
+    spec = CODEBOOK.prompt_dictionary.flag_prompts[flag]
+    if _is_actor(envelope) and spec.role_reversed:
+        return spec.role_reversed
+    return spec
+
+
 def _flag_priority(flag: str) -> tuple[int, int, int, str]:
     precedence = CODEBOOK.flag_precedence_order.rankings.get(flag)
     if precedence is not None:
@@ -122,7 +134,7 @@ def _flag_priority(flag: str) -> tuple[int, int, int, str]:
 def _selected_flag_prompt(envelope: dict[str, Any]) -> dict[str, str]:
     active_flags = sorted(_active_flag_ids(envelope), key=_flag_priority)
     if active_flags:
-        spec = CODEBOOK.prompt_dictionary.flag_prompts[active_flags[0]]
+        spec = _flag_prompt_variant(active_flags[0], envelope)
         return {
             "flag": active_flags[0],
             "context": spec.context,
@@ -142,8 +154,8 @@ def _secondary_flag_context(envelope: dict[str, Any], primary_flag: str) -> list
     for flag in _active_flag_ids(envelope):
         if flag == primary_flag:
             continue
-        spec = CODEBOOK.prompt_dictionary.flag_prompts.get(flag)
-        if spec:
+        if flag in CODEBOOK.prompt_dictionary.flag_prompts:
+            spec = _flag_prompt_variant(flag, envelope)
             secondary.append(f"{flag}: {spec.context}")
     return secondary
 

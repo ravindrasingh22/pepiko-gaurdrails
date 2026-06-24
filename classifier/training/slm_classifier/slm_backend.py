@@ -15,6 +15,8 @@ from app.models.guardrail_decision import GuardrailDecision
 from training.slm_classifier.codebook import codebook_fingerprint
 from training.slm_classifier.data_pipeline import (
     CANONICAL_DATASET,
+    FLAG_VOCAB,
+    IS_ACTOR_VOCAB,
     LABEL_VOCAB_PATH,
     build_group_id,
     dataset_fingerprint,
@@ -168,9 +170,20 @@ def _iter_rows(path: Path = CANONICAL_DATASET) -> list[dict[str, Any]]:
 
 
 def _load_label_vocab() -> dict[str, list[str]]:
-    if not LABEL_VOCAB_PATH.exists():
+    if not LABEL_VOCAB_PATH.exists() or _label_vocab_needs_refresh(LABEL_VOCAB_PATH):
         write_label_vocab(target_path=LABEL_VOCAB_PATH)
     return json.loads(LABEL_VOCAB_PATH.read_text(encoding="utf-8"))
+
+
+def _label_vocab_needs_refresh(path: Path) -> bool:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return True
+    return (
+        list(payload.get("flags", [])) != FLAG_VOCAB
+        or list(payload.get("is_actor", [])) != IS_ACTOR_VOCAB
+    )
 
 
 def _decode_g2_predictions(
@@ -188,8 +201,8 @@ def ensure_label_vocab(model_dir: Path | None = None, core: str | None = None) -
     if model_dir is None:
         model_dir = model_dir_for_core(core)
     source = LABEL_VOCAB_PATH
-    if not source.exists():
-        write_label_vocab(source)
+    if not source.exists() or _label_vocab_needs_refresh(source):
+        write_label_vocab(target_path=source)
     model_dir.mkdir(parents=True, exist_ok=True)
     (model_dir / "label_vocab.json").write_text(source.read_text(encoding="utf-8"), encoding="utf-8")
     return model_dir / "label_vocab.json"
@@ -210,9 +223,11 @@ def _training_defaults(core: str | None = None) -> dict[str, Any]:
         "g1_loss_weight": 0.2,
         "g2_loss_weight": 2.0,
         "flag_loss_weight": 0.3,
+        "is_actor_loss_weight": 0.2,
         "intent_family_loss_weight": 0.15,
         "intent_phrase_loss_weight": 0.10,
         "flag_max_pos_weight": 8.0,  # Stricter cap for lower-dimensional flags
+        "is_actor_max_pos_weight": 8.0,
         "intent_family_max_pos_weight": 18.0,  # Higher headroom for sparse child safety behaviors
         "intent_phrase_max_pos_weight": 18.0,
         "g2_focal_gamma": 2.0,
@@ -262,7 +277,7 @@ def _checkpoint_is_compatible(state_dict: dict[str, Any]) -> bool:
     return any(
         key.startswith(prefix)
         for key in state_dict
-        for prefix in ("g1_classifier.", "g2_classifier.", "flag_classifier.", "classifier.")
+        for prefix in ("g1_classifier.", "g2_classifier.", "flag_classifier.", "is_actor_classifier.", "classifier.")
     )
 
 
@@ -511,6 +526,21 @@ def _compute_list_multilabel_pos_weight(
     return weights
 
 
+def _compute_binary_pos_weight(
+    rows: list[dict[str, Any]],
+    key: str,
+    *,
+    max_pos_weight: float | None = None,
+) -> float:
+    total = max(len(rows), 1)
+    positives = max(sum(1 for row in rows if bool(row.get(key, False))), 1)
+    negatives = max(total - positives, 1)
+    weight = negatives / positives
+    if max_pos_weight is not None:
+        weight = min(weight, float(max_pos_weight))
+    return weight
+
+
 def _compute_sample_weights(rows: list[dict[str, Any]], label_vocab: dict[str, list[str]]) -> list[float]:
     g2_counts = {value: 0 for value in label_vocab["g2"]}
     total = max(len(rows), 1)
@@ -632,6 +662,7 @@ class CanonicalSLMDataset(Dataset):  # pragma: no cover - exercised through trai
                 [1.0 if bool(row.get("flags", {}).get(flag, False)) else 0.0 for flag in self.flag_vocab],
                 dtype=torch.float32,
             ),
+            "is_actor_labels": torch.tensor([1.0 if bool(row.get("is_actor", False)) else 0.0], dtype=torch.float32),
             "intent_family_labels": torch.tensor(
                 [
                     1.0 if str(intent_family) in {str(item).strip() for item in row.get("intent_families", []) or []} else 0.0
@@ -660,6 +691,7 @@ class CanonicalSLMDataset(Dataset):  # pragma: no cover - exercised through trai
             "g1_text": str(row.get("g1", "")),
             "g2_text": primary_g2_label(row.get("g2", [])),
             "flags_json": json.dumps(row.get("flags", {}), sort_keys=True),
+            "is_actor_text": str(bool(row.get("is_actor", False))).lower(),
         }
 
 
@@ -712,6 +744,7 @@ class MultiHeadSLMClassifier(nn.Module):  # pragma: no cover - exercised through
         self.g1_classifier = nn.Linear(hidden_size, num_g1_labels)
         self.g2_classifier = CrossFeatureFusionHead(hidden_size, num_intent_rules, num_phrase_triggers, num_g2_labels)
         self.flag_classifier = nn.Linear(hidden_size, num_flags)
+        self.is_actor_classifier = nn.Linear(hidden_size, 1)
         self.intent_family_classifier = nn.Linear(hidden_size, num_intent_families) if num_intent_families > 0 else None
         self.intent_phrase_classifier = nn.Linear(hidden_size, num_intent_phrases) if num_intent_phrases > 0 else None
         self.config = self.backbone.config
@@ -749,6 +782,7 @@ class MultiHeadSLMClassifier(nn.Module):  # pragma: no cover - exercised through
             "g1_logits": self.g1_classifier(pooled),
             "g2_logits": self.g2_classifier(pooled, fusion_intent_features, phrase_trigger_features),
             "flag_logits": self.flag_classifier(pooled),
+            "is_actor_logits": self.is_actor_classifier(pooled),
         }
         if self.intent_family_classifier is not None:
             payload["intent_family_logits"] = intent_family_logits
@@ -883,21 +917,25 @@ def _compute_loss(
     g1_loss_fn: Any,
     g2_loss_fn: Any,
     flag_loss_fn: Any,
+    is_actor_loss_fn: Any,
     intent_family_loss_fn: Any | None = None,
     intent_phrase_loss_fn: Any | None = None,
     g1_loss_weight: float = 0.2,
     g2_loss_weight: float = 2.0,
     flag_loss_weight: float = 0.45,
+    is_actor_loss_weight: float = 0.2,
     intent_family_loss_weight: float = 0.15,
     intent_phrase_loss_weight: float = 0.10,
 ) -> Any:
     g1_loss = g1_loss_fn(outputs["g1_logits"].float(), batch["g1_labels"])
     g2_loss = g2_loss_fn(outputs["g2_logits"].float(), batch["g2_labels"])
     flag_loss = flag_loss_fn(outputs["flag_logits"].float(), batch["flag_labels"])
+    is_actor_loss = is_actor_loss_fn(outputs["is_actor_logits"].float(), batch["is_actor_labels"])
     total_loss = (
         float(g1_loss_weight) * g1_loss
         + float(g2_loss_weight) * g2_loss
         + float(flag_loss_weight) * flag_loss
+        + float(is_actor_loss_weight) * is_actor_loss
     )
     if intent_family_loss_fn is not None and "intent_family_logits" in outputs and batch["intent_family_labels"].numel():
         intent_family_mask = batch["intent_family_mask"].float().view(-1, 1)
@@ -930,6 +968,7 @@ def _compute_loss_breakdown(
     g1_loss_fn: Any,
     g2_loss_fn: Any,
     flag_loss_fn: Any,
+    is_actor_loss_fn: Any,
     intent_family_loss_fn: Any | None = None,
     intent_phrase_loss_fn: Any | None = None,
 ) -> dict[str, float]:
@@ -937,6 +976,7 @@ def _compute_loss_breakdown(
         "g1_loss": float(g1_loss_fn(outputs["g1_logits"].float(), batch["g1_labels"]).item()),
         "g2_loss": float(g2_loss_fn(outputs["g2_logits"].float(), batch["g2_labels"]).item()),
         "flag_loss": float(flag_loss_fn(outputs["flag_logits"].float(), batch["flag_labels"]).item()),
+        "is_actor_loss": float(is_actor_loss_fn(outputs["is_actor_logits"].float(), batch["is_actor_labels"]).item()),
     }
     if intent_family_loss_fn is not None and "intent_family_logits" in outputs and batch["intent_family_labels"].numel():
         intent_family_mask = batch["intent_family_mask"].float().view(-1, 1)
@@ -971,11 +1011,13 @@ def _evaluate_loss(
     g1_loss_fn: Any,
     g2_loss_fn: Any,
     flag_loss_fn: Any,
+    is_actor_loss_fn: Any,
     intent_family_loss_fn: Any | None = None,
     intent_phrase_loss_fn: Any | None = None,
     g1_loss_weight: float = 0.2,
     g2_loss_weight: float = 2.0,
     flag_loss_weight: float = 0.45,
+    is_actor_loss_weight: float = 0.2,
     intent_family_loss_weight: float = 0.15,
     intent_phrase_loss_weight: float = 0.10,
 ) -> float:
@@ -998,11 +1040,13 @@ def _evaluate_loss(
                 g1_loss_fn,
                 g2_loss_fn,
                 flag_loss_fn,
+                is_actor_loss_fn,
                 intent_family_loss_fn,
                 intent_phrase_loss_fn,
                 g1_loss_weight=g1_loss_weight,
                 g2_loss_weight=g2_loss_weight,
                 flag_loss_weight=flag_loss_weight,
+                is_actor_loss_weight=is_actor_loss_weight,
                 intent_family_loss_weight=intent_family_loss_weight,
                 intent_phrase_loss_weight=intent_phrase_loss_weight,
             )
@@ -1038,6 +1082,8 @@ def _evaluate_gate_accuracy(model: Any, loader: Any, label_vocab: dict[str, list
         label: {"tp": 0, "fp": 0, "fn": 0}
         for label in label_vocab.get("intent_phrases", [])
     }
+    is_actor_correct = 0
+    is_actor_counts = {"is_actor": {"tp": 0, "fp": 0, "fn": 0}}
     flag_exact_match = 0
     intent_family_exact_match = 0
     intent_family_evaluated_total = 0
@@ -1057,6 +1103,7 @@ def _evaluate_gate_accuracy(model: Any, loader: Any, label_vocab: dict[str, list
             g1_pred = torch.argmax(outputs["g1_logits"], dim=-1)
             g2_pred = torch.argmax(outputs["g2_logits"], dim=-1)
             flag_pred = (torch.sigmoid(outputs["flag_logits"]) >= 0.5).to(dtype=tensor_batch["flag_labels"].dtype)
+            is_actor_pred = (torch.sigmoid(outputs["is_actor_logits"]) >= 0.5).to(dtype=tensor_batch["is_actor_labels"].dtype)
             intent_family_pred = None
             if "intent_family_logits" in outputs and "intent_family_labels" in tensor_batch and tensor_batch["intent_family_labels"].shape[-1] > 0:
                 intent_family_pred = (torch.sigmoid(outputs["intent_family_logits"]) >= 0.5).to(
@@ -1069,6 +1116,7 @@ def _evaluate_gate_accuracy(model: Any, loader: Any, label_vocab: dict[str, list
                 )
             g1_correct += int((g1_pred == tensor_batch["g1_labels"]).sum().item())
             g2_correct += int((g2_pred == tensor_batch["g2_labels"]).sum().item())
+            is_actor_correct += int((is_actor_pred == tensor_batch["is_actor_labels"]).sum().item())
             batch_size = int(tensor_batch["g2_labels"].shape[0])
             total += batch_size
             predicted_g1_values = [label_vocab["g1"][int(idx)] for idx in g1_pred.cpu().tolist()]
@@ -1116,6 +1164,17 @@ def _evaluate_gate_accuracy(model: Any, loader: Any, label_vocab: dict[str, list
                             flag_counts[label]["fp"] += 1
                         elif gold and (not pred):
                             flag_counts[label]["fn"] += 1
+            is_actor_gold = tensor_batch["is_actor_labels"].cpu().view(-1).tolist()
+            is_actor_pred_values = is_actor_pred.cpu().view(-1).tolist()
+            for pred_value, gold_value in zip(is_actor_pred_values, is_actor_gold):
+                gold = bool(gold_value)
+                pred = bool(pred_value)
+                if gold and pred:
+                    is_actor_counts["is_actor"]["tp"] += 1
+                elif (not gold) and pred:
+                    is_actor_counts["is_actor"]["fp"] += 1
+                elif gold and (not pred):
+                    is_actor_counts["is_actor"]["fn"] += 1
             if intent_family_counts and intent_family_pred is not None:
                 intent_gold = tensor_batch["intent_family_labels"].cpu().tolist()
                 intent_pred_values = intent_family_pred.cpu().tolist()
@@ -1219,6 +1278,10 @@ def _evaluate_gate_accuracy(model: Any, loader: Any, label_vocab: dict[str, list
         "g2_macro_f1": g2_summary["macro_f1"],
         "g2_weighted_f1": g2_summary["weighted_f1"],
         "flags": _multilabel_summary(flag_counts, flag_exact_match, total),
+        "is_actor": {
+            "accuracy": (is_actor_correct / total) if total else 0.0,
+            **_multilabel_summary(is_actor_counts, is_actor_correct, total),
+        },
         "intent_families": _multilabel_summary(intent_family_counts, intent_family_exact_match, intent_family_evaluated_total),
         "intent_phrases": _multilabel_summary(intent_phrase_counts, intent_phrase_exact_match, intent_phrase_evaluated_total),
         "total_rows": total,
@@ -1286,12 +1349,14 @@ def train_slm_classifier(
     g1_loss_weight: float | None = None,
     g2_loss_weight: float | None = None,
     flag_loss_weight: float | None = None,
+    is_actor_loss_weight: float | None = None,
     intent_family_loss_weight: float | None = None,
     intent_phrase_loss_weight: float | None = None,
     g2_focal_gamma: float | None = None,
     intent_family_focal_gamma: float | None = None,
     intent_phrase_focal_gamma: float | None = None,
     flag_max_pos_weight: float | None = None,
+    is_actor_max_pos_weight: float | None = None,
     intent_family_max_pos_weight: float | None = None,
     intent_phrase_max_pos_weight: float | None = None,
     train_intent_heads: bool | None = None,
@@ -1383,8 +1448,12 @@ def train_slm_classifier(
         config["g2_loss_weight"] = float(g2_loss_weight)
     if flag_loss_weight is not None:
         config["flag_loss_weight"] = float(flag_loss_weight)
+    if is_actor_loss_weight is not None:
+        config["is_actor_loss_weight"] = float(is_actor_loss_weight)
     if flag_max_pos_weight is not None:
         config["flag_max_pos_weight"] = float(flag_max_pos_weight)
+    if is_actor_max_pos_weight is not None:
+        config["is_actor_max_pos_weight"] = float(is_actor_max_pos_weight)
     if intent_family_max_pos_weight is not None:
         config["intent_family_max_pos_weight"] = float(intent_family_max_pos_weight)
     if intent_family_loss_weight is not None:
@@ -1543,6 +1612,16 @@ def train_slm_classifier(
         g1_loss_fn = torch.nn.CrossEntropyLoss(weight=g1_weights)
         g2_loss_fn = MulticlassFocalLoss(gamma=float(config.get("g2_focal_gamma", 2.0)), weight=g2_weights)
         flag_loss_fn = torch.nn.BCEWithLogitsLoss(pos_weight=flag_weights)
+        is_actor_weight = torch.tensor(
+            [_compute_binary_pos_weight(
+                train_rows,
+                "is_actor",
+                max_pos_weight=config.get("is_actor_max_pos_weight"),
+            )],
+            dtype=torch.float32,
+            device=device,
+        )
+        is_actor_loss_fn = torch.nn.BCEWithLogitsLoss(pos_weight=is_actor_weight)
         intent_family_weights = torch.tensor(
             _compute_list_multilabel_pos_weight(
                 train_rows,
@@ -1579,6 +1658,7 @@ def train_slm_classifier(
             model.g1_classifier,
             model.g2_classifier,
             model.flag_classifier,
+            model.is_actor_classifier,
         ]
         if getattr(model, "intent_family_classifier", None) is not None:
             head_modules.append(model.intent_family_classifier)
@@ -1692,11 +1772,13 @@ def train_slm_classifier(
                     g1_loss_fn,
                     g2_loss_fn,
                     flag_loss_fn,
+                    is_actor_loss_fn,
                     intent_family_loss_fn,
                     intent_phrase_loss_fn,
                     g1_loss_weight=float(config.get("g1_loss_weight", 0.2)),
                     g2_loss_weight=float(config.get("g2_loss_weight", 2.0)),
                     flag_loss_weight=float(config.get("flag_loss_weight", 0.45)),
+                    is_actor_loss_weight=float(config.get("is_actor_loss_weight", 0.2)),
                     intent_family_loss_weight=float(config.get("intent_family_loss_weight", 0.15)),
                     intent_phrase_loss_weight=float(config.get("intent_phrase_loss_weight", 0.10)),
                 )
@@ -1736,6 +1818,7 @@ def train_slm_classifier(
                             g1_loss_fn,
                             g2_loss_fn,
                             flag_loss_fn,
+                            is_actor_loss_fn,
                             intent_family_loss_fn,
                             intent_phrase_loss_fn,
                         )
@@ -1744,6 +1827,7 @@ def train_slm_classifier(
                         g2_probs = torch.softmax(g2_logits, dim=-1).tolist()
                         g1_pred_indices = torch.argmax(outputs["g1_logits"], dim=-1).detach().cpu().tolist()
                         flag_probs = torch.sigmoid(outputs["flag_logits"].detach().cpu()).tolist()
+                        is_actor_probs = torch.sigmoid(outputs["is_actor_logits"].detach().cpu()).view(-1).tolist()
                         g2_pred_indices = torch.argmax(outputs["g2_logits"], dim=-1).detach().cpu().tolist()
                         g2_gold_indices = tensor_batch["g2_labels"].detach().cpu().tolist()
                         g2_confusion_counter: Counter[str] = Counter()
@@ -1776,6 +1860,8 @@ def train_slm_classifier(
                                         str(flag): float(flag_probs[idx][flag_idx])
                                         for flag_idx, flag in enumerate(label_vocab["flags"])
                                     },
+                                    "is_actor_score": float(is_actor_probs[idx]),
+                                    "is_actor": str(meta_batch.get("is_actor_text", ["false"])[idx]),
                                     "intent_family_scores": {
                                         str(intent_family): float(score)
                                         for intent_family, score in zip(
@@ -1824,11 +1910,13 @@ def train_slm_classifier(
                 g1_loss_fn,
                 g2_loss_fn,
                 flag_loss_fn,
+                is_actor_loss_fn,
                 intent_family_loss_fn,
                 intent_phrase_loss_fn,
                 g1_loss_weight=float(config.get("g1_loss_weight", 0.2)),
                 g2_loss_weight=float(config.get("g2_loss_weight", 2.0)),
                 flag_loss_weight=float(config.get("flag_loss_weight", 0.45)),
+                is_actor_loss_weight=float(config.get("is_actor_loss_weight", 0.2)),
                 intent_family_loss_weight=float(config.get("intent_family_loss_weight", 0.15)),
                 intent_phrase_loss_weight=float(config.get("intent_phrase_loss_weight", 0.10)),
             ) if len(test_rows) else 0.0
@@ -1870,9 +1958,11 @@ def train_slm_classifier(
         metadata["g1_loss_weight"] = float(config.get("g1_loss_weight", 1.0))
         metadata["g2_loss_weight"] = float(config.get("g2_loss_weight", 2.0))
         metadata["flag_loss_weight"] = float(config.get("flag_loss_weight", 0.45))
+        metadata["is_actor_loss_weight"] = float(config.get("is_actor_loss_weight", 0.2))
         metadata["intent_family_loss_weight"] = float(config.get("intent_family_loss_weight", 0.15))
         metadata["intent_phrase_loss_weight"] = float(config.get("intent_phrase_loss_weight", 0.10))
         metadata["flag_max_pos_weight"] = float(config.get("flag_max_pos_weight", 10.0))
+        metadata["is_actor_max_pos_weight"] = float(config.get("is_actor_max_pos_weight", 8.0))
         metadata["intent_family_max_pos_weight"] = float(config.get("intent_family_max_pos_weight", 10.0))
         metadata["intent_phrase_max_pos_weight"] = float(config.get("intent_phrase_max_pos_weight", 10.0))
         metadata["g2_focal_gamma"] = float(config.get("g2_focal_gamma", 2.0))
@@ -2077,6 +2167,7 @@ def _decision_from_predictions(
             "runtime_classifier_output": classifier_output,
             "trained": bool(package.metadata.get("trained", False)),
             "flags_trained": bool(package.metadata.get("flags_trained", False)),
+            "is_actor_trained": bool(package.metadata.get("trained", False)),
         },
     )
 
@@ -2144,6 +2235,8 @@ def build_decision_from_slm(
     g1_probs = torch.softmax(outputs["g1_logits"], dim=-1).squeeze(0).cpu().tolist()
     g2_primary_probs = torch.softmax(outputs["g2_logits"], dim=-1).squeeze(0).cpu().tolist()
     flag_probs = torch.sigmoid(outputs["flag_logits"]).squeeze(0).cpu().tolist()
+    is_actor_probability = float(torch.sigmoid(outputs["is_actor_logits"]).squeeze().cpu().item())
+    is_actor = is_actor_probability >= threshold
     intent_family_probs = (
         torch.sigmoid(outputs["intent_family_logits"]).squeeze(0).cpu().tolist()
         if "intent_family_logits" in outputs else []
@@ -2166,6 +2259,8 @@ def build_decision_from_slm(
     }
     learned_intent_flags = {
         "predicted_flags": [flag for flag in flag_vocab if float(active_flags.get(flag, 0.0)) >= threshold],
+        "is_actor": is_actor,
+        "is_actor_score": is_actor_probability,
         "flag_scores": {flag: float(flag_probs[idx]) for idx, flag in enumerate(flag_vocab)},
         "predicted_intent_families": [
             intent_family
@@ -2207,8 +2302,11 @@ def build_decision_from_slm(
                 **decision.classifier_metadata,
                 "inference_device": inference_device,
                 "usage": usage,
+                "is_actor": is_actor,
+                "role": {"is_actor": is_actor},
                 "head_confidences": {
                     **decision.classifier_metadata.get("head_confidences", {}),
+                    "is_actor": {"true": is_actor_probability, "false": 1.0 - is_actor_probability},
                     "flags": {flag: float(flag_probs[idx]) for idx, flag in enumerate(flag_vocab)},
                     "intent_families": {
                         label: float(score)

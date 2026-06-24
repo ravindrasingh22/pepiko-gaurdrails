@@ -1,0 +1,20 @@
+now create a CSV in docs folder name - prompt-shape.csv and add following columns -
+input_text: examples 
+classifier_output : JSON Object,
+GateEngine computation :JSON Object,
+GL-FP1 : if applied - what it has changed, final output after this,
+GL-T1 :if applied - what it has changed, final output after this,
+GL-A1: if applied - what it has changed, final output after this,
+GL-E1: if applied - what it has changed, final output after this,
+GL-CU1: if applied - what it has changed, final output after this,
+GL-O1, if applied - what it has changed, final output after this,
+final_tone_instructions,
+final_action_instructions,
+final_escalation_instructions,
+final_flag_guidance, 
+final_flag_context,
+final_flag_example_start, 
+final_lov_guidance,
+final_prompt
+
+the goal of this csv to understand how the each stage is shaping the final output for every placeholders need values in the final prompt. this needs to be created on based on gl-classifier-gate-engine-reference.md understanding. atleast create different 20 examples which caters all usecases or create more if all usecases(scenarios are not getting covered)

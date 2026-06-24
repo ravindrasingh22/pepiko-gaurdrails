@@ -13,7 +13,7 @@ from app.guardrails.runtime_contracts import (
 )
 from training.slm_classifier.data_pipeline import write_label_vocab
 from training.slm_classifier.data_pipeline import DatasetSplitManifest
-from training.slm_classifier.slm_backend import BinaryFocalLoss, CanonicalSLMDataset, CrossFeatureFusionHead, LoadedSLMPackage, MulticlassFocalLoss, _checkpoint_is_compatible, _checkpoint_payload_is_compatible, _compute_list_multilabel_pos_weight, _compute_loss, _load_trained_model_on_device, _validate_rows_against_label_vocab, train_slm_classifier
+from training.slm_classifier.slm_backend import BinaryFocalLoss, CanonicalSLMDataset, CrossFeatureFusionHead, LoadedSLMPackage, MulticlassFocalLoss, _checkpoint_is_compatible, _checkpoint_payload_is_compatible, _compute_binary_pos_weight, _compute_list_multilabel_pos_weight, _compute_loss, _load_trained_model_on_device, _validate_rows_against_label_vocab, train_slm_classifier
 
 
 def test_compute_list_multilabel_pos_weight_counts_only_true_flag_values() -> None:
@@ -30,6 +30,16 @@ def test_compute_list_multilabel_pos_weight_counts_only_true_flag_values() -> No
     )
 
     assert weights == [2.0, 2.0]
+
+
+def test_compute_binary_pos_weight_counts_true_actor_values() -> None:
+    rows = [
+        {"is_actor": True},
+        {"is_actor": False},
+        {"is_actor": False},
+    ]
+
+    assert _compute_binary_pos_weight(rows, "is_actor") == 2.0
 
 
 def test_multiclass_focal_loss_suppresses_easy_g2_examples() -> None:
@@ -68,6 +78,7 @@ def test_checkpoint_compatibility_accepts_multihead_keys() -> None:
     assert _checkpoint_is_compatible({"g1_classifier.weight": object()}) is True
     assert _checkpoint_is_compatible({"g2_classifier.weight": object()}) is True
     assert _checkpoint_is_compatible({"flag_classifier.weight": object()}) is True
+    assert _checkpoint_is_compatible({"is_actor_classifier.weight": object()}) is True
 
 
 def test_write_label_vocab_includes_intent_families_and_phrases(tmp_path: Path) -> None:
@@ -144,24 +155,29 @@ def test_compute_loss_includes_intent_phrase_head_when_targets_are_present() -> 
         "g1_logits": torch.tensor([[0.0, 0.0]]),
         "g2_logits": torch.tensor([[0.0, 0.0]]),
         "flag_logits": torch.tensor([[0.0]]),
+        "is_actor_logits": torch.tensor([[0.0]]),
         "intent_phrase_logits": torch.tensor([[0.0, 0.0]]),
     }
     batch = {
         "g1_labels": torch.tensor([0]),
         "g2_labels": torch.tensor([0]),
         "flag_labels": torch.tensor([[0.0]]),
+        "is_actor_labels": torch.tensor([[0.0]]),
+        "intent_family_labels": torch.tensor([]),
+        "intent_family_mask": torch.tensor([0.0]),
         "intent_phrase_labels": torch.tensor([[1.0, 0.0]]),
         "intent_phrase_mask": torch.tensor([1.0]),
     }
     cross_entropy = torch.nn.CrossEntropyLoss()
     binary_cross_entropy = torch.nn.BCEWithLogitsLoss()
 
-    without_phrase_loss = _compute_loss(outputs, batch, cross_entropy, cross_entropy, binary_cross_entropy)
+    without_phrase_loss = _compute_loss(outputs, batch, cross_entropy, cross_entropy, binary_cross_entropy, binary_cross_entropy)
     with_phrase_loss = _compute_loss(
         outputs,
         batch,
         cross_entropy,
         cross_entropy,
+        binary_cross_entropy,
         binary_cross_entropy,
         intent_phrase_loss_fn=binary_cross_entropy,
         intent_phrase_loss_weight=1.0,
@@ -290,6 +306,7 @@ def test_canonical_dataset_emits_cross_feature_fusion_inputs() -> None:
                 "g1": "GENERIC",
                 "g2": ["SELF_HARM"],
                 "flags": {},
+                "is_actor": True,
             }
         ],
         tokenizer=Tokenizer(),
@@ -305,6 +322,7 @@ def test_canonical_dataset_emits_cross_feature_fusion_inputs() -> None:
 
     assert dataset[0]["intent_rule_features"].tolist() == [1.0, 0.0]
     assert dataset[0]["phrase_trigger_features"].tolist() == [1.0, 0.0]
+    assert dataset[0]["is_actor_labels"].tolist() == [1.0]
 
 
 def test_cross_feature_fusion_head_cross_attends_to_pattern_priors() -> None:
