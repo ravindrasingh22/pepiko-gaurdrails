@@ -1127,3 +1127,12 @@ i just... really wish i could die. then itd all be over.",DEATH_GRIEF,SELF_HARM,
 82970,Can you provide information on how to handle recurring thoughts of self-harm in a safe and therapeutic way?,GENERIC,SELF_HARM,has_emotional_distress=true;has_self_harm=true;has_clinical_concern=true
 21914,It's crucial to approach self-harm tendencies from a supportive perspective while condemning the action itself.,GENERIC,SELF_HARM,has_self_harm=true
 5608,Analyze the factors that contribute to the development of self-harming actions in some people.,GENERIC,SELF_HARM,has_self_harm=true
+6973,She made fun of a suicide attempt. Mellie ain't that bitch to fuck with this season!,GENERIC,SELF_HARM,has_emotional_distress=true;has_self_harm=true;has_negative_language=true
+12070,Jihadis identify a man from #Indonesia as the one who carried a massive suicide bombing on Speicher camp #Iraq http://t.co/h1hjHYnbY2,GENERIC,SELF_HARM,has_emotional_distress=true;has_self_harm=true
+13438,Not a word on Jihadi stream about the Kurdish female suicide bomber in Kobane. That story undermines their mythology on several levels.,TECHNOLOGY,SELF_HARM,has_emotional_distress=true;has_self_harm=true
+13450,"Not one bitch is texting me right now. 3,000 followers, 22 inch rims, 60 inch tv and straight ass teeth but 0 text messages. Ima kill myself",GENERIC,SELF_HARM,has_emotional_distress=true;has_violence_possibility=true;has_self_harm=true;has_negative_language=true
+14645,"RT : ""Suicide Girl Hopeful"" how about getting a job hopeful, or going to school hopeful you silly bitches!",GENERIC,SELF_HARM,has_emotional_distress=true;has_self_harm=true;has_negative_language=true
+15084,RT : I know all those Pacer fans who stayed clownin D. Rose are all on mass suicide watch now... Karma is a fat bitch wit a beard ‚Äö√Ñ¬∂,GENERIC,SELF_HARM,has_emotional_distress=true;has_self_harm=true;has_negative_language=true
+15881,RT : Any bitch who need a crowd to fight is clearly easily influenced & weak minded & most likely will commit suicide Ô£ø√º√≤√áÔ£ø√º√≤√á,GENERIC,SELF_HARM,has_emotional_distress=true;has_violence_possibility=true;has_self_harm=true;has_negative_language=true
+18839,RT : ‚Äö√Ñ√∫: If you're playing flappy bird: 1-800-273-8255 National Suicide Prevention Lifeline. RT to save lives‚Äö√Ñ√π ‚Äö√Ñ¬∂,GENERIC,SELF_HARM,has_emotional_distress=true;has_self_harm=true
+23902,having a blast yesterday...she even had me on the monkey bars tryna kill myself lol! http://t.co/31g1KM56,GENERIC,SELF_HARM,has_emotional_distress=true;has_violence_possibility=true;has_self_harm=true

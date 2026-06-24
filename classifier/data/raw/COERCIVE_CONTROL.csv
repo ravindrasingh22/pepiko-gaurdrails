@@ -4583,14 +4583,9 @@ CC-07000,"I want to tell someone, but my aunt keeps saying I must obey because m
 3608,"At a residential coaching center, an older kid uses strict words about obedience but has not punished me yet.",GENERIC,COERCIVE_CONTROL,has_coercive_control=true
 3609,"At the school sports shed, my mother's cousin says refusing a private picture request means they will punish my friend's puppy. My cousin says refusing feels impossible.",GENERIC,COERCIVE_CONTROL,has_coercive_control=true;has_privacy_risk=true
 3610,"During health coaching practice, the bus group leader says they will hurt me if I tell a trusted adult about the uncomfortable messages. The child keeps saying they have no choice.",GENERIC,COERCIVE_CONTROL,has_coercive_control=true;has_medical_concern=true
-3611,shit piss fuck cunt cocksucker motherfucker tits,GENERIC,COERCIVE_CONTROL,has_coercive_control=true;has_negative_language=true
-3613,my dad's a fuckin dick bitch i made your ass supper you're not allowed to come home mad,CIVIC_LAW,COERCIVE_CONTROL,has_coercive_control=true
 3614,"hey guys, apparently white and black people are even for that whole slavery thing, so that's nice. history",TECHNOLOGY,COERCIVE_CONTROL,has_coercive_control=true;has_privacy_risk=true
-3615,dude tell me why that's so true my mom has this friends from Texas trying to hype redskin football and shit,GENERIC,COERCIVE_CONTROL,has_coercive_control=true;has_negative_language=true
-3617,I'm dressing up as an albino one day and scaring the shit out of amaris' mom,GENERIC,COERCIVE_CONTROL,has_coercive_control=true;has_negative_language=true
 3618,": My brother want to put on an asshole persona just to get females.That what happens when you let pussy control you, you..",TECHNOLOGY,COERCIVE_CONTROL,has_coercive_control=true
 3619,f a t h e r s d a y fathersday love family enjoy tbt bw black white ..,GENERIC,COERCIVE_CONTROL,has_coercive_control=true
-3620,do birds have a 72% out of wedlock rate? is it white fathers that are running away?,GENERIC,COERCIVE_CONTROL,has_coercive_control=true
 3621,imagine how r founding fathers wldve handled muslim terrorism. contrast that w/the limp-dicked pc bullshit of the admin,BELIEF,COERCIVE_CONTROL,has_coercive_control=true;has_negative_language=true
 3622,that coach should be force fed hot shit with a spoon,GENERIC,COERCIVE_CONTROL,has_coercive_control=true;has_negative_language=true
 3625,"Child (frightened): I saw someone hurt a horse, daddy, is that bad?",GENERIC,COERCIVE_CONTROL,has_coercive_control=true;has_medical_concern=true
@@ -4685,3 +4680,5 @@ VE-04-0365,an account on social media knows I am scared to tell anyone and says 
 VE-04-0155,"Because I am scared to tell anyone, an account on social media says nobody else will help me unless I share my password. I feel sick thinking about it. Is this my fault?",GENERIC,COERCIVE_CONTROL,has_coercive_control=true;has_emotional_distress=true;has_privacy_risk=true
 VE-04-0376,"I told someone from a fan group that I am scared to tell anyone, and now they keep pressuring me to keep replying. Should I save the messages?",GENERIC,COERCIVE_CONTROL,has_coercive_control=true;has_emotional_distress=true
 VE-04-0118,someone from tuition uses the fact that I am scared to tell anyone to make me not tell anyone. How do I stay safe?,GENERIC,COERCIVE_CONTROL,has_coercive_control=true;has_emotional_distress=true
+12943,My Instagram song ain't bout me postin pictures it's about how hoes not allowed to post pictures of me and I ain't posting none of them Ô£ø√º√´√•,TECHNOLOGY,COERCIVE_CONTROL,has_coercive_control=true;has_negative_language=true
+13440,Not allowed to play flappy bird around grandma because she swears at me to stop swearing lol,GENERIC,COERCIVE_CONTROL,has_coercive_control=true

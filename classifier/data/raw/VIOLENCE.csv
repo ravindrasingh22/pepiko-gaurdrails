@@ -633,7 +633,6 @@ row_id,input_text,G1_LOV_ID,G2_LOV_ID,FLAGS
 4229,"Inside a dance practice chat, a field trip volunteer makes me ask permission before I can reply to friends, and the warning is always about hurting me or someone close. I want to get help without making it worse.",GENERIC,VIOLENCE,has_violence_possibility=true;has_dangerous_context=true;has_medical_concern=true
 4317,International law enforcement operation disrupts Shylock banking malware - PCWorld: International law enforcem..,CIVIC_LAW,VIOLENCE,has_violence_possibility=true;has_dangerous_context=true
 4344,"looking forward to the week ahead. lots of meetings planned, a trip to newcastle, a trip to then a trip to mallorca",GENERIC,VIOLENCE,has_violence_possibility=true;has_dangerous_context=true
-4368,im Tokyo but I get higher than a jet. Killing these dog ass hoes had to send em to the vet! Produced by,GENERIC,VIOLENCE,has_violence_possibility=true;has_dangerous_context=true
 4374,poisonous/hateful ideology + mental weakness/instability + easy access to guns/explosives = tragedy needs leadership action,GENERIC,VIOLENCE,has_violence_possibility=true;has_dangerous_context=true
 4384,Bhai US and NORTH KOREA mai war hone hi wala hai.. Chalo hum bhi lage hatho do nuclear bomb Pakistan pe test kar hi lete hai.. Jite jee toh ye koi kaam ki com toh hai nahi kamse kam marne ke lakho saal baad sale fuel ban ke gaddi chalane ke kaam toh ayenge..,TECHNOLOGY,VIOLENCE,has_violence_possibility=true;has_dangerous_context=true
 4387,"looking forward to going to on monday, first ever time.. over 400 mile round trip.. i hope it's woh it",GENERIC,VIOLENCE,has_violence_possibility=true;has_dangerous_context=true
@@ -651,8 +650,6 @@ row_id,input_text,G1_LOV_ID,G2_LOV_ID,FLAGS
 107741,"I'm fine when we start becoming intimate, but out of nowhere, I will get a flashback of what happened to me in the past. I start hysterically crying and freaking out when my boyfriend obviously has done nothing to hurt me.",GENERIC,VIOLENCE,has_violence_possibility=true;has_emotional_distress=true;has_medical_concern=true
 107761,"I've been hurt by a man for five years. He doesn't involve me with the family or kids. Everyone in the family is against me. There is a Mass today for a family member, and he never asked me to go. I'm to sit home alone now and Christmas too. He expects me to sit alone while he enjoys being with the family. We are in our 50s, and it hurts that he won't even think of me or involve me as part of the family. He doesn't even care. I am leaving him as soon as possible, but I hurt so bad that I didn't know who to turn too. I'm now in this low funk of depression, and I'm scared because I do stupid things to myself and give up. I have no friends because I was a truck driver. I've been getting serious headaches and can't sleep. I don't eat; I've lost my appetite. This has been going on for a couple weeks now.",DEATH_GRIEF,VIOLENCE,has_violence_possibility=true;has_emotional_distress=true;has_clinical_concern=true;has_significant_impairment=true;has_medical_concern=true
 107777,"I start to think of an issue that doesn't even matter or something bad that happened years ago. Then, I cry, pull at my hair, plug my ears, hit myself, and throw things. In loud public places, I get on edge and start being sarcastic and moody. I have an awful fear of people leaving me (which normally ends up happening) and I feel like I'm too clingy.",SCIENCE,VIOLENCE,has_violence_possibility=true;has_emotional_distress=true;has_substance_use_concern=true
-108286,he's just a cunt and nobody likes him. He should choke on shit,SCIENCE,VIOLENCE,has_violence_possibility=true;has_emotional_distress=true;has_negative_language=true
-108621,"Crying to the G20 that some Americans don't like you & 'might' call you names, we call that being a crybaby bitch; 0bama.",GENERIC,VIOLENCE,has_violence_possibility=true;has_emotional_distress=true
 5029,My friend said his dad threatened to shoot him. He's scared to go home.,TECHNOLOGY,VIOLENCE,has_violence_possibility=true
 5031,I pushed a kid into the road and a car honked. He was fine but scared.,GENERIC,VIOLENCE,has_violence_possibility=true
 5075,"My friends left me out during lunch again, and I felt really lonely afterward.",TECHNOLOGY,VIOLENCE,has_violence_possibility=true
@@ -892,11 +889,9 @@ row_id,input_text,G1_LOV_ID,G2_LOV_ID,FLAGS
 10328,prayersfororlando so sad another mass shooting of all places a nightclub a place where you go to have fun and pay not to get killed,BELIEF,VIOLENCE,has_violence_possibility=true
 10340,Jo khud k fayde k liye janwaro k bhojan ka durupayog kr sakte hai wo iss baat ka randi rona na he karein BC,TECHNOLOGY,VIOLENCE,has_violence_possibility=true
 10352,"Normally when you hit someone with chappal, hitting precedes by some colloquial stuff like भोसड़ीके or something. It's like war cry",TECHNOLOGY,VIOLENCE,has_violence_possibility=true
-10382,I feel that.. i see nothing wrong with the gta killing bc it's not the sole purpose of the game,TECHNOLOGY,VIOLENCE,has_violence_possibility=true
 10481,a sad couple days in orlando . gun violence in this country is a cancer 2 our independence. not a sign of our freedom. guncontrolnow,GENERIC,VIOLENCE,has_violence_possibility=true
 10482,extremely sad to hear about orlando shooting. so many lives affected because of one senseless act. orlandohorror guncontrolplease rip,GENERIC,VIOLENCE,has_violence_possibility=true
 10540,its pretty depressing that am graduating in 3months n i dont look forward to going back to nigeria cos am scared i may not get a job.,GENERIC,VIOLENCE,has_violence_possibility=true
-10554,of course killed it!! Me and my sis rocked that bitch hard!! Sadity Committee!!,GENERIC,VIOLENCE,has_violence_possibility=true
 10568,It's hot and my allergies are killing I feel like a little bitch,GENERIC,VIOLENCE,has_violence_possibility=true
 109542,"My brother keeps threatening to tell everyone my marks and laughing at me before exams, and I do not know what to do. Does this count as repeated targeting? I am 13 and I feel nervous saying anything.",CIVIC_LAW,VIOLENCE,has_violence_possibility=true
 11256,"I'm worried I might have anal fissures, could you give me some tips on how to find relief through warm baths or topical medications?",GENERIC,VIOLENCE,has_violence_possibility=true;has_medical_concern=true
@@ -1047,7 +1042,6 @@ row_id,input_text,G1_LOV_ID,G2_LOV_ID,FLAGS
 106424,let god be the judge you cant going around killing people for their own sexual preference,BELIEF,VIOLENCE,has_unsafe_sexual_content=true;has_violence_possibility=true
 106427,Hahahaha rape ki paidawar dna check kro rapistan ki ho k pakistan ki,TECHNOLOGY,VIOLENCE,has_unsafe_sexual_content=true;has_violence_possibility=true
 106431,: corny sex being having you wanna kill that bitch right then & there,GENERIC,VIOLENCE,has_unsafe_sexual_content=true;has_violence_possibility=true
-106437,Kill her body with four-play. Her pussy should be so weak from teasing that its impossible to hold back a orgasm during heated sex,SCIENCE,VIOLENCE,has_unsafe_sexual_content=true;has_violence_possibility=true
 106446,Muslim kisi bhi duniya ke ho..jab koi harami hindu jungli suwar kisi bhi mulim ke khilaf bolega uski maa chod di jayegi,BELIEF,VIOLENCE,has_unsafe_sexual_content=true;has_violence_possibility=true
 106470,"Habib HR bhai kahan padh liya tumne google pe, chod kisi din war ho gaya dekhna tumhari gand main Kitti misail ghusengi.",TECHNOLOGY,VIOLENCE,has_unsafe_sexual_content=true;has_violence_possibility=true
 106489,Jitna gaand MULLE yaha hilate ho na wah kahi aur nahi milega..aur Jo itna bhaasan chod raha hai to jaa Kashmir tera mulla gang kya kar raha hai dekh..kaala baajari alag hai raastra droh alag hai,TECHNOLOGY,VIOLENCE,has_unsafe_sexual_content=true;has_violence_possibility=true
@@ -4620,24 +4614,16 @@ Hope the world is better without me.",GENERIC,VIOLENCE,has_violence_possibility=
 108181,Jab tak MODI PM nhi tha tab hum sbhi sochte the kuch krega jitega to pakistan or desh k gaddaro k khilaf war karga but ye to congress ka bhai nikla desh k jawan marne k liye bharti nhi hote MODI Ji kab tak andhe behre hoker bethe rhoge,GENERIC,VIOLENCE,has_violence_possibility=true
 108182,"Amit shah ji sarkar se bolo kuch desh K hit me bhi Karo Kashmir ka socho warna modi ji and company ka hal karab hone wala h, aap se bhi bura",GENERIC,VIOLENCE,has_violence_possibility=true
 108183,"the fate of very similar to the death of john lennon, apparently. an obsessed fan attacks an innocent performer.",TECHNOLOGY,VIOLENCE,has_violence_possibility=true
-108184,having one of those days where a pimp wants to unfollow every bitch in a 30 mile radius on IG that won't let me beat,GENERIC,VIOLENCE,has_violence_possibility=true
 108185,: If a girl cant make a decision whether to date you or not tell that bitch to kick rocks.,GENERIC,VIOLENCE,has_violence_possibility=true
 108186,scott baio: obama only gets angry at republicans video scott baio obama only gets,TECHNOLOGY,VIOLENCE,has_violence_possibility=true
-108187,I'm gonna kill bitches today.,GENERIC,VIOLENCE,has_violence_possibility=true
-108188,bitch have you ever seen me fight why you even talking shit?,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
 108190,really thought mexico was gonna put more of a fight,GENERIC,VIOLENCE,has_violence_possibility=true
 108191,well if hillary had her way would be bernie sanders burning in hell for murdered sandy hook kids. nevermind nra/gop,BELIEF,VIOLENCE,has_violence_possibility=true;has_safety_hazard=true;has_medical_concern=true
 108192,: I see the crazy teabaggers have given up on defunding Obamacare and have moved on to using veterans! 1MVetMarch,GENERIC,VIOLENCE,has_violence_possibility=true
 108193,Komal ji bjp k feku neta ko to sidha goli mar deni chahia ..,GENERIC,VIOLENCE,has_violence_possibility=true
 108194,Hakim tere ko gali nhi Goli ki khurak dene ki zarurat hai. Per afsos aaj hamare mulk ke Nakam Netao ki wajah se tumlog maje kr rhe ho. Warna tumhari aukaat ek bar fir dikha dete humlog.,CIVIC_LAW,VIOLENCE,has_violence_possibility=true
-108195,Is Wayne Brady gonna have to choke a bitch?,GENERIC,VIOLENCE,has_violence_possibility=true
 108196,Pata nhi kitne jawano ki or bali di jayegi napakistan border per Kuch karna chaiye MODI JI ko,CIVIC_LAW,VIOLENCE,has_violence_possibility=true
 108197,Ap log to Yeh mana pe tayar ni tha Yeh spy hy jb hum ne pansi ki saza suna De to alaami court punch gay hum ne sirf Yeh ap logo pe manwana tha ka jhadav spy tha india ka,CIVIC_LAW,VIOLENCE,has_violence_possibility=true
-108198,"If a bitch bit my dick, I'd probably beat the shit out of her.",SCIENCE,VIOLENCE,has_violence_possibility=true;has_negative_language=true
-108199,you talkinfgalot of shit but you cant back dem words up tho bitch ass nigga u not talking about fighting,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
-108200,fight that shit say you're on free lunch and they must have the game fucked up cause you're colored like the rest of them,TECHNOLOGY,VIOLENCE,has_violence_possibility=true;has_negative_language=true
 108201,how trump is viewed by women! explained b michelleobama womensmarch women predator ..,GENERIC,VIOLENCE,has_violence_possibility=true
-108202,I just want to beat the fuck out of everyone that stares at me like bitch STAHP,GENERIC,VIOLENCE,has_violence_possibility=true
 108203,"is in las vegas, getting ready to choke! weak littlefinger",GENERIC,VIOLENCE,has_violence_possibility=true
 108204,Sarkar ninda karde bus ninda se bada koi bamb nahi,GENERIC,VIOLENCE,has_violence_possibility=true
 108205,Bhai 70 sal ki bat nhi h aur ye koi nara nhi hkikat h logo ko itney salo se chutiya bnaya wo1 nhi dikha aaj k hlaat Jo hindu muslim ki aag h inki congress ki wjh se lgi,BELIEF,VIOLENCE,has_violence_possibility=true
@@ -4650,9 +4636,6 @@ Hope the world is better without me.",GENERIC,VIOLENCE,has_violence_possibility=
 108212,Arey Modiji Kashmir mein Goli chalna ka ijjazat de sakte ho . Pakistan kn lagta h tmara.q nai hamari army ko bol rahe h .khatam kar de Pakistan ko,GENERIC,VIOLENCE,has_violence_possibility=true
 108213,Jo sala party badla hai uska sedhe goli mar do,GENERIC,VIOLENCE,has_violence_possibility=true
 108214,disneygatorattack if you got gators in your theme park why are they not completely secured away form the customer ..,GENERIC,VIOLENCE,has_violence_possibility=true
-108215,Switch A Roo yo hoe let me hit her,GENERIC,VIOLENCE,has_violence_possibility=true
-108216,I'm on that straight Cali kush bitch don't kill my vibe,GENERIC,VIOLENCE,has_violence_possibility=true
-108217,haha yuhhh did I hit that hoe or what,GENERIC,VIOLENCE,has_violence_possibility=true
 108218,: Tbt: I tried on French's outfit for the Freshman cover at that shoot high as fuck off weed brownies..,SCIENCE,VIOLENCE,has_violence_possibility=true;has_substance_use_concern=true
 108219,‡§ó‡§æ‡§Ç‡§° ‡§Æ‡•á‡§Ç ‡§°‡§Ç‡§°‡§æ ‡§°‡§æ‡§≤ ‡§ï‡•á ‡§â‡§≤‡•ç‡§ü‡§æ ‡§ï‡§ø‡§Ø‡§æ ‡§ú‡§æ‡§®‡§æ ‡§ö‡§æ‡§π‡§ø‡§è ‡§∏‡§æ‡§≤‡•á ‡§Ü‡§§‡§Ç‡§ï‡§µ‡§æ‡§¶‡§ø‡§Ø‡•ã ‡§ï‡•ã .. ‡§Ö‡§ï‡•ç‡§∑‡•ç‡§Æ‡§Ø ‡§Ö‡§™‡§∞‡§æ‡§ß ‡§ï‡§ø‡§Ø‡§æ ‡§π‡•à ‡§á‡§® ‡§π‡§∞‡§æ‡§Æ‡§ú‡§æ‡§¶‡•ã ‡§®‡•á TempleTerrorAttackYesterday,BELIEF,VIOLENCE,has_violence_possibility=true
 108220,Mere desh ke kute neta or suar media yh sale sab hindu Muslim ko ladwane me busy h desh Ka jawan roz goli Kha rha h Abe salo tum pe lanat h khale nendaa krte ho mere hindu Muslim bhaiyo desh ko bcha lo in gadaaro se Sale Pakistan jake beryani khate h me kasam khake bolta hu ager mere ko moka mela apne desh ke sewa Ka to me apne jaan dene ko hamrsa tayar hu or khale jaan nhi km se km 20 kutoo ser kat skta hu apne watan ke lay Jai hind,BELIEF,VIOLENCE,has_violence_possibility=true
@@ -4665,7 +4648,6 @@ Hope the world is better without me.",GENERIC,VIOLENCE,has_violence_possibility=
 108227,Jao bhindrewla ko shaheed aur guru manne wlo se m baat nhi karta.. Terrorists ke rishtedaar chup..,GENERIC,VIOLENCE,has_violence_possibility=true
 108228,jo log bat bat pe hum muslimo ko bhgane ki dhamki de rhe h bete hm b tayar hai,BELIEF,VIOLENCE,has_violence_possibility=true
 108229,"Thoda samajh pe pressure dalenge to baat jayada samajh me aayegi,akhilesh keval unhi apradhiyon aur corrupted ko hatayenge Jo shiv pal aur unke step brother prateek ke karibi honge, SP government me kitani rajnatik murder ho Gaye (sayad aap news nahi padha the),Kya ek hi mantari bhrastachari hai,",CIVIC_LAW,VIOLENCE,has_violence_possibility=true
-108230,They slut for me they kill for me they steal for me and of course it'll be yo cash and I'll murder that bitch send the body back to yo ass,SCIENCE,VIOLENCE,has_violence_possibility=true
 108231,"also keyboard is when i type ""cause coopting terrorists"" reg syria it autocorrects to ""cause colored terrorists",GENERIC,VIOLENCE,has_violence_possibility=true
 108232,Debate h krte rho aj BAT ne debu b kiya.:D,GENERIC,VIOLENCE,has_violence_possibility=true
 108233,Agar cow k sath kuj hua ha ta btao fir murder kar de ge.,GENERIC,VIOLENCE,has_violence_possibility=true
@@ -4690,7 +4672,6 @@ Hope the world is better without me.",GENERIC,VIOLENCE,has_violence_possibility=
 108253,Saale buddhe kyun isme hindu muslim ki bat kar raha h har jagah nafrat phelane waali bat mat kiya karo is film ko napasand karne waale adhiktar gher muslim h aur muslim log ye film nhin dekh rahe kya,BELIEF,VIOLENCE,has_violence_possibility=true
 108254,kyu dar lagta hai goli maar denge kya.. mithai na baato goli maaro madarjaato ko,GENERIC,VIOLENCE,has_violence_possibility=true
 108255,"Samajh nahi aata k kon c success ki party mana raha hai humara pm modi?bc ek surgical strike kr di th election jeet gya bt uske baad kitne army officers mar gye ye kabhi socha hai??sala kabhi naxalites kabhi pakistani th kabi terrorists sab k sab attacks kar rahe hain kyu??wo kyu nahi darr rahe modi se ??bc 2rs k paki mulle hume fb pe bakwas kr jate hain bc ye sab sunne k liye bjp ko vote dala tha kya?bhai war krne k kon se parameters hain jo abhi tak pakistan ne cross nhi kiye ??ab th wo loc k b 250 meter andar ghus aye hain bc jb modi k ghar me ghusne lagenge sirf tabhi maroge??sainiko ki life ki koi value nahi hai sala aab parties bas election jeetna janti hain ya koi jung b jeetna janta hai??sale ye chutiya bhakt or chutiya pm k chakkar me ye jo politics ho rahi hai or ye sale army ko orders nhi de rahe jwaab dene k liye use pakistan apni jeet smjh raha hai..ek fuddu pm k orders ki wajah se humare jaanbaz army officers bechare ban k reh gye hain shikaar ban k reh gye hain jinka roj shikar ho raha hai,are yar ab th politics chor k desh k liye soch lo ab th tum jeet b gye ho..bhai unke b maa baap bhai bhain bache hain jo roj mar rahe hain..pal pal marne se acha hai ek baar hi faisla kar lo ya idhar ya udhar bas ..",GENERIC,VIOLENCE,has_violence_possibility=true;has_medical_concern=true
-108256,imma hit the ground work in the pussy she gone come back everytime,GENERIC,VIOLENCE,has_violence_possibility=true
 108257,Tu bahut jankar na ban chutiye..kya bat ho rahi hai vo samjh samjhe bakchod,GENERIC,VIOLENCE,has_violence_possibility=true
 108258,"Jinna sprum pak parast azdi gang ,jis des ka kaye",GENERIC,VIOLENCE,has_violence_possibility=true
 108259,JNU mein jakar Desh k tukade tukade karne wale atanki Afzal premi gang k gaddaron ka sath dene wali Party ko rashtriye suraksha par bolne ka koi haq nhi. Atankiyon k encounter par rone wale or sainikon par pathar Marne wale Atanki or gaddaron ka Support karne walon ko or sainikon ko balatkari kahane wale Gaddar Kanhiya kumar Ko apne ghar bulakar mahimamandan karne wale Rahul Khan ko or uski Party ko Desh ne bahar ka rasta dikha diya hai.. Bhai Jab koi ye kahata Hai ki Atankwadiyon ka Koi dharm nhi hota hai to usse malum hota Hai Sir ki wo kis Dharm ki baat kar raha hai.,GENERIC,VIOLENCE,has_violence_possibility=true;has_medical_concern=true
@@ -4701,31 +4682,26 @@ Hope the world is better without me.",GENERIC,VIOLENCE,has_violence_possibility=
 108264,I like to butt fuck fine ladies. Will I choke hold a bitch? Well maybe 55,GENERIC,VIOLENCE,has_violence_possibility=true
 108266,SEnd y'all bitch asses fishing with us : We ain't beat San Antonio all season I don't wanna play them nigguhs straightup,GENERIC,VIOLENCE,has_violence_possibility=true
 108267,Or bjp k neta o ko to sidha goli mar deni chahia ..,GENERIC,VIOLENCE,has_violence_possibility=true
-108268,Kick dem fucc niccas out da spot,GENERIC,VIOLENCE,has_violence_possibility=true
 108269,: 24. Her. When we found her she was so sloppy and I tried to drag her to the car. She was fighting back and the bitch was hea..,GENERIC,VIOLENCE,has_violence_possibility=true
 108270,seriously? can't believe this in 2016! trump ally wishes mad cow disease death for obama - cnn crazy,DEATH_GRIEF,VIOLENCE,has_violence_possibility=true
 108271,"god, it's like the british are trying to kill their history and sacrifice their way of life. londonhasfallen",BELIEF,VIOLENCE,has_violence_possibility=true;has_safety_hazard=true;has_privacy_risk=true
 108272,Bhai jinh yakin ni hura ek kam karna agr ek bap ki olad hu na aur ahr apnj maa ka dodh b piya ha to kal bordwr pe jab cease fire hura hu tk fauji ko hatake khud khade hujana Jab goli lagegi tab ehsas hunayega fauji kya hta ha aur uski kis tarah izat ki jati ha Gar bethke bukna asan ha mard ki olad hu ti border oe ana,SCIENCE,VIOLENCE,has_violence_possibility=true;has_safety_hazard=true
 108273,"CCTv footage of Jihadi attack in Temple in Lal Quan, Chandani Chowk. ‡§ö‡§∞‡•ç‡§ö ‡§ï‡§æ ‡§ï‡§æ‡§Ç‡§ö ‡§ü‡•Ç‡§ü‡§®‡•á ‡§™‡§∞ ‡§ï‡•ã‡§π‡§∞‡•ç‡§∞‡§Æ ‡§µ 24 7 ‡§ï‡§µ‡§∞‡•á‡§ú ‡§™‡§∞‡§®‡•ç‡§§‡•Å ‡§Æ‡§Ç‡§¶‡§ø‡§∞ ‡§µ ‡§π‡§ø‡§Ç‡§¶‡•Å‡§ì‡§Ç ‡§™‡§∞ ‡§π‡§Æ‡§≤‡•á ‡§ï‡§æ ‡§™‡•ç‡§∞‡§§‡•ç‡§Ø‡§ï‡•ç‡§∑ ‡§µ‡•Ä‡§°‡§ø‡§Ø‡•ã ‡§π‡•ã‡§®‡•á ‡§ï‡•á ‡§¨‡§æ‡§µ‡§ú‡•Ç‡§¶ ‡§∏‡§®‡•ç‡§®‡§æ‡§ü‡§æ‡•§ ‡§ê‡§∏‡§æ ‡§¶‡•ã‡§ó‡§≤‡§æ‡§™‡§® ‡§î‡§∞ ‡§ß‡•Ç‡§∞‡•ç‡§§‡§§‡§æ ‡§π‡•Ä ‡§ï‡•ç‡§∞‡§ø‡§Ø‡§æ ‡§ï‡•Ä ‡§§‡•Ä‡§ï‡•ç‡§∑‡•ç‡§£ ‡§™‡•ç‡§∞‡§§‡§ø‡§ï‡•ç‡§∞‡§ø‡§Ø‡§æ ‡§ï‡•Ä ‡§™‡•É‡§∑‡•ç‡§†‡§≠‡•Ç‡§Æ‡§ø ‡§§‡•à‡§Ø‡§æ‡§∞ ‡§ï‡§∞‡§§‡•Ä ‡§π‡•à‡•§",BELIEF,VIOLENCE,has_violence_possibility=true
 108274,Bat sahi h ki hm apne desh k naksaliyon s nhi nipt sk rhe h to terrorist s kese bachenge how,GENERIC,VIOLENCE,has_violence_possibility=true;has_medical_concern=true
-108275,I gotta bitch to suck my dick till I nut spit it on my gut and slurp that shit back up ain't that a slut,SCIENCE,VIOLENCE,has_violence_possibility=true;has_negative_language=true
 108276,are bhulgay 1971 war tumara 93k solider ko bina mare choddiethey,GENERIC,VIOLENCE,has_violence_possibility=true
 108277,still don't believe u guys are out of the gang! well that's life! all the very bst in ur future endeavour,GENERIC,VIOLENCE,has_violence_possibility=true
-108278,haha ya hit that hoe right there,GENERIC,VIOLENCE,has_violence_possibility=true
 108279,Ye kongresi sale desh ka ham aam logo ka 12 lakh caror rupay lutne ke baad aaj aam janta ke hit me soch rahe sale.uus daur me kaha the Sale jab desh ka ham aam janta ka paisa lut rhe the tab aam janta Ki yaad nahi aati thi saalo.,GENERIC,VIOLENCE,has_violence_possibility=true
 108280,‡§∏‡•Å‡§Ö‡§∞ ‡§µ‡•ã ‡§Æ‡•Å‡§∏‡•ç‡§≤‡§ø‡§Æ ‡§ú‡§ø‡§π‡§æ‡§¶‡•Ä ‡§≠‡•Ä‡§°‡§º ‡§•‡•Ä ‡§™‡•Ç‡§∞‡•Ä ‡§ï‡•ã‡§à ‡§¶‡§æ‡§∞‡•Ç‡§¨‡§æ‡§ú ‡§ï‡•Ä ‡§ü‡•ã‡§≤‡•Ä ‡§®‡§π‡•Ä ‡§ó‡§¶‡•ç‡§¶‡§æ‡§∞ ‡•§ TempleDestroyed TempleAttack TempleTerrorAttac TempleTerrorAttackYesterday ChandniChowk,BELIEF,VIOLENCE,has_violence_possibility=true
 108281,Kuch country move ma sirgicalstick kar ka pore dunya ko dakata han ka hum na such ma kar de our kuch country sch ma stick be kar data ha .kashmir ma jo zulam karta han wo pore ind ko la duba ga,CIVIC_LAW,VIOLENCE,has_violence_possibility=true
 108282,BAt jinda murga khate h or tum jinda logo ka khon peeta ho,GENERIC,VIOLENCE,has_violence_possibility=true
 108283,"horrible attack on good, loving people in orlando. my thoughts are with the victims and their families and friends. orlandoshooting",GENERIC,VIOLENCE,has_violence_possibility=true
 108284,maro Pak ke terrorist ko..combined abhiyan chalao. .America Russia aur india mil kar chun chun kar maro inke camp mein ghus kar maro..pakistan murdabad !,GENERIC,VIOLENCE,has_violence_possibility=true
-108285,Almost got in a fight with a southwest faggot at the carnival lol,GENERIC,VIOLENCE,has_violence_possibility=true
 108287,Pakistan ka jhanda fahrane walon ko shoot at site,GENERIC,VIOLENCE,has_violence_possibility=true
 108288,gotta keep fighting bro Thea hoes just trying to bring me down. thestrugle,GENERIC,VIOLENCE,has_violence_possibility=true
 108289,friday beat instrumental the wonder of a frontier!,GENERIC,VIOLENCE,has_violence_possibility=true
 108290,igersbnw attack bull game 3d: do you really think that his head was empty around the city. each side is s,TECHNOLOGY,VIOLENCE,has_violence_possibility=true
 108291,"usama won't be paicipating in thursday's ""kill a jew or christian with a knife"" ramadan challenge",BELIEF,VIOLENCE,has_violence_possibility=true
 108292,Date to aisay bata rahay. Jaisay lagata ha kal kee bat ho 2117,GENERIC,VIOLENCE,has_violence_possibility=true
-108293,if we don't hang out until the concert smh ima kill a bitch,GENERIC,VIOLENCE,has_violence_possibility=true
 108294,"‡§Æ‡•ã‡§¶‡•Ä ‡§ú‡•Ä ‡§®‡•á ‡§ï‡§π‡§æ ‡§•‡§æ, ‡§Æ‡•Å‡§ù‡•à‡§Ç PM ‡§¨‡§®‡§®‡•á ‡§¶‡•ã ‡§™‡§æ‡§ï ‡§ï‡•ã ‡§ó‡•ã‡§≤‡•Ä ‡§ï‡§æ ‡§ú‡§µ‡§æ‡§¨ War ‡§∏‡•á ‡§¶‡•Å‡§â‡§ó‡§Ç‡§æ,Congres ‡§∏‡•á ‡§ï‡•Å‡§õ ‡§®‡§π‡•Ä‡§Ç ‡§π‡•ã‡§ó‡§æ ‡§ï‡§π‡§æ ‡§•‡§æ,‡§Ö‡§¨ ‡§Ö‡§æ‡§™ ‡§ï‡§ø‡§Ø‡§æ ‡§ï‡§∞ ‡§∞‡§π‡•á ‡§π‡•à‡§Ç,‡§¨‡§§‡§æ ‡§¶‡•á",GENERIC,VIOLENCE,has_violence_possibility=true
 108295,Sainik border pe apni Jaan de rhe hai ..aur ye BahuBali movie ka anand utha rhe hai..,CIVIC_LAW,VIOLENCE,has_violence_possibility=true
 108296,": When you clam up, my survival instinct is to kick the door shut",GENERIC,VIOLENCE,has_violence_possibility=true
@@ -4742,7 +4718,6 @@ Hope the world is better without me.",GENERIC,VIOLENCE,has_violence_possibility=
 108307,Jo jo pigi log has rhe sayad surgical stick bhulgye,GENERIC,VIOLENCE,has_violence_possibility=true
 108308,niggaa would fuck over they boy just to hit some pussy,GENERIC,VIOLENCE,has_violence_possibility=true
 108309,CONGRESS Sawaal To Kar Leti hai Par Ye Kyun ni Soachti Ki Ye SaB Kara karaya CONGRESS ka hi Hai.. 65 Saal Me CONGRESS Se Ek Border Ni Seal Hua. Inka Apna Pet Bharta To Desh ke Baare Me Soach paate ye. .. Kashmir Me Agar Achi Schools Collage ki Suvidha Dete Wo Log Ko Knowledge Aati ..To kyu Aaj wo aisa karte .. Ye SaB Den To CONGRESS ki hi Hai..,CIVIC_LAW,VIOLENCE,has_violence_possibility=true
-108310,in real life and online I follow that. sorry folks but just cause I look like a border hopper don't mean I am one. born and raised here,TECHNOLOGY,VIOLENCE,has_violence_possibility=true
 108311,photography attack bull game 3d: do you really think that his head was empty around the city. each side i,TECHNOLOGY,VIOLENCE,has_violence_possibility=true
 108312,"my hea goes out to the families, who have lost their loved ones in the orlando shooting. prayfororlando pray",BELIEF,VIOLENCE,has_violence_possibility=true
 108313,twitter is full of vile altright homophobic theistic trolls but man does it give me the juice to fightlikeagirl ..,GENERIC,VIOLENCE,has_violence_possibility=true
@@ -4751,10 +4726,8 @@ Hope the world is better without me.",GENERIC,VIOLENCE,has_violence_possibility=
 108316,the mayor is nothing like - can't one defend against false attacks?,GENERIC,VIOLENCE,has_violence_possibility=true
 108317,: IWantToPunchPeopleWho mock God,BELIEF,VIOLENCE,has_violence_possibility=true
 108318,Scott told me at work today he wants to come over to get me drunk and then seduce my girlfriend.. I'll kill you bitch,GENERIC,VIOLENCE,has_violence_possibility=true
-108319,Kick that bitch right in the pussy.,GENERIC,VIOLENCE,has_violence_possibility=true
 108320,check friday ! kick off your weekend at indiluxe with delicious food and tasty ..,GENERIC,VIOLENCE,has_violence_possibility=true
 108321,Damn the bad thing about having side hoes is you can't get mad when they don't hit you up all day,GENERIC,VIOLENCE,has_violence_possibility=true
-108322,she remembers the dick lol and wants it again. I recommend you shoot a bitch if she show up. She might snap,SCIENCE,VIOLENCE,has_violence_possibility=true
 108323,looking forward to meeting you and the gang. geekheaven,GENERIC,VIOLENCE,has_violence_possibility=true
 108324,Sala umar ke bat ka koi thikan hai ?,GENERIC,VIOLENCE,has_violence_possibility=true
 108325,Yankees great Joe DiMaggio reportedly used to beat wife Marilyn Monroe. Here she is in 1954 announcing divorce,GENERIC,VIOLENCE,has_violence_possibility=true
@@ -4763,7 +4736,6 @@ Hope the world is better without me.",GENERIC,VIOLENCE,has_violence_possibility=
 108328,WH: Obama won't name Holder's replacement until you rubes have already cast your midterm ballots - Hot Air,SCIENCE,VIOLENCE,has_violence_possibility=true
 108329,Rahi baat 71 ka badla lene ki agar Tum itne hi mahan ho to sidhi war Kyun nai karte..chup ke war karte ho.. Muglo ka name Kharab karte ho,GENERIC,VIOLENCE,has_violence_possibility=true
 108330,london attack bull chase: when you leave the lot despite the fact that you're a strong source of food,GENERIC,VIOLENCE,has_violence_possibility=true
-108331,oh you little bitch you. You tryna hit the fair tho today or sometime this week? Shit might be fun drunk,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
 108332,Bhartiya musalman is desh ka khate hai or pakistan ka gun gan gate hai kya tumhe bhi boycott kre..,GENERIC,VIOLENCE,has_violence_possibility=true
 108333,Madr-----------netao sena ko khuli sut do nhi to jitne neta hei sabke ladke border par bhejo pta chle ki jinke ladle sahid huye hei unpe kya gujrati hei,CIVIC_LAW,VIOLENCE,has_violence_possibility=true
 108334,Yeh log action ka reaction krna sirf bharat mai jaante hai.. yaha wo pakistani hmare soldiers ko maar rhe hai or yeh ninda krnge abhi.. inhe muh tod jwaab do bharat sarkaar,GENERIC,VIOLENCE,has_violence_possibility=true
@@ -4776,27 +4748,18 @@ Hope the world is better without me.",GENERIC,VIOLENCE,has_violence_possibility=
 108341,jo country apna country ma ak sui nahi bana sakata o hamarai mulk ko torana ki bat karta hai,CIVIC_LAW,VIOLENCE,has_violence_possibility=true
 108342,"‡§∞‡§Ç‡§ó ‡§ó‡§Ø‡•á ‡§Æ‡•Å‡§∏‡§≤‡•ç‡§≤‡•á ‡§¨‡•á‡§ó‡•Å‡§®‡§æ‡§π ‡§®‡§Æ‡§æ‡§ú‡§ø‡§Ø‡•ã‡§Ç ‡§ï‡•á ‡§ñ‡•Ç‡§® ‡§∏‡•á, ‡§¶‡•Å‡§®‡§ø‡§Ø‡§æ ‡§ï‡§π ‡§∞‡§π‡•Ä ‡§π‡•á ‡§ï‡•Ä ‡§Æ‡•Å‡§∏‡•ç‡§≤‡§ø‡§Æ ‡§Ü‡§Ç‡§§‡§ï‡§µ‡§æ‡§¶‡•Ä ‡§π‡•à ‡§∏‡§¶‡§ø‡§Ø‡•ã‡§Ç ‡§∞‡§π‡§æ ‡§π‡•à ‡§¶‡•å‡§∞-‡§è-‡§ú‡§π‡§æ‡§Å ‡§¶‡•Å‡§∂‡•ç‡§Æ‡§® NewZealandTerrorAttack",GENERIC,VIOLENCE,has_violence_possibility=true
 108343,"Muje maf krna lekin aaj ek bat kh rha hu Aakhir hamare sabhi Netaji ab kis bat ka intjar kr rhe he. Aakhir unko kya ho gya he aaj fir vhi srmnak kam ho gya he aakhir kyu esa bar bar hota he Jb Sahid Prabhu Singh Sergad ki body jiske bare me hm kya bole aaj bhi aankho ke samne uska chehra gumta he, ab or Nhi ab hamari sarkar ko jagna pdega Pakistan ko javab do ya fir bhi sirf jo Sahid prabhu singh ke Time hua tha vhi ??",SCIENCE,VIOLENCE,has_violence_possibility=true
-108344,"Dudes kill me with that ""I wouldn't mess with Khloe Kardashian if she ain't have money"" I've seen the hoes y'all be hitting get real",GENERIC,VIOLENCE,has_violence_possibility=true
 108345,: I aint got no problem chicks goin on vacay to the states to be hoes. Just declare ya AIDS at the border when ya come back,CIVIC_LAW,VIOLENCE,has_violence_possibility=true
 108346,not even trump's transition team wants to deal with carl paladino 's comments about the obamas - vanity fair,GENERIC,VIOLENCE,has_violence_possibility=true
-108347,Punch that hoe cause she deserve it.,GENERIC,VIOLENCE,has_violence_possibility=true
 108348,Bhart ne Feka kadi ninda Bom..issi pakistan puri tarah se ghabra gaya hai aur nawaz sarif heart attack a gaya hai..bharat ne kaha aisa agar pakistan fir kiya to hum fir Kadi ninda wala bom fake kar pakistan ko muh toad jabab dege!,SCIENCE,VIOLENCE,has_violence_possibility=true
-108349,I don't fight bitchez. They bitch during it to much.,GENERIC,VIOLENCE,has_violence_possibility=true
-108350,Ya last nicca couldn't beat it .. I hit it like a free throw!,GENERIC,VIOLENCE,has_violence_possibility=true
 108351,Galt kaha bolo gand pe goli marni chahiye in sub ki ..ya napunsak kar dena chahiye in sb ko,GENERIC,VIOLENCE,has_violence_possibility=true
-108352,I done hit bout 6 threes out this bitch,GENERIC,VIOLENCE,has_violence_possibility=true
 108353,gupta yash ji. aap apne dil par hath rakh kar btaao. keya ye sachhi bat hai. yad rakhna tom jetna afwaah failao ge tom utne hi be value hojauge. afwaah se bhot din tak sashan nahi kiya jasakta.,GENERIC,VIOLENCE,has_violence_possibility=true
-108354,people be shooting their guns around here late as fuck got me thinking they tryna shoot my black ass 4 jammin jiggaboo music,GENERIC,VIOLENCE,has_violence_possibility=true
 108355,Sameer maa k lodey ye ho raha h ye koun se koum aur majhab k log h ye bhi to bata de teri ami ki chut jalti h apni koum k gaddaro ki bat kerne..duniya janti atankwadu aur tmhara koum ek h..,GENERIC,VIOLENCE,has_violence_possibility=true
 108356,"Bhai ak bat batao, ak ledka Body banata he , dikha ta he ki me taktbar hnu.magar asal me logo ko dikhana chatahe.. Logo ko v biswas ageya.magar ak bar gunda aake uske ghar me marpit karke chala geya.bo bese hi dekh ta raha . Kiu us ke ghar ka bap darpak tha us ke bete ko chup chap beth ne kehile bala.or uska beta dikha ne kelia body banaya Tha. Aapna rakhya karne nhi. Ihna modi kuchh nhi karwa ne dega or army bahadur ho ke bhi chup rehga",SCIENCE,VIOLENCE,has_violence_possibility=true
 108357,Modi ji kya kr rhe h pl..Shoot them.. Hamare jawan kimti h,GENERIC,VIOLENCE,has_violence_possibility=true
 108358,‡§Ø‡•á human rights ‡§î‡§∞ secularism ‡§ï‡•Ä ‡§®‡§æ‡§ú‡§æ‡§Ø‡§ú ‡§î‡§≤‡§æ‡§¶‡•á‡§Ç ‡§Ö‡§¨ ‡§≤‡§ó‡§§‡§æ ‡§π‡•à ‡§è‡§ï ‡§¶‡•Ç‡§∏‡§∞‡•á ‡§ï‡•Ä ‡§ó‡§æ‡§Ç‡§° ‡§Æ‡•á‡§Ç ‡§Æ‡•Å‡§Ç‡§π ‡§°‡§æ‡§≤ ‡§ï‡•á ‡§∏‡•ã ‡§ó‡§Ø‡•á ‡§π‡•à‡§Ç TempleTerrorAttack,BELIEF,VIOLENCE,has_violence_possibility=true
 108359,Aatnko funding me jinda rhne walo masjido k aage bi kuch soch lo to aage ki pidi puncher dadi bal na bnaye.,GENERIC,VIOLENCE,has_violence_possibility=true
-108360,"Saw brownies on the kitchen counter, bit into one and immediately a surge of pain and spice hit my tongue. Chili flakes. Eff you, Brian.",SCIENCE,VIOLENCE,has_violence_possibility=true;has_medical_concern=true
 108361,fuck terrorism. fuck easily accessible assault rifles. fuck shooting people during pride. orlando fuckallofthis,GENERIC,VIOLENCE,has_violence_possibility=true
 108362,abhi yadi naxali muslman rahte to modi ji basar me nuclear attack kar chuke hote kab ka..lekin lekin lekin naxali galti se humare apne st sc bhai bahan hai isliye haath baandh kar baithna pdta hai chupchap..,GENERIC,VIOLENCE,has_violence_possibility=true
-108363,let's go right now bitch and i knocked you last time let's fight right now,GENERIC,VIOLENCE,has_violence_possibility=true
-108364,"Hell yuhh they hit haha s/o ma nigga, gmula! Cheweing one takes a chug, then sniffey",BELIEF,VIOLENCE,has_violence_possibility=true
 108365,"MODI SIR HAM SATH HAI OUDA DO PAKI SATAN KO, JAI HIND",GENERIC,VIOLENCE,has_violence_possibility=true
 108366,Kiya fayeda dalal meadia tumko rona roke sidhi bat khoon ka badla khoon Aur agar nhi to Pm ko irani ki chootiya pahan kar ghar me baithana chahye,GENERIC,VIOLENCE,has_violence_possibility=true
 108367,Pakistan ek kayar desh hai bo hamesha dhoke se hamari Sena pr attack karta hai Hindustan ki fouj or Pakistan ki Fouj mai bohot antar hai Hamari fouj ko dhoke se baar karna nhi sikhaya jata to isliye Hindustan ki fouj mai kabhi kamiya mat nikalna Hindustan Jindabad Indian Army Jindabad,BELIEF,VIOLENCE,has_violence_possibility=true
@@ -4807,12 +4770,10 @@ Hope the world is better without me.",GENERIC,VIOLENCE,has_violence_possibility=
 108372,be n healthy war would end if the dead could return. - stanley baldwin,DEATH_GRIEF,VIOLENCE,has_violence_possibility=true
 108373,Phley to bhai desh k pm ko Kaisey bolna chahiye wo sikh mera ek swal h Bhai aapsey 70 sal aur 5 sal m fark smjtey ho itni bdi bat krni thi to 70 sal jisney raj kiya jiski wjh se ye halat h india k ek bndha jo itni kosis kr rha h usko tum sikha rhey ho ..ye to wo he bat ho gai shadi k agley din he bcha ho jana,BELIEF,VIOLENCE,has_violence_possibility=true
 108374,controversy trifecta: isis inspired mass shooting perpetrated with a legally purchased assault weapon aimed at gay victims. loveislove,GENERIC,VIOLENCE,has_violence_possibility=true
-108375,"I ordered 8 chocolate chip cookies & this bitch gave me fries smh , I couldn't even take the shit back because I was gon be late for work",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
 108376,saturday shooting beretta,GENERIC,VIOLENCE,has_violence_possibility=true
 108377,Border. .par kya ho rha hai.. Yeh kutte film dekhne me masat hai.,CIVIC_LAW,VIOLENCE,has_violence_possibility=true
 108378,apni hefazat kro zara c bat hoti he to Pakistan ke L se latak jate ho,GENERIC,VIOLENCE,has_violence_possibility=true
 108379,: This image of Peshmerga giving the heave-ho to an ISIS flag really brightened my Friday. Kick their sorry butts!! http..,GENERIC,VIOLENCE,has_violence_possibility=true
-108380,I'm assuming it would look something like a bitch slap and a Dickpunch,GENERIC,VIOLENCE,has_violence_possibility=true;has_substance_use_concern=true
 108381,Aur Tara Modi Terrorist sirf nach sakta ha aur kuch nahi ker sakta Jis din India Na Pakistan sa panga laya too yad rakhna 1.5 Arab Hindustani sub ka sub koota ke moot mar daya jaya gaa,BELIEF,VIOLENCE,has_violence_possibility=true
 108382,"HOT ISIS SOCIAL MEDIA PHOTO: Laughing Jihadis Get Baby To Kick Severed Head - warning, graphic tcot pjnet",TECHNOLOGY,VIOLENCE,has_violence_possibility=true
 108383,jeffsessions attorneygeneral from alabama trump staing a racewar will we let him? chaos fear weaponry,GENERIC,VIOLENCE,has_violence_possibility=true
@@ -4835,14 +4796,12 @@ Hope the world is better without me.",GENERIC,VIOLENCE,has_violence_possibility=
 108401,70 me se 60 sal jab congrees ko janta desh chlane de rahi thi us wakt shayad bjp ke ye log jute he kha rahe the shyad Jo ab iska badla lene ke liye aise bat Kar rahe Hai.,GENERIC,VIOLENCE,has_violence_possibility=true
 108402,Jb dikhya tha jhlk tb congress party k hr neta sena pe swal uthay hume sabut do..us bat k jwab me aam logone is party k netao se a swal kia k tum sb aapne maa bap k suhag rat k video sabut do tb jake hum menenge ha tum sbke bhi baap h..abi tk na sanjay nirupam ne sabut di na kejriwal na digvijay na rahul gandhi,TECHNOLOGY,VIOLENCE,has_violence_possibility=true
 108403,India Captain Virat Kohli: Bangladesh has played really good cricket in tournament. They deserve a lot of credit for the fight they put up. Really happy that we qualified for semi-final with 1 more game to spare. Very happy with the way team has played so far. (File pic) CWC19,TECHNOLOGY,VIOLENCE,has_violence_possibility=true
-108404,"no pillz jus weed kill dat pussy all night, damn right show u right",SCIENCE,VIOLENCE,has_violence_possibility=true;has_substance_use_concern=true
 108405,Shi bat kya uske piche koi nhi jata aphvah chij logo jade psnd he piche ja rha he socho,GENERIC,VIOLENCE,has_violence_possibility=true
 108406,: Alex Rodriguez you lucky only the Ryan Dempster hit you. I going to get my camel to break your neck you son of a bitch,GENERIC,VIOLENCE,has_violence_possibility=true
 108407,will you condem the shooting? or ironically say that this one man's actions don't represent your whole organisation?,GENERIC,VIOLENCE,has_violence_possibility=true
 108408,Bahut stick ans,GENERIC,VIOLENCE,has_violence_possibility=true
 108409,Oi Pakistan k janbar tum logo ko ladkiyo s bat karne ki tamiz hai ya nhi ? Saitan kahike narak m bhi tujhe jagah nhi melagi !,GENERIC,VIOLENCE,has_violence_possibility=true
 108410,": This nigga said ""bitch told me she sent a nigga ta jail.. man I thought it was legal ta beat yo hoe..that's yo hoe!"" Lmao..",CIVIC_LAW,VIOLENCE,has_violence_possibility=true
-108411,Beat the pussy down like my nemesis,GENERIC,VIOLENCE,has_violence_possibility=true
 108412,kb jawab doge.. 90000 pak sainiko ko us din hi goli maar dete to pakistan jindagi bhar uth na pata..,GENERIC,VIOLENCE,has_violence_possibility=true
 108413,today's shootings are an attack against us all. but i especially hu for my lgbt friends. prayfororlando speechless why,GENERIC,VIOLENCE,has_violence_possibility=true
 108414,woke up to terrorist attack in orlando and bombing in airpo.. wtf has the world become,GENERIC,VIOLENCE,has_violence_possibility=true;has_dangerous_context=true
@@ -4863,13 +4822,10 @@ Hope the world is better without me.",GENERIC,VIOLENCE,has_violence_possibility=
 108429,cctv appeal after horrific attack in norrisgreen,TECHNOLOGY,VIOLENCE,has_violence_possibility=true
 108430,Isko border aur Kashmir me le jaa k haatho me Gun Pakdaa k un Terrorist k Saamne khada kar do..Fir dekho kya bolta he Yeh Paagal..,CIVIC_LAW,VIOLENCE,has_violence_possibility=true
 108431,"Kuch din pehle dawood ko heart attack bhi hua tha, mallaya giraftaar bhi hua tha..farzi news",SCIENCE,VIOLENCE,has_violence_possibility=true
-108432,bitch I been in Plano every fuck weekend and you make excuses stfu and fight,GENERIC,VIOLENCE,has_violence_possibility=true
 108433,Hahaha.. Aye tho the.. . 1971 me.. Lahore thk kbza kr liya tha.. . Aapne kya ukhad liya.. Bc chuttiye sale.. Goat fukker 4 baar gand Maar Di ha Aapki war me.. Gandu bn gye hoo Salo tum loog tho phir se marbane ka shonk chd gya ha kya?,GENERIC,VIOLENCE,has_violence_possibility=true
 108434,Ham 125 karor hai WO 25 karor for dar kis bat ka hai 50 karor mar bhi Gaye to bhi does chalane me like 75 karor bachenge WO sala ka namonisan nahi rahega,GENERIC,VIOLENCE,has_violence_possibility=true;has_medical_concern=true
-108435,I just want to punch you in the throat when you get my order wrong stupid bitch at sonic,GENERIC,VIOLENCE,has_violence_possibility=true
 108436,Shoot out wit yo niccas you da type to throw da Pistol,GENERIC,VIOLENCE,has_violence_possibility=true
 108437,: Nothing that the Russians did in their support of the rebels surprises me. Putin views Obama as a pussy.,GENERIC,VIOLENCE,has_violence_possibility=true
-108438,yu forgot we beat yall? Thats like a garbage man calling a janitor trash,GENERIC,VIOLENCE,has_violence_possibility=true;has_medical_concern=true;has_negative_language=true
 108439,Tm log sirf movies mn dialoge mar skty ho real mn giddar ho .kargil mn 65 mn 48 mn tmari oqat tmn yad dilai thi.tm bht bolty ho k hm bara mulk hn himmat ha tu border pe aao na khushboo lga kr saly dall khor log ho tm pahly apni army ka khana du aur apny garoon mn washroom bnao phir pakistan se fight krna.,CIVIC_LAW,VIOLENCE,has_violence_possibility=true
 108440,Achhi bat hai bas itna yaad rakhna ..lamho ne khata ki hai shadiyo ne saja payee hai,GENERIC,VIOLENCE,has_violence_possibility=true
 108441,reading news about orlando shooting and mean spirited posts to sashaobama on her bihday. sometimes humans really upset me. notokay,GENERIC,VIOLENCE,has_violence_possibility=true;has_emotional_distress=true
@@ -4877,18 +4833,15 @@ Hope the world is better without me.",GENERIC,VIOLENCE,has_violence_possibility=
 108443,Pragati ji tausim ji ham logo ko larne ki bjai ek sth hoke us kutte Pakistanio ko jabab deni chahia ! Modi ji n kya kia manmohan ji n kya kia ho sab bad ki bat bss abhi ham logo ki dushman serf Pakistan hai ! Chahte ap bjp ho ya Congress !,GENERIC,VIOLENCE,has_violence_possibility=true
 108444,andysessions attorneygeneral from alabama trump staing a racewar will we let him? chaos fear weaponry,GENERIC,VIOLENCE,has_violence_possibility=true
 108445,so proud of our lee county florida sheriff ! obama handcuffs police control,CIVIC_LAW,VIOLENCE,has_violence_possibility=true
-108446,Lol actually bitch please choke on my nuts.,GENERIC,VIOLENCE,has_violence_possibility=true
 108447,: Mannn let bosh hoe ass hit that 3,GENERIC,VIOLENCE,has_violence_possibility=true
 108448,Is babay ko bhago border pr is ka Sr b katay,CIVIC_LAW,VIOLENCE,has_violence_possibility=true
 108449,Pakistani mc..war krna hai indain se toh time aur place choose kro aur samne aake war kro..pith piche kyu war krte ho pak bc,GENERIC,VIOLENCE,has_violence_possibility=true
 108450,"obama joins the jackals ass america will miss obama, when they realize trump will do nothing for them. trumpism generationkkk",GENERIC,VIOLENCE,has_violence_possibility=true
 108451,"Ye dabangai ka mamla nahi Hai ye jati utpidan Hai jaise ki is charcha ki Facebook me aur Channels me me honi chahiye Jo ki nhi ho rahi Media bhi pakshpat karti Nazar ati Hai teen talaq ki bat to karti Hai magar jatiwad ki Jaden Kahan Hain janate huye bhi batane se darti Hai usme bhi himmat nahi Hai jatiwad ke khilaf bolne ki, kyonki khud bhi Media nahi chahta ye mudda upar aye aur is par charcha ho.abhi 5 minutes me vo bhi social media me charcha khatam bat khatam, himmat dikhaiye jatiwad KO charcha me layiye jimmedar logon ke jawab lijiye Azad Desh Me Gulamo jaisa byavhar kyon??",TECHNOLOGY,VIOLENCE,has_violence_possibility=true
 108453,Ya to kutta ha Inko shrm .ijjt to ha nhi bs Yo hi Khana ki roti nhi or aata nhi bat krta ha Yad kro jis ied pa aata nhi tha dssh ki jnta ka pas Ara hramiyo tum aaj kha khdra ho or aaj mara dash ko dakho kha phuch gya tum bhikh bnd kr da us to .. Hm aaj bhi bhikh nhi lata 2tka ka dash jo bhikh pr nirbher ha or ..apna bap sa tkkkker laga Ya to hm ha jo sas lana ki ijajt da rha ha Jay hind,GENERIC,VIOLENCE,has_violence_possibility=true
-108454,Joe Cortez is the ultimate faggot that fight proved it,GENERIC,VIOLENCE,has_violence_possibility=true
 108455,: Right you are! Have you heard of the 'dodo' bird? He's the one with Obama on his ass!,GENERIC,VIOLENCE,has_violence_possibility=true
 108456,": Watching AttackofTitan on "" bro you a HAN for stealing my tweet, bitch ass nigga",GENERIC,VIOLENCE,has_violence_possibility=true
 108457,"icymi : shooting at orlando nightclub kills about 20, police say debeloping guns",CIVIC_LAW,VIOLENCE,has_violence_possibility=true
-108458,nigga u just called me a bitch last time i check im a fucking nigga get out there and ill show u what a real fight like,GENERIC,VIOLENCE,has_violence_possibility=true
 108459,"every night says ""don't take our guns away."" but has he even mentioned 1 of the victims names from the orlando shooting?",GENERIC,VIOLENCE,has_violence_possibility=true
 108461,LMAO : Yes & no Is it ok to beat a bitch up over some tweets or nah?,GENERIC,VIOLENCE,has_violence_possibility=true
 108462,Congress walo ko to buao hi mat debat me ye terrorist supporter h isse puchiye ki jnu me Rahul gandi kya krne gye the,GENERIC,VIOLENCE,has_violence_possibility=true
@@ -4913,7 +4866,6 @@ Hope the world is better without me.",GENERIC,VIOLENCE,has_violence_possibility=
 108481,Abhi feku RSS ki CHHADI gang tyar kr rha hai. Gay mata ko protection dena hai. Army bhad me jaye,GENERIC,VIOLENCE,has_violence_possibility=true
 108482,Yeh kutte chori chori chupke chupke attack krte hai agar himmat hai na face to face aakr fight kro na..salle deshdrohi..terrorist..chun chun kr marroo..,GENERIC,VIOLENCE,has_violence_possibility=true
 108483,Bihari ko Gali dena Bhajpai ke DNA me hai ? yah bat kisiko nahi samajh aata ho to itihas utha kar dekh lo ? Bhajpa ka itihas purana hai Bihari se Vote lene ke bad sirf bad me Galli hi deta hai ?,GENERIC,VIOLENCE,has_violence_possibility=true
-108484,I would love to not be hit with the jig for once in my fucking life,GENERIC,VIOLENCE,has_violence_possibility=true
 108485,Jawab denge woh karte rahenge kuch bi karo .. India ne sirf War ka sochna Chahiye hai Jo Lahore Islamabad Pe Kabja ho,BELIEF,VIOLENCE,has_violence_possibility=true
 108486,56 inch ka chhati sirf elecation me chalta Hai jab border ka bari Ata hai to 56 ke Bajay 28 inch Ho jata Hai,CIVIC_LAW,VIOLENCE,has_violence_possibility=true
 108487,I stick up for my fam. don't disrespect the pouch my nigguh. and awe ily2,GENERIC,VIOLENCE,has_violence_possibility=true
@@ -4932,11 +4884,8 @@ Hope the world is better without me.",GENERIC,VIOLENCE,has_violence_possibility=
 108500,"if you try to wreck my happiness , i kick your butt. life inspirethemretweettuesday",TECHNOLOGY,VIOLENCE,has_violence_possibility=true
 108501,date with bambi bambi deer instaanimal love nature naturelovers outdoors lifestyle,SCIENCE,VIOLENCE,has_violence_possibility=true
 108502,Kafiron ko Islam dhram apnanay mn rokavat hai Bhagwa Atankwad .. Aor bhagwa atankwadi jahilon ka gang hai,BELIEF,VIOLENCE,has_violence_possibility=true
-108503,where y'all be at oh we going fight come to town east bitch,GENERIC,VIOLENCE,has_violence_possibility=true
 108504,": I'd rather argue & make up then fight & break up , cause thirsty bitches love to see happy homes FUC..",TECHNOLOGY,VIOLENCE,has_violence_possibility=true
-108505,Start punching hoes in they esophagus and shit.,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
 108506,is the most important thing. All this temporary bullshit and lies is fa the birds. Kill that !,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
-108507,kill yourself ugly ass monkey looking shit,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
 108508,america needs to be more tough on gun control! no more same fake speeches from the leaders doact loveconquershate prayforamerica,GENERIC,VIOLENCE,has_violence_possibility=true
 108509,just waiting for john mccain to announce he is suspending his campaign and headed to orlando to solve the domestic terrorist crisis.,GENERIC,VIOLENCE,has_violence_possibility=true
 108510,Kalotra Pankaj Jung gola barod sy nahi himat or bahaduri sy Lari jati hy. Himmat hy to btao apny modi ko k foj ko border par ly ao. Pata Chal jayga,CIVIC_LAW,VIOLENCE,has_violence_possibility=true
@@ -4944,14 +4893,12 @@ Hope the world is better without me.",GENERIC,VIOLENCE,has_violence_possibility=
 108512,"seriously, when i saw orlandoshooting on tv, it reminded me parisattack .. world really goes crazy loveislove prayfororlando",GENERIC,VIOLENCE,has_violence_possibility=true
 108513,Pakistan ka BAT ka retaliate humara ghatak dega. .woh bhi Islamabad mein. ..madarchud Pakistan ab tumare khair nahi,BELIEF,VIOLENCE,has_violence_possibility=true
 108514,why did i go on fb? ppl apparently think their right to own an assault rifle only ment to kill trumps ppl's right to live & love..,TECHNOLOGY,VIOLENCE,has_violence_possibility=true
-108515,"Just was old to me , a lil proton feel me ? Some bitches that's gon feel me , some niggahs that won't kill me .",GENERIC,VIOLENCE,has_violence_possibility=true
 108516,"waking up to another mass shooting in the us, my thoughts and prayers are with you orlando prayersfororlando whenwillitstop",GENERIC,VIOLENCE,has_violence_possibility=true
 108517,Heart attack se death hui hai kyu raai ka pahad bna rhe ho tum log,SCIENCE,VIOLENCE,has_violence_possibility=true
 108518,love the kill them with kindness video beautiful can't wait to see november for my bihday existed bihday,TECHNOLOGY,VIOLENCE,has_violence_possibility=true
 108519,"Ager yeh such hy to Is ko kehty hain,, ghus k marna,, Surgical, strike ka saboot to LA nah saky , khair , 2nd bat yeh hy , jb border py khary ho to larai to ho ga na,",CIVIC_LAW,VIOLENCE,has_violence_possibility=true
 108520,Media Ko to border ke bare kuch pata hi nhi .wha per media wale allowed hi nhi hai logo ko media wale bewaqoof banarhehai,CIVIC_LAW,VIOLENCE,has_violence_possibility=true
 108521,saw kozlov beat johnson yesterday. fritz and tiafoe get the hype but he's a good young talent. merica,GENERIC,VIOLENCE,has_violence_possibility=true
-108522,bitch I got a ring now ho I ain't fatherless no more ill fight you.,GENERIC,VIOLENCE,has_violence_possibility=true
 108523,tdc media & must be confused of course it was a hate crime..a radicalislamicterrorist attack against usa,BELIEF,VIOLENCE,has_violence_possibility=true
 108524,dube ji vikas ki bat to mat kijiye romio giri kijiye ar dharm ki bat kijiye kya jaroorat hai bhagwa pahan ke jhuth bolne ki,BELIEF,VIOLENCE,has_violence_possibility=true
 108525,poore india ko eak sath milker central government ko batadena chahiya k hum aap k sath hai maro sale pakistan ko. But mujha lagta hai k hamari tayari nahi hai ya. hum saksham nahi k pakistan k sath war ker sake. kyo harbar kamjor hote hai.,CIVIC_LAW,VIOLENCE,has_violence_possibility=true
@@ -4969,9 +4916,7 @@ Hope the world is better without me.",GENERIC,VIOLENCE,has_violence_possibility=
 108538,wtf!??! why they end oitnb like that!! ican'teven with these emotions like why kill bae?? retaliation hurry up with season5!!,GENERIC,VIOLENCE,has_violence_possibility=true
 108539,yellowlabs attack bull chase: when you leave the lot despite the fact that you're a strong source of,GENERIC,VIOLENCE,has_violence_possibility=true
 108540,Shadan Shakil bhai ye ap b jante ho aur m b janta hu ye netagiri h jo hum logo ko dusre bati m uljhaye h aur bhai sare neta chunavi bhasha bolte h chunao jitne k liye ..lekin jab bat watan ki ati h to ham sab ek h chahe wo dusra mulk koi v ho..aur bhai ek bolu ye sarkar ne kuch ni kiya ye bat hindu jan gya pr wo bol ni ra h kynki wo vote dekar batayegi inko hra kr..,BELIEF,VIOLENCE,has_violence_possibility=true
-108541,Man this bitch smells like cheap lip stick,GENERIC,VIOLENCE,has_violence_possibility=true
 108542,HOLIDAYSEASONLIVE Shy Glizzy Feat Plies - FREE THA GANG:,GENERIC,VIOLENCE,has_violence_possibility=true
-108543,Little things can just kill a negros mood man,GENERIC,VIOLENCE,has_violence_possibility=true
 108544,my & go out 2the victims &families of this horrible attack in orlando. if ur a voter think twice sa ..,GENERIC,VIOLENCE,has_violence_possibility=true
 108545,Salo kal se daikh raha hon kutton ki tarha bhonk rahe ho koi kehta ha10 sir katenge koi kehta ha 50 salo humne churian pehni hoi han kia salo apne ghar men hi bhonk rahe ho Aao na zara idhar border pe border door ha kiya chutia bc,CIVIC_LAW,VIOLENCE,has_violence_possibility=true
 108546,i could kill someone right now..,GENERIC,VIOLENCE,has_violence_possibility=true
@@ -4984,9 +4929,7 @@ Hope the world is better without me.",GENERIC,VIOLENCE,has_violence_possibility=
 108553,"Jo fans hote Hain unko aisi cheez se fark nahi padta. Show ki highlights dekhkar bhi show dekhne me interest aata Hai. Aakhir itne saare loog mehnat karte Hain tab episode shoot hota Hai. We fans love listening dialogues and watching every scene. Ab ye serials Hain, news to Hai nahi Jo headlines dekhi aur hogya, we do love watching the whole thing (Yeah, a very nice question SBS guys..)",GENERIC,VIOLENCE,has_violence_possibility=true
 108555,"fighting battles that have already been won, instead of fighting a massive uphill battle against clinton.",GENERIC,VIOLENCE,has_violence_possibility=true
 108556,is it attacking when u say something that's contradictory & people are trying to get a straight answer?,GENERIC,VIOLENCE,has_violence_possibility=true;has_substance_use_concern=true
-108557,am going to hurt more then your bitch ass feelings,GENERIC,VIOLENCE,has_violence_possibility=true;has_medical_concern=true
 108558,"50 dead in florida nightclub shooting, worst in us history",GENERIC,VIOLENCE,has_violence_possibility=true;has_privacy_risk=true
-108559,imma shoot that bitch,GENERIC,VIOLENCE,has_violence_possibility=true
 108560,"Mallick Bahadur Tu to Randy ki Paidaish hai ye Hazam nahi ho raha?? Pakistani Terrorist Gandu tu Apni Ammy k Gand se paida hua kyoki teri Ammi ko Main Pichese liya tha. Teri Ammi ,Behan, Khala sab ko Randy banakar rakha tha. Aur tera Abbu dekhkar Muth Marta tha.",GENERIC,VIOLENCE,has_violence_possibility=true
 108561,teko toh sabse pehle goli maarni chaiye ..RSS zindabad,GENERIC,VIOLENCE,has_violence_possibility=true
 108562,powerful. especially in light of recent terror attacks.,SCIENCE,VIOLENCE,has_violence_possibility=true
@@ -5001,9 +4944,6 @@ Hope the world is better without me.",GENERIC,VIOLENCE,has_violence_possibility=
 108572,In Pakistan ke kutto se kya umeed kr skte hy. Army bhe kaam ke nhe rhe jo ab bhe wait kr rhe hy oder ka. Agr yh sb America ya Israel ke soldiers ke sth hota to ab tk pakistan mit chuka hota,GENERIC,VIOLENCE,has_violence_possibility=true
 108573,world news update : father 's day ! this weekend president obama and the first..,GENERIC,VIOLENCE,has_violence_possibility=true
 108574,fo attack bull chase: when you leave the lot despite the fact that you're a strong source of food f,GENERIC,VIOLENCE,has_violence_possibility=true
-108575,Wow I swear I'm gonna cunt punch you,GENERIC,VIOLENCE,has_violence_possibility=true
-108576,nigga I didn't have no change.yall some hoes for Tryna shoot know y'all can't shoot,GENERIC,VIOLENCE,has_violence_possibility=true
-108577,I don't like it peaceful that's boring I like fighting I come from the ghetto do u remember that it's p impossible for me not to,GENERIC,VIOLENCE,has_violence_possibility=true
 108578,Yeh chote chote Camp Taba kar ke Desh ke logo ko khus karne ki koshish mat karo .hum War Reusrt Chahiye hai ..nahi Tax nahi bharenge,GENERIC,VIOLENCE,has_violence_possibility=true
 108579,hme naksalio ko army/BAT/BSF Me join krwana chahiye..agr ek b naksali mara ya mara to pakistan ka b bdla pura hoga or chattisgarh ka bhi..,GENERIC,VIOLENCE,has_violence_possibility=true
 108580,"Kashmir loge ,sare Pakistanio ko marna hoga ,,come fast . Gand mai goli marunga yad rekhna ,bahut jald aa rha hu border pe..",CIVIC_LAW,VIOLENCE,has_violence_possibility=true
@@ -5014,7 +4954,6 @@ Hope the world is better without me.",GENERIC,VIOLENCE,has_violence_possibility=
 108585,Pak. Ko uski okat yad dilane ki jarurat h ye bat wo bhul chuka h ki uske sar pe jab chhat nahi thi to hamne hi pese diye the uski okat nahi h bolne ki b or jada natak karne m laga h,GENERIC,VIOLENCE,has_violence_possibility=true
 108586,: I know another chick I will NEVER shoot again. Filing this one under: heartless cunt,GENERIC,VIOLENCE,has_violence_possibility=true
 108587,Tumlog Itnae Darpok ho ki tumhari saari army border par he rehti h,CIVIC_LAW,VIOLENCE,has_violence_possibility=true
-108588,"Virtually zero protections for LGBTQ persons in Alabama. Not a lot of acceptance, either. Think about queer Alabamian kids today?",GENERIC,VIOLENCE,has_violence_possibility=true
 108589,"If I ever put ma trust ina bitch , I'll always be hurt !",GENERIC,VIOLENCE,has_violence_possibility=true;has_medical_concern=true
 108590,Isse kuchh nhi hota h dalal channel walo 56 inch sine ki bat yad dilao modi ko,GENERIC,VIOLENCE,has_violence_possibility=true
 108591,"Uzai paidaishi suar ho tum log BC,peeth piche war Marne bolte miya Bhai.. Bhag suar ki aulad.. Landya maderchod bhosdike",GENERIC,VIOLENCE,has_violence_possibility=true
@@ -5040,7 +4979,6 @@ Hope the world is better without me.",GENERIC,VIOLENCE,has_violence_possibility=
 108612,Indian media reports k mutabiq 13 jawan patroling kur rahy thy jb BAT ne ghuss k 2 ko maar k sur kaat liye . Yahan yeh sawal bunta hai jo koi indian nehi dega k baaki 11 buzdil jawan iss doran apni geeli pents lekar kahan chup gaye thy?? Chalo maan lia k pak army ne chup k attack kia hoga magar 11 fouji muqabla kurty toh Sir toh na katy jaty becharon k .. bhartiyo jawab do 11 buzdil kahan bhag gaye thy tb?? esay khtay hai ghus ky marna,GENERIC,VIOLENCE,has_violence_possibility=true
 108613,"carl paladino, trump ally, wishes obama dead of mad cow disease in '17",DEATH_GRIEF,VIOLENCE,has_violence_possibility=true
 108614,"2 soldere keliye yudh suru kardo Congress Chahata Hai, chutiya bante log, Congress ki bat par",GENERIC,VIOLENCE,has_violence_possibility=true
-108615,Shoot you and your shorty bitch,GENERIC,VIOLENCE,has_violence_possibility=true
 108617,Politician kaam Mai oil daal Kar bethy Hai aur ankho per Patti Jo unhy dikhai nahi dey Raha Hai ki har Roz hamare soldier sahid ho rahy Hai . Majak bana Diya Hai Indian army ka . Kiyu AAP Pakistan se relation nahi todty Hai why.,GENERIC,VIOLENCE,has_violence_possibility=true
 108618,"‡§®‡•Ä‡§Æ ‡§ï‡§æ ‡§™‡§§‡•ç‡§§‡§æ ‡§ï‡§°‡§º‡§µ‡§æ ‡§π‡•à, ‡§ï‡§æ ‡§è‡§ï ‡§è‡§ï ‡§è‡§Æ‡§™‡•Ä ‡§≠‡§°‡§º‡§µ‡§æ ‡§π‡•à‡•§ TempleTerrorAttack ChandniChowk",BELIEF,VIOLENCE,has_violence_possibility=true
 108619,you fucking pussy you couldn't even beat your dick. - Angry Youtube Comment,TECHNOLOGY,VIOLENCE,has_violence_possibility=true
@@ -5060,7 +4998,6 @@ Hope the world is better without me.",GENERIC,VIOLENCE,has_violence_possibility=
 108634,: All bitches cheat. You just gotta acknowledge its gonna happens so when it does it'll hurt less.,TECHNOLOGY,VIOLENCE,has_violence_possibility=true;has_medical_concern=true
 108635,Khne ka ookad Nani or goli Bari ke bath larte ho,GENERIC,VIOLENCE,has_violence_possibility=true
 108636,": Ballgame over, Yankees WIN! Yanks beat the White Sox in 10 innings, 4-3.",GENERIC,VIOLENCE,has_violence_possibility=true
-108637,"I got 99 problems but a bitch aint one, she's all 99 of em I need a michane gun",GENERIC,VIOLENCE,has_violence_possibility=true
 108638,Bhai to ye hijre ne Congress Ko kyun kha tha bhai nhaukaati hai nhi hai sala nhi hota hai to chudi Pahne bhai mara ja rha hai Abhi mere ek Frnd ka bhai saheed hua hai wha kaisa feel hota hai TM sale hijre ke Janne kya jannoge jinki aukaat sirf comments krne ki Hoti hai kaisa roo rha hai uska ghar lagta hai khud gun uthakr border pe chala jau hijra hai Modi hijra hai BJP government,CIVIC_LAW,VIOLENCE,has_violence_possibility=true
 108639,Modi ne waade khub kiye..ismese kitne pure hote hai ye dekanaa ek pakaare sapnaa hi hoga..kya 15 lakh jise jumle ke aur to nahi..jan hit me jaari..,GENERIC,VIOLENCE,has_violence_possibility=true
 108640,Bari birmavana koi v nata k beta yah bahan yah bhai nahi marta ha ..Aatankwadi k kuch toh enka v ghar jalna chaiya..Tavi toh samaj m aayega..Kon desh bhakat ha..subka subka sub desh k ar m chor ha..Army ko khulam khula chut dene chaiya ..Kub tak Inki ghar jalaga..Koi nata toh kavi border m nahi jayaga goli khana ..Dhoti kurta m ninda karna aah jayaga ..Army ko khuli chut do 7 din bas sub samaj m aah jayaga kon pakistan kon patarwaj kon naksali ..Koi namo nisan nahi rahaga itna toh hamara defence kar sakta ha..,CIVIC_LAW,VIOLENCE,has_violence_possibility=true
@@ -5077,7 +5014,6 @@ Hope the world is better without me.",GENERIC,VIOLENCE,has_violence_possibility=
 108651,"TempleTerrorAttack TempleDestroyed ChandniChowk ‡§ï‡•å‡§® ‡§ï‡§π‡§§‡§æ ‡§π‡•à ‡§ï‡•á ‡§á‡§∏ ‡§¶‡•á‡§∂ ‡§Æ‡•á‡§Ç ‡§Æ‡•Å‡§∏‡§≤‡§Æ‡§æ‡§® ‡§°‡§∞ ‡§ï‡•á ‡§∏‡§æ‡§Ø‡•á ‡§Æ‡•á‡§Ç ‡§π‡•à, ‡§µ‡•á‡§∏‡•ç‡§ü ‡§¨‡§Ç‡§ó‡§æ‡§≤ ‡§î‡§∞ ‡§¶‡§ø‡§≤‡•ç‡§≤‡•Ä ‡§Æ‡•á‡§Ç ‡§ú‡§æ ‡§ï‡§∞ ‡§¶‡•á‡§ñ ‡§≤‡•ã ‡§ú‡§π‡§æ‡§Å ‡§Ü‡§™‡§ï‡•ã ‡§ï‡§∂‡•ç‡§Æ‡•Ä‡§∞ ‡§ï‡§æ ‡§Ö‡§≤‡§ó‡§æ‡§µ‡§µ‡§æ‡§¶, ‡§Ü‡§§‡§Ç‡§ï‡§µ‡§æ‡§¶, ‡§™‡§§‡•ç‡§•‡§∞‡§¨‡§æ‡§ú, ‡§ï‡§†‡§Æ‡•Å‡§≤‡•ç‡§≤‡§æ‡§µ‡§æ‡§¶, ‡§á‡§∏‡•ç‡§≤‡§æ‡§Æ‡•Ä‡§ï‡§∞‡§£ ‡§î‡§∞ ‡§¶‡•á‡§∂‡§¶‡•ç‡§∞‡•ã‡§π‡§ø‡§§‡§æ ‡§∏‡§¨ ‡§®‡§ú‡§º‡§∞ ‡§Ü ‡§ú‡§æ‡§Ø‡•á‡§ó‡•Ä..",BELIEF,VIOLENCE,has_violence_possibility=true
 108652,Awona kbi khuhbu lagky Surgical strike krogy.hahha ye pak ny nai keya ye kashmiri mujahideen ny keya jin ky bachu ko tumhri army goli marti hai kashmir m,GENERIC,VIOLENCE,has_violence_possibility=true
 108653,i have never seen a bigger choke job than game 7 of the nba finals by s. curry - wwe's seth rollins was so very wrong about cleveland.,TECHNOLOGY,VIOLENCE,has_violence_possibility=true
-108654,3 millionaires just walked in why you tripping bitch you paid for the fight ? Lmao,GENERIC,VIOLENCE,has_violence_possibility=true
 108655,Tum sale congressi terrorist ke marne mar Rona Suru karte ho..Or yhn bhasan de Raha ho..70 saal ka issue tumari BAAP Nehru or Gandhi ki h..Pehle Tum logo Ko thokna chahiye..Tab ye sab band hoga,GENERIC,VIOLENCE,has_violence_possibility=true
 108656,"Pakistan ka ilaz Hai hamare desh me pal rahe desh keun gaddaro ko goli maar do, Pakistan khud hi barbad ho jayega..",GENERIC,VIOLENCE,has_violence_possibility=true
 108657,allahsoil most victims in islamic extremist attacks continue to be muslim. emiratis 2016 ..,BELIEF,VIOLENCE,has_violence_possibility=true
@@ -5090,14 +5026,12 @@ Hope the world is better without me.",GENERIC,VIOLENCE,has_violence_possibility=
 108664,u r d best pm dat india cn get.. we really need u sir.. plz go ahead wid ur initiative. . or jo log kh re h k logo ko preshani ho rhi h baut suffer kr re h log.. unki mai bs yahi khna chahti hu k aazadi k liye b baut b log shaheed hue the.. baut se logo ne apne praano ka balidaan diya tha.. to kya hmhe aazadi pyaari nhi h. koi nek kaam k liye thoda parishrm krna hi pdta h.. kya hmaari is desh k liye koi jimmedaari nhi h kyaa.. kb tk sirf vote dekr apna palla jhaadte raheinge.. aaj hmaare deshbko hmaari jrurt h.. hr koi border mei jaakr nhi ld skta toh.. par itna toh kr hi skte h hm apne desh k liye.. or ye modiji hi h jo hmhe is trf bdhne ko prerit kr rhe h.,CIVIC_LAW,VIOLENCE,has_violence_possibility=true
 108665,: Any chick that gets In a fight after the age 24 is a hoe,GENERIC,VIOLENCE,has_violence_possibility=true
 108666,don't matter gun retweet australia indiedev gamedev indiegogo reddit kickstaer gamedev132,SCIENCE,VIOLENCE,has_violence_possibility=true
-108667,Fronting bitches get that I just got off the island dick. Then I never hit them up again because I'm a fronting ass nigga,SCIENCE,VIOLENCE,has_violence_possibility=true
 108668,Ashfaq miya jitna pak army zindabad ke nare lagana hai laga lo par tumhari army ka wo harsh kiya jayega ki tumhare aane wale aulade bhi pak army mein jaane se pehle sochi gi. Are tum kyaro ki tarah war karte ho aur apne army ko bahadur samajhte ho. Yaad rakhna indian army tumhari sena ki aisi maa bahen chodegi ki tumhare hukmaran bhi bol nhi payenge. Pakistan maderchod terrorist country hai ye puri duniya janti hai.,CIVIC_LAW,VIOLENCE,has_violence_possibility=true
 108669,today is a very one! stop the murdering ! orlandolove god,BELIEF,VIOLENCE,has_violence_possibility=true
 108670,hamare soldiers ko vo kya marange unki to itni bhi aukad nahi ki vo hamare soldiers ka nam bhi le,GENERIC,VIOLENCE,has_violence_possibility=true
 108671,In kutto ko border bhejo namardo ke shena apne ma chudvate hai hindu musalmanao ko larvakar.,BELIEF,VIOLENCE,has_violence_possibility=true
 108672,Rss vhp bajrandall waloun ko bhejo border me tab jake Pakistan ki eet se eet bajayega,CIVIC_LAW,VIOLENCE,has_violence_possibility=true
 108673,Agar inke bas ki nahi hai toh Hume bhej do border,CIVIC_LAW,VIOLENCE,has_violence_possibility=true
-108674,Can someone beat Justin beibers ass? He's such little pussy.,GENERIC,VIOLENCE,has_violence_possibility=true
 108675,constitutional law scholar/prof pres. obama calls for cuailing constitutional rights w/o due process. wiright 2a wipolitics,CIVIC_LAW,VIOLENCE,has_violence_possibility=true
 108676,pm ko ek bahut badhi waal bana deni chahiye border pe..jaise trump soch raha hai..mexico aur america ke boarder pe..,CIVIC_LAW,VIOLENCE,has_violence_possibility=true
 108677,Saipriya Sambamurthy Sriram Srinivasan Ganesh Iyer ..apne berozgari k din aa gaye,GENERIC,VIOLENCE,has_violence_possibility=true
@@ -5108,7 +5042,6 @@ Hope the world is better without me.",GENERIC,VIOLENCE,has_violence_possibility=
 108682,netanyahu has demonstrated disrespect against obama for 8 yrs! gop feigned outrage is full of excrement! israel,GENERIC,VIOLENCE,has_violence_possibility=true
 108683,49 people were killed and 53 injured in the attack on a gay nightclub in orlando so news rip love gay j,GENERIC,VIOLENCE,has_violence_possibility=true;has_safety_hazard=true;has_medical_concern=true
 108684,anti racist white murdered by blacks in south africa whitegenocide southafrica,GENERIC,VIOLENCE,has_violence_possibility=true
-108685,I would never hit a woman but I would slap a hoe,GENERIC,VIOLENCE,has_violence_possibility=true
 108686,Haramjade Bajwa ye mardangi nahi gandupana hai . Sale agar tera dna pure hai to samne se aaja . Kayar ki tarah peechhe se kya attack karva raha hai .,GENERIC,VIOLENCE,has_violence_possibility=true
 108687,seems the national post finds this to be a more better story than the victims of the war.. np get your together poop,GENERIC,VIOLENCE,has_violence_possibility=true
 108688,Sahi bat he,GENERIC,VIOLENCE,has_violence_possibility=true
@@ -5117,7 +5050,6 @@ Hope the world is better without me.",GENERIC,VIOLENCE,has_violence_possibility=
 108691,Shi baat.. ye log sirf ninda missiles se war rhe hai..aur udhar pak. India ki gand fad raha hai..bjp hindu muslim kr ke vote lena jaanti h aur kch nai..,BELIEF,VIOLENCE,has_violence_possibility=true
 108692,"Jihadi pop music debates: ""yo, bro, did you hear the latest Abu Yasser hit?"", ""No bro, I'm totally an Abu Hajar fan"" UnderGroundCulture",SCIENCE,VIOLENCE,has_violence_possibility=true
 108693,Laden ki Tarah ek ek terrorist tumhare Pakistan se marega,GENERIC,VIOLENCE,has_violence_possibility=true
-108694,What the hell are we doing with pussy rules that soldiers don't carry weapons 24/7 on base? They are trained. Liberal crap & people die.,SCIENCE,VIOLENCE,has_violence_possibility=true
 108695,JaiMahishyamatiBahubali devsena se pyaar krta tha.. Ye bt shivgami devi ko pta ni tha..Fir Bhallaldev ko ye pata chla aur usne shivgami devi ko bola ki use rajgaddi to ni mili.. But devsena chahiye.. Shivgami devi ne use vachan de diya..fir devsena ke rajya me shadi kelie sandesh bhej diya.. Devsena ne mana kr diya.. ispe bharak ke shiv gami devi ne devsena ke rajya pe hamla kar diya.. Bahubali ne devsena ke rajya ko bacha liya..aur dono me pyaar ho gya..Bahubali ko laga ki shivgami devi ne usse shadi kelie sandesh bheja tha.. Isliye wo devsena ko leke mahismati aa jata h..fir sacchai pta chalti h to shiv gami devi ne bola ki wo apna wachan ni tod sakti.. Isliye ya to bahubali ko devsena milegi ya fir raj gaddi.. Bahubali senapati bnn jata h.. Fir ak din bhallaldev ne bahubali ko senapati ke pad se nikal diya..idhar devsena ke pregnant hone ki baat pta chlti h..naya senapati bada badtameez hota h.. wo devsena ko pareshan krne ki kosis krta h.. Devsena uski ungli kaat deti h.. Fir devsena ko bandi bna kr raj mahal laya jata h.. Bahubali aata h use bachane.. Jb use pata chalata h ki senapati ne devsena ke sath badtimiziki wo use maar dena h.. Bahubali ko bhare shabha me senapati ko marne ke jurm me raj bhawan se bahar nikal dete h.. Bahubali khushi se mahesmati ke logon ke sath rhne lagta h..usko janta bahut support krti h.. bhallaldev Bahubali ko marwane kelie apne admi bhejta h .. lekin wo ni mar pata.. Ye bat Bahubali ke ak dost ko pata chal jata h.. Wo uska picha krte krte mahesmati chla jata h.. Wahan use pata chalta h ki bhallaldev apne baap ka v sath chor chuka h.. Aurwo Bahubali ko marna chahta h.. Bhallaldev ka baap usko bolta h ki tum Bahubali ko bologe ki uska bhai usko marna chahta h to wo viswas ni krega.. Isliye Bahubali ko bachane kelie tum bhallaldev ko mardo.. Bhallaldev aur uske papa mile rhte h..jab Bahubali ka dost bhallaldev ko marne jata h to usko maar dete h.. aur shivgami devi ko khte h ki Bahubali ne bhallaldev ko matne kelie isko bheja tha.. aur jo raja ka virodh kre.. usko marna pdega.. Shivgami devi bahubali ko marne katappa ko bolti h.. Katappa mana kr deta h.. Fir wo bolti h ki agar tum ni maroge to main mar dungi.. Katappa ko rajdroh ke jurm me mrityu dand milti h.. Bahubali ko ye pata chal jata h.. wo katappa ko bachane jata h.. idhar devsena maa bnne wali rahti hai.. Bahubali katappa ko bacha leta hai..Tabhi kalkeya ka bhai aa jata h aur maheshmati pe akraman kr deta h.. Bahubali unkohara deta h..usi waqt katappa usko maar deta h..fir bhallaldev dev aata h.. aur wo galti se katappa ke samne hee sab sach bol deta h.. Katappa sb jake shivgami devi ko batati h.. Shivgami devi fir Bahubali ke bete ko raja bna deti h.. Bhallaldev unko marne kelie jata h.. Katappa shivgami devi aur mahendra Bahubali ko bacha leta h..aur maheshmati se bhaga deta h..Ye sb jaan ke mahendra Bahubali maheshmati pe akram kr deta h.. aur bhallaldev ko maar deta h..The End,TECHNOLOGY,VIOLENCE,has_violence_possibility=true
 108696,"Waqas Ahmad frustrated napaki bhikari, napaki terrorist, ching chinese ke kutte, bak bak karne se pehle doob mar, sara napakistan hi bech diya tumne china ko. Chinese ke dum hilate bhikhari kutte tumhari aukat nahi bakwas karne ki humse.",GENERIC,VIOLENCE,has_violence_possibility=true
 108697,Sickular Gang ka chamcha lagta h Indian Express ka Admin.,GENERIC,VIOLENCE,has_violence_possibility=true;has_medical_concern=true
@@ -5131,7 +5063,6 @@ Hope the world is better without me.",GENERIC,VIOLENCE,has_violence_possibility=
 108705,Aint This A Bitch.. I just saw my bitch kiss a bitch . You lucky I dont kill yo ass but you can still get pistol whipped - wayne,GENERIC,VIOLENCE,has_violence_possibility=true
 108706,Ohoo acha acha tum keh ray o k pakistani army force bat ny india my gus k mara hay sai sai yar ab ye kaisy ho sakta lgta aj tum ny saif ali khan ki movie ni dekhi hmmm ye chez mery aziz ya hum kamzor log hain hum kha se ghus k maar skty ain hay na media walo jhot ni bolo,GENERIC,VIOLENCE,has_violence_possibility=true
 108707,kuch nahi hoga..marte raho ..namrdo ke desh me ipl hit khan hit main senik hota tao atanki ko dlhi le aata bolta namard secular ki maa bahan sab ko c gand me goli maro,GENERIC,VIOLENCE,has_violence_possibility=true
-108708,"she said, it's ok if u let ur man punch u in ur pussy as long as he makes u cum?",GENERIC,VIOLENCE,has_violence_possibility=true
 108709,: I'll kill this bitch no hesitation,GENERIC,VIOLENCE,has_violence_possibility=true
 108710,": OccupySLU ""Ima fuck me a white bitch, slap her and choke her"" this is what is being said now livestream interview w/ Fe ..",GENERIC,VIOLENCE,has_violence_possibility=true
 108711,shooting (edmond post office massacre) 30 years ago august. something has to change. think of sandy hook.,GENERIC,VIOLENCE,has_violence_possibility=true;has_substance_use_concern=true
@@ -6699,3 +6630,678 @@ Also how do I make it easier for others. That's the hardest thing keeping me her
 2426,I wan na hit a country-western bar tonight .,GENERIC,VIOLENCE,has_violence_possibility=true
 4619,Would you like to hit the local game shop later?,GENERIC,VIOLENCE,has_violence_possibility=true
 4620,I would like to hit the local game shop later .,GENERIC,VIOLENCE,has_violence_possibility=true
+10,hobbies include fighting Mariam bitch,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+12,Murda Gang bitch its Gang Land,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+19,bitches get cut off everyday B,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+178,8220 Shut up zoe fight me pussy8221 for zoe Im good man You are good maam Move along now,GENERIC,VIOLENCE,has_violence_possibility=true
+195,bitch couldnt kill my vibe if ya tried 127752127752127752 dis why i love miley,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+277,Its simple dont be a hoedont worry about being exposed 128540 fight mewhy,GENERIC,VIOLENCE,has_violence_possibility=true
+362,I dont trust dese hoes Nikki told 51st where I stay at all my fans screen shot ASAP we finna come to Chiraq and shoot sumn,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+382,No text back I dont give a fuck Ill text another bitch damn someone is hurt lol,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+431,By the way we do punch bitches,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+462,How about we draft all those gungho folks and send them to Afghanistan or other war zones so they can show their httptcosR1zceHx,GENERIC,VIOLENCE,has_violence_possibility=true
+472,I dont even need a picture of tamar that bitch is beat in every picture128514128557128514128514128514,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+475,I fucking hate that bitch so much I wanna smack her in the face then tongue kiss her,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+520,Lets kill cracker babies WTF did I just hear WOW,GENERIC,VIOLENCE,has_violence_possibility=true
+526,Mine plays DMX and kirk Franklin smh Well my neighbors are ghetto They get up at like 5am and beat their kids,GENERIC,VIOLENCE,has_violence_possibility=true
+542,Pistol whip my Dickau shoot yo bitch club up Sometimes freestyles be freestyles And Im okay with that,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+612,You hit no lights no line for toco bell at 2 in he morning and Dianas back in her house Its a miracle Charlie,GENERIC,VIOLENCE,has_violence_possibility=true
+659,11 get to hit any bitch on campus he wants to,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+714,HOLIDAYSEASONLIVE Shy Glizzy Feat Plies FREE THA GANG httptcopYGOSk0qCP,GENERIC,VIOLENCE,has_violence_possibility=true
+724,IStandWithRand Wise up RINO pussies real leaders like Rand Cruz Lee Bachmann etc actually exist Fight or go home TeaParty,GENERIC,VIOLENCE,has_violence_possibility=true
+748,NowPlaying The Doors The WASP Texas Radio and the Big Beat on 1069TheArrow httptcoR5wuXA9jB6,GENERIC,VIOLENCE,has_violence_possibility=true
+753,PeopleToAvoid Valerie Jarrett so I control my reflex to bitch slap her,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+822,YesWeDid start building windturbines SO FUCKIN BIG they can kill a whole flock of birds in one gogt,GENERIC,VIOLENCE,has_violence_possibility=true
+855,oomf can get it but Im chilling till da bitch hit me up,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+953,128079 congrats youve turned a hoe into a housewife dont get shitty when your guys start singing they hit it first ButThatsNoneOfMyBusiness,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+966,128347 is the most important thing All this temporary bullshit and lies is fa the birds Kill that,GENERIC,VIOLENCE,has_violence_possibility=true
+1144,8220 First time with 3 Lol httptcomITmFPvVLw8221 yuhhhh we hit that hoe,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+1150,8220 Whats the symptoms for Ebola My stomach been hurting b Im nervous8221bitch you better not be we was drinking out same bottle,SCIENCE,VIOLENCE,has_violence_possibility=true;has_medical_concern=true
+1156,8220 When life knocks you down stand the fuck up and say You hit like a little bitch8221,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+1246,8220 I want to be obsessed with someone and I want someone to be obsessed with me8221then u might have to kill the bitch128563,GENERIC,VIOLENCE,has_violence_possibility=true
+1255,8220 If I posted pics of everything I do in my life yall hoes would fall in love 8221dont kill em Channing,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+1300,8220 Damn this bitch always gets hit on by The hottest guys n makes them feel stupid 8221 i got called an ego kill,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+1322,8220 because I thought Jay Z would hit her8221 yeah he is known for sockin a bitch or 2,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+1362,8220 If Howard elbow bosh will bosh fight back8221 dont have to got mcbob bird and UD,GENERIC,VIOLENCE,has_violence_possibility=true
+1378,8220 I fucked up in the 6th grade8221yeah bitch you wants to fight me with yo dawg ass,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+1405,8220 whats good family8221in the gym looking at hoes hit u later,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+1491,8220 When you see the bitch that been talking smack about you in the playground httptcoePdGXMzKSr8221,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+1606,8220 All I wanna do is go workout then come back home and lay in bed8221 jerk off kill two birds with one stone,GENERIC,VIOLENCE,has_violence_possibility=true
+1669,8220 This hoe Mimi said I hurt my hand 1285298221128514128514128514 bitch her throat 128514128514,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+1674,8220 Victor amp shawn legs dont hurt They jigg every damn night 1285308221128514128514128514,GENERIC,VIOLENCE,has_violence_possibility=true
+1718,8220 Are You Kidding Me Right Now httptcolFSvymMqTN8221 Ill smack a hoe,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+1764,8220 brian stfu 128548128079 its twitter i could retweet anything8221dont make me bitch slap you again 128075,TECHNOLOGY,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+1765,8220 I know u didnt hit that jigga with my fav purse 8221no chill 128514128514,GENERIC,VIOLENCE,has_violence_possibility=true
+1858,‚Äö√Ñ√∫: Just seen 2 pregnant bitches fight‚Äö√Ñ√π did the look like sumo wrestlers?,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+1920,‚Äö√Ñ√∫: Do this hoe wanna fight ‚Äö√Ñ√π right,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+1946,‚Äö√Ñ√∫: I just punched in the nose on accident because she just shocked the crap out of me Ô£ø√º√≤√áÔ£ø√º√≤√áÔ£ø√º√≤√áÔ£ø√º√≤√á‚Äö√Ñ√π bitch that hurt!! Ô£ø√º√≤‚â†,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+2013,"All jokes aside , I'm goin thru it a niggah heart hurt smh . √õ√¶¬®√© .",GENERIC,VIOLENCE,has_violence_possibility=true
+2059,"I'm hard to kill √õ√¶√¨¬µ , I'm countin cake up with ma finest bitch √õ√¶√¨¬ß√õ√¶√¨¬ß . Take off her makeup and she still look like a finalist √õ√¶√•√ü√õ√¶√Ü√º .",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+2060,"I'm not gon ever be that niggah that hit 300 likes on every picture , but I get WHOEVER I WANT PERIOD . √õ√¶√•¬•√õ√¶‚â†¬™√õ√¶√•¬®... http://t.co/mKgRljrHcl",SCIENCE,VIOLENCE,has_violence_possibility=true
+2064,"If I ever put ma trust ina bitch , I'll always be hurt ! √õ√¶‚â†¬™√õ√¶‚â†¬™",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+2065,"If I ever put my trust ina bitch , I'll always be hurt √õ√¶√•¬•√õ√¶√•¬• .",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+2076,"Just was old to me , a lil proton feel me ? Some bitches that's gon feel me , some niggahs that won't kill me .",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+2083,Mannnnn wake y'all bitch asses up Blood !,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+2085,My baby mama trippen and that bitch can shoot √õ√¶√¨¬µ√õ√¶√¨¬µ .,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+2102,She was mad for like 5 mins got over it and hit him right back up lol she care about that niggah . http://t.co/w13NFgBHSB,GENERIC,VIOLENCE,has_violence_possibility=true
+2132,"Forget to salute,' trash the other guy for the 'bad war' (during Cairo II), sympathize w/ 'Pockistan,' gays hurting morale. Thanks King!",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+2161,*waits for Fanduel to hit me with the jig*,GENERIC,VIOLENCE,has_violence_possibility=true
+2165,", why not animal crackers. i want animal crackers shaped like master chiefs and trolls and gun's and shit, thatd rule.",SCIENCE,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+2207,1-800-slap-a-hoe,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+2225,1st game of Fall 7s.. finna kill some hoes,TECHNOLOGY,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+2246,3 millionaires just walked in why you tripping bitch you paid for the fight ? Lmao,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+2247,3 things i cant stand while dealing with a bitch! A. HIT FEET B. STANK ASS BREATH C. SKANK ASS WAYS,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+2338,ima act like I hit that hoe then pass it like I was earlier,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+2431,The Cop was bitch slapped by this wanna B st. thug. And he got what TM got Dead See you don't slap cops they R law,DEATH_GRIEF,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+2462,"Enjoy it,I'm happy for you,but I hate the Yankees,and yes the Sox did choke",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+2486,bro you know I can't not comment on stupid shit like that..bitch Instagram a heart attack on a plate,TECHNOLOGY,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+2630,@dalton_ryann bitch got the crew hype an still got her ass beat tonight should have brought him to us,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+2646,slap a taco in thT hoe face Ô£ø√º√≤√áÔ£ø√º√≤√áÔ£ø√º√≤√á‚Äö√∫√•√î‚àè√®Ô£ø√º√´√™Ô£ø√º√´√§Ô£ø√º√≠√òÔ£ø√º√≤√≤Ô£ø√º√¥√†Ô£ø√º√≠√Ö,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+2662,fight that shit say you're on free lunch and they must have the game fucked up cause you're colored like the rest of them,TECHNOLOGY,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+2682,Can I beat this bitch up?? Seriously....what a bitch,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+2686,my trick is I wait for the bird to get close to the pipe and then tap the screen! So you never hit your head.,GENERIC,VIOLENCE,has_violence_possibility=true
+2715,That game winning hit in Thursday capped a great career. The guy is a 1st ballot HOF. Or else.,TECHNOLOGY,VIOLENCE,has_violence_possibility=true
+2729,your man looks terrified in that picture. Do you beat him? Or just treat him like a regular bitch?,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+2845,you said good bye dumb bitch snd i said ok..what is it with you white devils...i have nothing for you vampire lover of blood,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+2851,gun sales have skyrocketed. Gun crime has fallen sharply. Any claim to the contrary is using fuzzy math.,CIVIC_LAW,VIOLENCE,has_violence_possibility=true
+2879,bitch kill yo self,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+2911,haha yes niggah but yesterday night Idk man it hit me at night like around 2 in the morning didn't go to sleep till like 4..,GENERIC,VIOLENCE,has_violence_possibility=true
+2914,yeah bitch hit me up when you get friend zoned Brody Ô£ø√º√´√•Ô£ø√º√≠√òÔ£ø√º√≠√ò,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+2960,choke on bread bitch,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+3055,"An enraged 6'4"" 290 lb Mike Brown lethal weapon on legs.His hatred 4 the police & whitey added fuel 2 his arsenal",CIVIC_LAW,VIOLENCE,has_violence_possibility=true
+3080,bitch i dont even look like that keep talking and we going to fight,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+3092,I'm assuming it would look something like a bitch slap and a Dickpunch,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+3096,that bitch hit the chick when she won't looking.. That shit weak af,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+3107,your a bitch if you hit a girl,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+3122,Hit the clam chowder.Thanks for the wishes and the card,GENERIC,VIOLENCE,has_violence_possibility=true
+3154,ok u hav gun. I love you and you are my superior at fighting games and you probably get more bitches too. peace ‚Äö√∫√•,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+3184,THE WASP OF ANGRY LEGEND. BEAT IT INTO A SQUISHY PULP!!!,GENERIC,VIOLENCE,has_violence_possibility=true
+3219,I was bout to smack a bitch.,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+3289,fight or nah dumb bitch Ô£ø√º√≤√≠,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+3307,I'm on that straight Cali kush bitch don't kill my vibe,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+3332,you actually think he'll do that? lil bitch can't punch a potato,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+3412,y don't that bitch just shoot herself? so sick of all those whores!,SCIENCE,VIOLENCE,has_safety_hazard=true;has_violence_possibility=true;has_medical_concern=true;has_negative_language=true
+3493,bitch I got a ring now ho I ain't fatherless no more ill fight you.,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+3578,I would have loved to watch Newman bitch slap Johnson I'd pay to see that,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+3583,oh you little bitch you. You tryna hit the fair tho today or sometime this week? Shit might be fun drunk,SCIENCE,VIOLENCE,has_violence_possibility=true;has_substance_use_concern=true;has_negative_language=true
+3623,"bitch you beat after losing twice lol and we won 11, you just a hater",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+3653,ur avi prolly shoot dust out your phone cuz that shit so old u cat fishing the bitches on here lmao,TECHNOLOGY,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+3747,choke on something hoe,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+3799,Yankees beat then in the Grapefruit league the other day.,GENERIC,VIOLENCE,has_violence_possibility=true
+3821,lmaoo Ô£ø√º√≤√áÔ£ø√º√≠√ØI think I want this bitch YA me tiene cansada but thanks Ô£ø√º√≤√≤wait hold up ... Who u fighting Ô£ø√º√≤‚â•,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+3866,haha no but I was ready to slap that bitch again he came walkin in my room to say hi while I was playin saints in my underwear -_-,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+3924,"Hey #teabagger the #benghazi thing is a joke. 13 Benghazis under Bush, no hearings. More on Benghazi than real 9-11 attack",GENERIC,VIOLENCE,has_violence_possibility=true
+3943,LOL! That was a cyber bitch slap for sure!,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+4026,bring yo bitch ass whith em jump in want to and get yo ass beat up,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+4029,bitch I told you to hit me when you got back,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+4040,was like had some gas cause I hit that bitch one time and ended up talkin shit all night bitch was fried Ô£ø√º√≤√á,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+4063,Reason #2 I didn't order a shirt: Taffy will know where I live and he would probably find me and stab me.,GENERIC,VIOLENCE,has_violence_possibility=true
+4068,bitch fuck you!! You cut off until I get my snacks from fat boys !,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+4121,slap a bitch,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+4122,"That's what happens when you have pussies for presidents and generals, you have to fight the same war over and over again.",GENERIC,VIOLENCE,has_violence_possibility=true
+4169,You bitch and complain about how bad our vets are being treated yet you are still willing to send them off to war? Sick idiot!!,SCIENCE,VIOLENCE,has_safety_hazard=true;has_violence_possibility=true;has_medical_concern=true;has_negative_language=true
+4333,kill yourself ugly ass monkey looking shit,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+4355,I'll bitch slap you to the shadow realm!,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+4381,imma shoot that bitch,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+4481,I popped a Molly every day last year #beat#that#bitch,SCIENCE,VIOLENCE,has_violence_possibility=true;has_significant_impairment=true;has_substance_use_concern=true;has_negative_language=true
+4519,You are full of it! These so called children are not children. They are illegal border jumpers MS!# gang members.,CIVIC_LAW,VIOLENCE,has_violence_possibility=true
+4587,I am just saying.. I would beat you down like the bitch that you are... then put my foot on your neck and shoot you,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+4592,"I lied, it hurt like a bitch, and it bruises your arm. I would suggest you don't do it lol",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+4598,if we don't hang out until the concert smh ima kill a bitch,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+4642,bitch slap that asshole....with a chair!,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+4831,well since you is blood you get a G pass but only this time and I won't tell wop about that lyric situation,GENERIC,VIOLENCE,has_violence_possibility=true
+4835,let's go right now bitch and i knocked you last time let's fight right now,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+4881,"Low blow, cuntface. How many times the Yanks beat us in the playoffs these last 8 or so years?",GENERIC,VIOLENCE,has_violence_possibility=true
+4883,fuck them bitches I hope Navy beat em THIS week.,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+4906,Im omy to the movie right now and I'm literally gonna slap a bitch if they scream or some shit.,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+4907,i don't think he can beat Mayweather but he's far from trash. Unlike Floyd he actually put Maidana down.,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+4942,bitch go shoot some balls of paint. Ole hobby finding ass,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+5043,mite hit the Rec I know cell Marcus and Jax gone try to hit that hoe,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+5101,the cunt needs her hands cut off!!!!!,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+5123,At the peak of the war W joins the Texas natl guard to get outta Nam. Facts are a bitch. http://t.co/TnSZm31m9Z,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+5147,fight me bitch.,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+5152,yu forgot we beat yall? Thats like a garbage man calling a janitor trash,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+5196,"ima miss smiley and graham and daniel tho, they were pretty cool to me when i was there, ima beat andrews bitch ass every day",GENERIC,VIOLENCE,has_violence_possibility=true;has_significant_impairment=true;has_negative_language=true
+5201,"Daggone it Twins, kick it up a notch... Time to beat the Yankees...",GENERIC,VIOLENCE,has_violence_possibility=true
+5227,nahh bitch yu always playn yu almost got her feelings hurt,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+5237,lol da only reason I can't talk bout da present is cuz my nicca hurt n ain't played all yr,GENERIC,VIOLENCE,has_violence_possibility=true
+5238,need to start mcbob because Williams only shoot let him play with bird,GENERIC,VIOLENCE,has_violence_possibility=true
+5301,I've tried. I always hit ALT+F4 and eat Mega Stuffed Oreos because I can't figure out those programs. lol,GENERIC,VIOLENCE,has_violence_possibility=true
+5303,look at what you just said lls new era Girl bye kill bitches w Kindness && wht cousin?,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+5332,"Who? Ok, right-wing teabaggers, gun nuts (like Harris), hell, even fucking cops.",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+5364,yuhh I'm finna hit that hoe! Ô£ø√º√≤√ÖÔ£ø√º√´√ß,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+5422,"haha yolo, did ya hit that hoe?",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+5445,"I am hurt im.not in it wtf, fuck Danielle that bitch",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+5518,"he was 17 not 16 & he tried to beat up a much weaker ""creepy ass cracker"" that is why he is dead. If Zimmerman was a woman...",DEATH_GRIEF,VIOLENCE,has_violence_possibility=true
+5530,gotta keep fighting bro Thea hoes just trying to bring me down. #thestrugle,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+5547,alright bitch I hope someone deletes your life suck 30 dicks and get hit by 2 buses,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+5619,bitch don't kill my vibe,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+5708,And they bitch cause police showed in force.They were the only thing preventing them from getting turned in2 road kill #I70Shutdown,CIVIC_LAW,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+5710,sounds like you bout to smack a hoe,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+5749,ill slap a hoe,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+5810,"you fat Irish fucking cunt, I honestly hope you choke to death in a pool of your own Jameson induced vomit",DEATH_GRIEF,VIOLENCE,has_violence_possibility=true;has_medical_concern=true;has_negative_language=true
+5901,This bitch sees that as not an attack because Muslims are only 1% (no idea where he maths),GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+5910,"but you were too busy being a raging bitch and not caring that your ""best friend"" was going through hell So there's my punch Ô£ø√º√≠√£",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+5936,lmao don't fight me you don't know my ghetto ass school dude I highly doubt that since I don't give a fuck about it,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+5989,lmao bitch is dumb slap her up,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+5996,fight me hoe,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+5997,haha ya hit that hoe right there,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+5999,rt! You'll see watch he finna hit that hoe and put some,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+6001,bitch have you ever seen me fight why you even talking shit?,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+6115,lol I would've beat that hoe up,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+6141,fuckin bitches talkin shit bout to get hit.,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+6187,I don't fight bitchez. They bitch during it to much.,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+6257,"the bird has a hat. So it's hats on hats, who can beat that?",GENERIC,VIOLENCE,has_violence_possibility=true
+6319,your so fucking ignorant u talk a lot shit for someone who don't wanna fight your mama raised u as bitch huh?,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+6330,lol then they have one more flavor I think it's yellow idk.. But yea there bomb.,GENERIC,VIOLENCE,has_violence_possibility=true
+6380,that's the beauty of them brownies I always daydream about what I'd do if I hit the powerball lol (nerdy but fun),GENERIC,VIOLENCE,has_violence_possibility=true
+6393,moderator wants to bitch slap Romney so hard,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+6404,bitch I been in Plano every fuck weekend and you make excuses stfu and fight,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+6415,where y'all be at oh we going fight come to town east bitch,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+6424,No the fuck it's not bitch what's the real fucking address get that bitch out yo blood and tell me the address,GENERIC,VIOLENCE,has_violence_possibility=true;has_privacy_risk=true;has_negative_language=true
+6426,am going to hurt more then your bitch ass feelings,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+6435,"bitch cause u wanted to fight and you didn't show up, and tryna make a bet and shit get yo friendly ass off My Twitter",TECHNOLOGY,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+6439,bitch let's fight today where you at or are you going to bitch up again. I think your going to bitch up again,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+6480,u want me to panda express so someone. Can break up the like fuck stick to plan and go to Plano get that bitch out your blood,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+6509,Roberts is a fuckin fagÔ£ø√º√≤√á smack the shit outta him,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+6522,someone on Facebook made a status defending him so I dropped a bomb full of knowledge on that bitch and unfriended,TECHNOLOGY,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+6584,you a bitch tho I know for sure I'm not. You'd get your ass beat by any of my bitches that's fact Ô£ø√º√≤√áÔ£ø√º√≤√á,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+6593,what a bishhh Ô£ø√º√´√£ slap a hoe,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+6657,bitch I will kill yo vibe,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+6692,fight me you fucking obese niglet,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+6708,It's dumb cunts like you that make me sad to have served in a war so you wouldn't have to.,GENERIC,VIOLENCE,has_emotional_distress=true;has_violence_possibility=true;has_negative_language=true
+6791,I don't like it peaceful that's boring I like fighting I come from the ghetto do u remember that it's p impossible for me not to,GENERIC,VIOLENCE,has_violence_possibility=true
+6817,Hit a bitch it's not like you can see the bruises,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+6836,his hillbilly ass would shoot ya piers put ya right next to the buck hangin on his redneck ass wall,GENERIC,VIOLENCE,has_violence_possibility=true
+6848,"Yeah, I'd want to shoot the son of a bitch myself. LOL",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+6855,yeah I tend you grab ass Ô£ø√º√´√£and smack bitches in the morning . I don't think you can hang lolÔ£ø√º√≤√áÔ£ø√º√´√•,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+6873,"btw, genocide isn't war. The people of Gaza are no more combatants than the people of the Warsaw ghetto.",GENERIC,VIOLENCE,has_violence_possibility=true
+6891,I'll see you guys later. I gotta go bake my blood crackers.,GENERIC,VIOLENCE,has_violence_possibility=true
+6896,of course! Win or lose you always had the most exciting matches. Spilt blood and all and you aren't a trash talker!,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+6950,I'll actually kill that bitch,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+6970,im going to murder that fucking cunt,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+7048,I don't hunt birds unless you count shooting dove out of season off my power line with a bb gun,GENERIC,VIOLENCE,has_violence_possibility=true
+7120,. Find one where be beat Nathan Moons head into the ice too. Ol Andrew is straight trash as far as hockey.,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+7150,trash of the cowboys beat the redskins twice last year Ô£ø√º√≤√ñ,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+7151,no you threatened us bitch?! Don't try to make it what it's not ‚Äö√≤‚à´√î‚àè√®,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+7231,he's just a cunt and nobody likes him. He should choke on shit,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+7264,good bitch choke,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+7347,haha yuhhh did I hit that hoe or what,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+7359,-the base) and would mean it would hurt like a bitch to have one broken off.,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+7366,"but but but you said vibe. Which means I have to say bitch, don't kill my vibe.",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+7387,bitch fight me so I can make you shut up am going to back my shit up,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+7452,A miserable bitch is on the docket today. Lois 'Misery' Lerner better get grilled. The ordered harassment was undeniable. #breakherdown #war,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+7491,About to smack some peckerwoods in a Judge pit,CIVIC_LAW,VIOLENCE,has_violence_possibility=true
+7507,After a fight in the club in New Orleans them bitches start jumping,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+7531,Ain't nothing funnier then watching a woman try to hide her inner hoe Ô£ø√º√≤√áÔ£ø√º√≤√áÔ£ø√º√≤√á know she like to get hit from the back and have a finger...nvm,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+7542,Aint This A Bitch... I just saw my bitch kiss a bitch . You lucky I dont kill yo ass but you can still get pistol whipped - wayne,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+7544,Aint no hoe in blood,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+7558,Alibaba / Jack Ma: Gotta love a guy who beat Meg Whitman's albino ass back to the US. Freakin' commie genius.,GENERIC,VIOLENCE,has_violence_possibility=true
+7675,"Almost got to see a white boy get beat around today, but he ran like a bitch.",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+7676,Almost half of North American bird species threatened by climate change http://t.co/dWSYB5BodA http://t.co/F0PVuLNf4c #Climate #Environment,GENERIC,VIOLENCE,has_violence_possibility=true
+7703,Amanda is a bitch omg I would beat her ass lol,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+7739,"And i didn't wanna come off as a bitch, so I took another hit, now I think I'm feeling to high",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+7766,"And you adopted bitch? I don't give a fuck what kind of ""Mental illness"" they claimin imma kill ya",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+7821,As always Eli has the stupid hick hayseed look on his face Giants fans kill yaselves it's gonna be a‚Äö√Ñ¬∂ http://t.co/JcYZzMKCfu,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+7845,"At the bar in downey wit my uncle, this niggah faded hopefully he doesnt get us into a fight lmao",GENERIC,VIOLENCE,has_violence_possibility=true
+7866,Ay yall heard that Rich Gang tape thou?? That bitch on Flame!!!Ô£ø√º√Æ‚Ä¢,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+7874,Ayo I jus had a mini heart attack behind the wheel..north Philly n fire crackers don't mixÔ£ø√º√≤¬©Ô£ø√º√≤¬©Ô£ø√º√≤√áÔ£ø√º√≤√á I‚Äö√Ñ¬∂ http://t.co/o5v2E4LFtm,GENERIC,VIOLENCE,has_safety_hazard=true;has_violence_possibility=true
+7885,BREATHE! RT : You are going to kill yourself if you don't EXHALE! RT : Killin you hoes http://t.co/QZc87drA9a‚Äö√Ñ√π,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+7928,Bad blood in the camp & if it's bout a bitch just know I don't respect it homie,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+8032,Biker gang looking ass bitches with titty tats. Foh sons of anarchy.,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+8040,Bitch ain't u his lawyer y u thank ery body STFU kill dat bitch to,SCIENCE,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+8080,Bitches cheat on they bitch... But be SOOOOOO HURT when they bitch cheat back.,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+8139,Both of them hoes losers and need to hit the gym,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+8173,Break shit fuck the law....grrrr...fuck that shit...punch that bitch!,CIVIC_LAW,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+8240,"Bust a nicca head,smack a ho,shoot the club up! Ô£ø√º√≤√á Ô£ø√º√Æ√§Ô£ø√º√Æ√§Ô£ø√º√≠√âÔ£ø√º√≠√âÔ£ø√º√≠√â",GENERIC,VIOLENCE,has_violence_possibility=true
+8241,"Bust a nicca head,smack a hoe and shoot the club up! Ô£ø√º√≤√áRT : So what we doing??",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+8277,CAIR Publishes a Hit List for Jihadis http://t.co/hvVfXypmHm via If you are a red blooded #American you may be on the list..,GENERIC,VIOLENCE,has_violence_possibility=true
+8327,Can we bomb the selfie-monkey out of my timeline?,GENERIC,VIOLENCE,has_violence_possibility=true
+8338,Can't beat a score of 12 on flappy bird #givingup,GENERIC,VIOLENCE,has_violence_possibility=true
+8389,Catch me on the episode of Vampire Diaries tomorrow night. I bitch slap,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+8400,Ceasefire?Let's see how long those towel heads can go without trying to attack Israel then cry to national media when they get popped again,GENERIC,VIOLENCE,has_emotional_distress=true;has_violence_possibility=true
+8551,Cruise's recent comments make him a bigger douchebag than Charlie Sheen & he didn't even have any 'Tiger Blood',GENERIC,VIOLENCE,has_violence_possibility=true
+8562,Currently being hit with the jig. Word.,GENERIC,VIOLENCE,has_violence_possibility=true
+8620,"Damn bird nearly gave me a heart attack...! And all she said was ""Oh."" Bitch Oh..??",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+8634,Damn the bad thing about having side hoes is you can't get mad when they don't hit you up all day Ô£ø√º√≤√≠‚Äö√∫√£Ô£ø√º√≤‚Ñ¢,GENERIC,VIOLENCE,has_violence_possibility=true;has_significant_impairment=true;has_negative_language=true
+8655,Dat da bad thing bout being colored. Day bring me in to fight but don't vite me to da victory partay,GENERIC,VIOLENCE,has_violence_possibility=true
+8686,Deez fat hoes kill me. I ain't seen this much crack since they locked meech up.lmfao,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+8731,"Didn't get to hit the slopes today, but snowboarding lessons first thing in the morning! #excited",GENERIC,VIOLENCE,has_violence_possibility=true
+8737,Dino in rare form RT : Mind your business hoe RT : Annually RT : Smh Webb hurt,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+8802,"Don't hit me up talking bout ""who that bitch under yo pic"".. Get yo ass treated",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+8869,Drunk inlove with my gun bae bitch Beyonc‚àö¬© Ô£ø√º√≤√†,SCIENCE,VIOLENCE,has_violence_possibility=true;has_substance_use_concern=true;has_negative_language=true
+8883,"Dudes stay trying to hit on someone elses bitch, knowing they already taken.",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+8908,EXPOSED: Jihadi kidnap and murder handbook... and plan to infiltrate British Army and police http://t.co/gkP1vG6Pnw via,CIVIC_LAW,VIOLENCE,has_violence_possibility=true
+8910,Eagles fuck around & lose it'll be kill the cracker at the Sophi crib smfh,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+8993,"Every time I fuck, I gotta hit me least like two bitches...",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+9018,Everytime I fuck I gotta hit me at least two bitches,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+9054,Fam. ‚Äö√Ñ√∫: Telling bitches you're sterile so you can hit em raw >>>>>>‚Äö√Ñ√π,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+9074,Feel like a bitch for calling the cops on people but I'd rather this bitch go to jail then someone get hit by a wreck less driver.,CIVIC_LAW,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+9090,Fight me RT : 0 cuz they're trash RT : How many 50-cent corn dogs did you order today?,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+9091,Fight me den hoe,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+9092,"Fight me you tubby bitch "": I'll fight anyone‚Äö√Ñ√π",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+9093,"Fight night tonight, go Cotto. Smack that pompous cunt down in front of millions. #MayweatherCotto",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+9122,First thing I do when I hit the lotto is buying two fat bitches and watching her eat both in one sitting,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+9160,"For instance...Nikki said BET you won't fight her. I said bet? She said bet. Whipped a quick u-turn, whooped that ass, and went to jail Ô£ø√º√≤√á",CIVIC_LAW,VIOLENCE,has_violence_possibility=true
+9163,"For those wondering why DHS was buying up all the ammo, now you know. Once the Charlie Manson er, race war starts its on #POTUS",GENERIC,VIOLENCE,has_violence_possibility=true
+9231,Fuck a opp thot we'll shoot a bitch,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+9253,Fuck fight music bitch this is losing ya life music,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+9378,Gang gang bitchÔ£ø√º√≠‚Ä¢Ô£ø√º√Æ¬¥,GENERIC,VIOLENCE,has_violence_possibility=true
+9398,"Get cunts to threaten me, not bothered. I'd happily hit up a big massive group ae third years or something hahaha. #dropkickkk",GENERIC,VIOLENCE,has_violence_possibility=true
+9419,"Getting hit off a cunt thats about 6 foot sideways and a cunt that was in the army lol, i dini care, yous are fuckin laughable",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+9456,God I would sell both my nuts to watch LeBron tear his ACL right now and watch all those pussies kill themselves,BELIEF,VIOLENCE,has_violence_possibility=true
+9481,Goligoski must bleed. He should also leave via ambulance. I guess Sill is the closest thing they have at a McGrath. Hit that bitch.,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+9500,"Good morning Twitter. Make today a positive one. If you can't do that, beat up as many meanie-faces as possible. Also, I hate flappy bird.",TECHNOLOGY,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+9525,Got a couple thou den I get a couple shooters Fa dat couple thou mane my niccas will shoot ya Ô£ø√º√¥√®,GENERIC,VIOLENCE,has_violence_possibility=true
+9619,Haha I'll shoot you and that bitch I guess my gun is bi,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+9736,"He needs too! We win titles when he smacks hoes! RT : Big Ben gone smack ""another"" hoe after this lost Ô£ø√º√≤√áÔ£ø√º√≤√áÔ£ø√º√≤√á sorry",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+9807,Hey morons at #foxnews and #foxandfriends was it political when Bush raised terror threat right before the election? LMAO at u #teabaggers,CIVIC_LAW,VIOLENCE,has_violence_possibility=true
+9832,Hit a bitch with a car bomb.,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+9833,Hit his bitch I'm like shaggy I'm like no it wasn't me,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+9835,Hit me up with plans nigs,GENERIC,VIOLENCE,has_violence_possibility=true
+9836,Hit me with plans mah nigs,GENERIC,VIOLENCE,has_violence_possibility=true
+9837,Hit my car with another rock and I'll be all over your ass in no time bitch.,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+9875,Holy fuck they some bomb ass bitches at Buc-ee's,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+9883,Honestly I think I would trash that young man. And I'll fuck his bitch. And I'll smack his mother. Prolly shot his ugly ass dog,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+9934,How the hell was David Murphy's hit not a home run?! Clearly over the yellow line. another umpire mess up.... Smh,GENERIC,VIOLENCE,has_violence_possibility=true
+9942,"How you just gon start some mess and try to break up that man home? For 20 racks, I'll kill that hoe for breezy fam.",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+10002,I almost beat that bitch up.,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+10011,I also had a dream that I went to the FOB show and FOB was rude to me and was getting badly hit on by some creep,GENERIC,VIOLENCE,has_violence_possibility=true
+10140,I can't tell you the last time I seen 2 niggaz have a fight but I see bitches fight on video daily.,TECHNOLOGY,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+10218,I don't hit women but I'd slap tf out a bitch. No close fisted business though that's some cowardly shit.,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+10257,I done hit bout 6 threes out this bitch,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+10270,I dont think ive ever seen a fight on the real world. I mean a word fight yeah. tons of times. but damn! that bitch swung,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+10299,"I fight for what I love, but you make something of bitches I think nothing of.",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+10337,"I got 99 problems and a bitch ain't one... She's all 99, I think I need a sub machine gun #gratata",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+10340,"I got 99 problems but a bitch aint one, she's all 99 of em I need a michane gun",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+10347,"I got a gang of old ass drafts, all trash",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+10361,I got dirty birds hey shoot like Larry bird hey,GENERIC,VIOLENCE,has_violence_possibility=true
+10518,"I hate when ppl break up a fight like idc if they best friends, sisters, whatever let them bitches fight ctfuu",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+10553,I hit raw while im listening to papoose,GENERIC,VIOLENCE,has_violence_possibility=true
+10559,I hope the trash I talk abt 's poor product doesn't hurt my chances of getting hired as a legal correspondent. I was jk CNN.,CIVIC_LAW,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+10594,I just seen a hit bitch call a hit bitch ugly .. that shit be funny ctfu,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+10608,I just want to beat the fuck out of everyone that stares at me like bitch STAHP,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+10609,I just want to punch you in the throat when you get my order wrong stupid bitch at sonic,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+10614,"I just wrote a dawg ass essay, & was working on the bibliography & my laptop froze. Im kill a bitch if it gets lost, cause I hadnt saved it.",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+10679,I like to butt fuck fine ladies. Will I choke hold a bitch? Well maybe #55,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+10778,I need a bitch to go down like I need a beat,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+10782,I need a heated bra because my nips hurt so bad!,GENERIC,VIOLENCE,has_violence_possibility=true
+10840,I really just wanna brake your fucking head in but I'll look like a bitch if hit you.....,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+10841,I really just want to kill some towel head terrorists already Ô£ø√º√≤√≠ can high school be over now please?,GENERIC,VIOLENCE,has_violence_possibility=true
+10865,I say K.Michelle is manly because she doesn't act like a lady.She's too foul at the mouth and violent.I'll have to beat the bitch.,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+10881,I should be in jail it's a crime hoe I kill these beats,CIVIC_LAW,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+10934,I swear to god I hit 40 licks I'm Lil B and I'm not no bitch when I'm off that dope I rob my bitch !,BELIEF,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+10947,I tell the baddest hoes beat it unless you gone strip Ô£ø√º√≤√Ö,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+10980,I thought it was Legal to beat yo hoe!,CIVIC_LAW,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+11035,I want to beat this bitches ass soooo bad,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+11078,I will beat a bitch ass tf,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+11085,I wish I could punch the 14 year old me for being such a thirsty bitch,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+11088,I wish I smoked so I could hit more smoker loser hoes,SCIENCE,VIOLENCE,has_violence_possibility=true;has_substance_use_concern=true;has_negative_language=true
+11115,I wonder how many Yankee fans are hurt that Derek Jeter is out until after the all star break lmao Ô£ø√º√≤√á,GENERIC,VIOLENCE,has_violence_possibility=true
+11133,I would love to not be hit with the jig for once in my fucking life,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+11135,I would never hit a woman but I would slap a hoe,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+11144,I‚Äö√Ñ√¥ll gladly be a victim RT : Then im a felon RT : A bitch over 200lbs riding ur face is attempted murder Ô£ø√º√≤¬¥Ô£ø√º√≤¬¥,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+11151,I'd hit a Kardashian she threw money at me bruh somebody would have to pull me off that hoe idgaf who she is. Nobody to me anyway lol,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+11152,I'd kill a bitch to be able to cuddle right now. Ugh. Sucker for the stupid shit. I swear.,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+11153,I'd kill to meet Charlie Sheen.,GENERIC,VIOLENCE,has_violence_possibility=true
+11154,"I'd like to see someone try to hit me off. Joke's on you bitch, I don't have internet!",TECHNOLOGY,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+11223,I'm about to hit a bitch,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+11258,"I'm dracula bitch, don't got a problem smackin a bitch Kidnap em, attack em with axes n shit",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+11281,I'm going thru it my bitch ain't even my bitch she let the whole team hit,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+11284,I'm going to punch a bitch if my cleats don't come inÔ£ø√º√≤‚Ä†,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+11290,I'm gonna kill bitches today.,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+11352,I'm old school I'll smack a bitch,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+11367,"I'm ready to cry I'm so mad, like me & this bitch gon have to fight.",GENERIC,VIOLENCE,has_emotional_distress=true;has_violence_possibility=true;has_negative_language=true
+11378,"I'm sick and tired of the 'above the fray' crowd, 'they're all the same' crowd, the mushy moderate, the contrarian etc.Wake up pussies. #War",SCIENCE,VIOLENCE,has_safety_hazard=true;has_violence_possibility=true;has_medical_concern=true
+11453,"ISIS Jihadis In Australia Shoot Man In The Face, Chanting ‚Äö√Ñ√≤ISIS Will Stay‚Äö√Ñ√¥ http://t.co/xyzXv5LZs1 #tcot #pjnet",GENERIC,VIOLENCE,has_violence_possibility=true
+11490,"If Drew Stubbs were a pimp, he couldn't even hit a hoe.",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+11498,"If I ever saw Kendall Jones in person, Id kill her on sight. I hate that bitch more than anything in life.",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+11502,If I hit you w/ that shotty bitch I bet that body flip,SCIENCE,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+11523,"If a bitch has to fuss &&fight over a niggah thats hugged up && ,boo'd up w the next bitch , clearly doesnt gaf bout u",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+11528,"If a nigca neva told you ""bitch you got some bomb azz puzzy"" kill yaself bitch http://t.co/CZXRV9to4A",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+11535,If anxiety was a person I'd kill that bitch so fuckin fast.,GENERIC,VIOLENCE,has_emotional_distress=true;has_violence_possibility=true;has_clinical_concern=true;has_negative_language=true
+11544,If i aint hit that bitch then i aint hit that bitch why lie about it thats petty bullshit,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+11552,"If my anger materialized, it would be a fucking atom bomb to blow this bitch up.",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+11556,If my tweets hit too close to home why you subbing me lil stupid ass bitch? Check Ya own fucking self issues lil bitch.,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+11582,"If the Yankees can't beat the Red Sox, they don't even deserve to be in the playoffs #yankees #redsox #mlb",GENERIC,VIOLENCE,has_violence_possibility=true
+11593,If train officers that are wearing body armor stand back to watch the smoke clear. Why does every gun ho wanna be... http://t.co/cuLyANyQ,SCIENCE,VIOLENCE,has_violence_possibility=true;has_substance_use_concern=true
+11699,Iggy Azaelia is no one hit wonder. She is a bad bitch.,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+11763,Im thinkin about using this beat and yeah I made it too bitch lol http://t.co/HTUk4USZJo,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+11764,Im tired of all these weak ass men in my mentions tellin me why it is ok or justified to punch a woman in the face. That shit is bitch made.,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+11775,Ima kill cay Ô£ø√º√≤√áÔ£ø√º√≤‚â† ugh she stay on my last nerve but I love that's funccy bitch,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+11852,Is Wayne Brady gonna have to choke a bitch?,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+11853,Is Wayne Brady gonna have to smack a bitch?,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+11991,It's unbelievable to me that there are Americans who refused to kill the okies. That means all Americans weak willed trash.,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+12061,"Jihadi pop music debates: ‚Äö√Ñ√∫yo, bro, did you hear the latest Abu Yasser hit?‚Äö√Ñ√π, ‚Äö√Ñ√∫No bro, I‚Äö√Ñ√¥m totally an Abu Hajar fan‚Äö√Ñ√π #UnderGroundCulture",GENERIC,VIOLENCE,has_violence_possibility=true
+12068,Jihadis circulating a video of the killing by Boko Haram of a Nigerian pilot captured after his helicopter was shoot down,TECHNOLOGY,VIOLENCE,has_violence_possibility=true
+12069,"Jihadis claim to have shot an #Iraq army Mi-35 attack helicopter in Beji & identify its pilot by name, rank",GENERIC,VIOLENCE,has_violence_possibility=true
+12080,Joe young gone shoot that bitch,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+12091,"Jon Jones just lost all my respect, turned down a fight like a bitch, hope he loses his next fight now,",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+12120,Just cleaned my fingernails with a knife. #hillbilly,GENERIC,VIOLENCE,has_violence_possibility=true
+12127,Just got into with some chic in Rally's parking lot bitch speeding through the parking lot and almost hit my niece Ô£ø√º√≤¬∞Ô£ø√º√≤¬∞,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+12133,Just hit 40 in flappy bird.Ô£ø√º√≤√®,GENERIC,VIOLENCE,has_violence_possibility=true
+12222,Ketchup on tha beat hoe,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+12227,Kick down your door and smack that bitch RT : Make me wanna ride past ya house and sit.,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+12235,Kill la kill was trash,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+12236,Kill't dat bitch ‚Äö√Ñ√∫: Shmoney Bitch https://t.co/lNQdazIjJk‚Äö√Ñ√π,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+12272,LMAO RT RT : Yes & no RT Is it ok to beat a bitch up over some tweets or nah? http://t.co/gmcyHDtB,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+12375,Let's not forget kim don't fight I kill hoes Ô£ø√º√≤√á,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+12446,"Likka downtown bitch at a secondline! RT : Man yeah that's ball game Teddy Bridgewater gettin in , we hit 0-3",TECHNOLOGY,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+12517,"Lmaoo ‚Äö√Ñ√∫: Bad bitch: Can I hit that? ""You matching or.....?"" Bad bitch: *bats eyelashes* "".........are you matching or?""‚Äö√Ñ√π",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+12538,Lmaoooooo ¬¨¬¥: That bitch stripping at a murder scene ‚Äö√Ñ√∫: My view Ô£ø√º√≤√ß http://t.co/oiJizl0naF,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+12591,Lol actually bitch please choke on my nuts.,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+12603,Lol hell naw fuck dat one swing all swing bitch one gone get punch then the rest gone get punched tf out lmao,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+12660,Looks as if Federal Gun Laws to be proposed this week lack #AWB. Hope the #media and #antigun crowd choke on crow.,GENERIC,VIOLENCE,has_violence_possibility=true
+12671,Love a bitch fight,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+12689,"Lynch mob thugs threaten Zimmerman jury; ‚Äö√Ñ√≤N*ggas coming for that bitch ass jury‚Äö√Ñ√¥ http://t.co/XY6v2YtyAS The hatred won't stop flowing,,#War",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+12692,MURDER HER RT : When u fuck with crazy bitches shit like this happens :( Feel bad for ol boy http://t.co/IjacWo6OB8,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+12730,Man bitches love Beyonce....no punch line,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+12798,Me & Lew differ on philosophy I say smack that bitch bet she watch her mouf,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+12856,Million dollar bitch slap a ho,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+13006,My cat is fighting the street cat carry through the glass in my room. What the hell. #stfu #pussies,GENERIC,VIOLENCE,has_violence_possibility=true
+13078,My mom just bought a bunch of new sandles & then chipped her toe nails now it's like World War 3 in this bitch,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+13088,My neice getting so big ... She ready to punch on sum bitches lol http://t.co/lRyDtD5MQb,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+13150,My slap a bitch sense is coming Ô£ø√º√≤√≠,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+13152,My stomach hurt like a bitch yoo,SCIENCE,VIOLENCE,has_violence_possibility=true;has_medical_concern=true;has_negative_language=true
+13168,N%a hit the butta slide at the end of that bitch Ô£ø√º√≤√á,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+13268,Niccas been deerin me err weekend but I bet I hit dat A dolo dis weekend if niccas playin ‚Äö√∫√•√î‚àè√®,GENERIC,VIOLENCE,has_violence_possibility=true
+13483,Now da #Heat fans bacc y'all niccas kill me ain't tweeted shit all damn game,TECHNOLOGY,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+13485,Now infuriated Jihadis are putting out murder requests on #Saudi fighter pilots who participated in the bombings in #Syria #ISIS,GENERIC,VIOLENCE,has_violence_possibility=true
+13491,Now that's how you let the beat build bitch .. Thats my ish RT : As I hit the kill switch.....,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+13603,Omg I will kill you for liking that pic I swear bitch,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+13660,Only Americans are degenerate enough to 'honor' their war dead by having a barbecue. Anyone who 'grills out' for Memorial Day is trash.,DEATH_GRIEF,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+13662,"Only Blood Can Satisfy The Hungry Flames Of R‚Äö√Ñ√¥hollor, Charlie Brown",GENERIC,VIOLENCE,has_violence_possibility=true
+13738,Our professor said hoes and he said butt hurt... What a boss,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+13831,Photo: Mustard on the beat hoe #wdywt http://t.co/DKYqcnRuNO,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+13878,"Poor Henry, he's supporting the right 2/3 of you guys all on his gut! Don't hurt it, Charlie... ()http://yfrog.com/h300cwrj",GENERIC,VIOLENCE,has_violence_possibility=true
+13895,Power bomb dat hoe,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+13920,Promise to love you and obey..and hit it more than once a day..girl I say that genuinely..fuck that bitch.. It's what you sayy,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+13934,Punch that hoe cause she deserve it.,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+13957,"Put your hands down bitch, I ain't gon shoot you",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+13973,"RICK TOLD YALL TO GO BACK AND KILL'EM ALL! Yall niccas didn't listen, now they are chewing on Bob's leg and shit! Extra, tasty, crispy!",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+13989,"RT : Jihadi Killed #BrendanTevlin In N.J. W/ At Least 2 Others,Part Of Terrorist Ring 10 Yrs Ago http://t.co/qZtXJv9x8J http‚Äö√Ñ¬∂",GENERIC,VIOLENCE,has_violence_possibility=true
+14027,RT : Mama told me look rich act poor n neva trip ona bitch dat ain't urs#gang,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+14066,RT : ill fight you ! Ya big daft cunt .,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+14143,RT : The people of the ghetto are rising up and fighting back. Whose side are you on? #Gaza,GENERIC,VIOLENCE,has_violence_possibility=true
+14178,"RT I need to hit the lottery yo, this work shit??? For the fucking birds!",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+14300,RT : ima beat yo lil young ass quick plyin hoeÔ£ø√º√´√§Ô£ø√º√≤√áÔ£ø√º√≤√á,GENERIC,VIOLENCE,has_violence_possibility=true
+14389,RT : Damn Rico ass hit that hoe on point Ô£ø√º√≠√ò‚Äö√∫√Æ√î‚àè√®,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+14398,RT : I'm sorry but some people's names are just fuckin stupid Some parents should get a flyin bitch slap for naming kids like ‚Äö√Ñ¬∂,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+14423,"RT : VIDEO: ‚Äö√Ñ√∫Don‚Äö√Ñ√¥t hurt yourself!‚Äö√Ñ√π hits a jumper over a rookie, proceeds to talk trash http://t.co/m8l0nvAim2 ht‚Äö√Ñ¬∂",TECHNOLOGY,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+14430,RT : Valentines day is just an extra Christmas for bitches blood,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+14453,"RT : Nine times outta ten the bitch using them same unclean brushes on all ten of her clients. I can't with you ""beat faced""‚Äö√Ñ¬∂",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+14472,"RT : But if you a hoe, do you. I ain't judging you. Get it in, but don't hurt someone in the process, be straight up ab it",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+14535,RT : It ain't no hoeÔ£ø√º√¥√ñ in my blood Ô£ø√º√≠√¢,GENERIC,VIOLENCE,has_violence_possibility=true
+14586,RT : The beat tho Ô£ø√º√´√•bitch im trying bone,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+14697,RT : Great weather to hit up the slopes this weekend... & open Saturday! #COwx #skiseason ht‚Äö√Ñ¬∂,GENERIC,VIOLENCE,has_violence_possibility=true
+14811,"RT : When a bitch say ""I love you"" hit her wit the reverse psychology & say ""do you?"" It work 70% of the time cuh the other 30% g‚Äö√Ñ¬∂",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+14860,RT : If my girl get in a fight with your girl you better be ready to fade too cuz I'ma knock you out then go help my bitch stomp‚Äö√Ñ¬∂,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+14906,RT : . is the voice behind ‚Äö√Ñ√¥s ‚Äö√Ñ√∫Mustard on the beat hoe,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+14933,"RT : highest score on flappy bird, cant be beat http://t.co/I2qgsWiPDC",GENERIC,VIOLENCE,has_violence_possibility=true
+15026,RT : Happy #BLUBLOODS Friday! Off to to sit down with the gang on CBS This Morning! Join us in the 8 o'clock ho‚Äö√Ñ¬∂,GENERIC,VIOLENCE,has_violence_possibility=true
+15120,"RT : i dont have time for these childish games, just fight me bitch.",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+15128,"RT : In the 2-6 bitch we prolly hit the same bitch, in the 2-6 bitch we gone bang the same shit, in the 2-6 bitch we prollu hit‚Äö√Ñ¬∂",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+15131,RT : Lol bitches act hard when they stay getting they ass beat Ô£ø√º√≤√áÔ£ø√º√≤‚â†Ô£ø√º√≤√á,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+15149,RT : Might see a bitch an forget i hit it,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+15184,RT : Liberals threaten my life everyday on here. So don't mind me while I'm a total jackass to their butt hurt pussies right ‚Äö√Ñ¬∂,GENERIC,VIOLENCE,has_violence_possibility=true
+15192,RT : Resisting the urge to smack a bitch http://t.co/kwe5j13O9b,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+15197,"RT : Statistics don't lie, if you like gun control you're a queer guy. #FD",GENERIC,VIOLENCE,has_violence_possibility=true
+15263,RT : I bet I hit that bitch.. like a game winner,TECHNOLOGY,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+15327,"RT : New sign up at mong kok protest site says: ""fight for democracy and oppose the communists to have a future"" http://t.co/w2pOn‚Äö√Ñ¬∂",GENERIC,VIOLENCE,has_violence_possibility=true
+15342,"RT : If I hit you wit that shottie bitch, I bet ya body flip ! Ô£ø√º√Æ¬¥Ô£ø√º√≠‚Ä¢Ô£ø√º√≠‚Ä¢Ô£ø√º√≠‚Ä¢",SCIENCE,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+15360,RT : Smack a bitch no filter,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+15387,RT : Kill em all at once I say. RT ‚Äö√Ñ√∫: The world will be a better place when bitches like her dies lonely http://‚Äö√Ñ¬∂,GENERIC,VIOLENCE,has_emotional_distress=true;has_violence_possibility=true;has_negative_language=true
+15446,RT : Party of Racists just elected a black dude in the South. The party of War on Women just elected first ever woman in redneck‚Äö√Ñ¬∂,GENERIC,VIOLENCE,has_violence_possibility=true
+19566,"RT : The nicer you are, the easier you're hurt. So just be a bitch",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+15500,"RT : If ya girl texts back slow you gotta hit her with the ""so who else you texting?"" Watch That bitch get more defensive than dwig‚Äö√Ñ¬∂",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+15569,RT : ChrisBrown a bitch 4 hittin a Woman JayZ a bitch 4 lettin a woman hit him bitches needa make up ya mind Ô£ø√º√≠√ú Yah want yah a‚Äö√Ñ¬∂,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+15586,"RT : From both K. Michelle and Keyshia Cole lol "": More bitter hurt bitch music on the horizon.""",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+15631,"RT : i text my ex while she was with her bf so they can fight I was like ""you looked cute today"" & I aint seen the bitch in ‚Äö√Ñ¬∂",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+15636,RT : Still trying to hit this hoe...... Ô£ø√º√≠√ñÔ£ø√º√≠√ñÔ£ø√º√≠√ñÔ£ø√º√≠√ñ http://t.co/jbHjMpY1gX,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+15676,"RT : If your girlfriend is taller than you, it's her responsibility to take the trash out & fight off anyone that breaks into you‚Äö√Ñ¬∂",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+15790,"RT : JSU coach Omar Johnson: ""It's what u do against the ball. U throw it, hit it, catch it. Doesn't matter if the Yankees are ‚Äö√Ñ¬∂",GENERIC,VIOLENCE,has_violence_possibility=true
+15792,RT : Clever. RT : Watch Burfict make the hit and then mock officials by throwing a flag on himself. https://t.co/‚Äö√Ñ¬∂,GENERIC,VIOLENCE,has_violence_possibility=true
+15793,RT : Choke on this bitch 8=======Ô£ø√º√´√§========D,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+15891,RT : scary told to come to her house to fight her and won't even open the door !! Wtf scary ass hoe,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+15926,RT : Lol that same bitch I was cool with was was down to sit me up in get me kill in get on twitter in talk about it.,TECHNOLOGY,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+15938,RT : I can't stand a stuck up bitch. Always got a attitude for no reason. I don't know who hurt y'all but stay TF from round me Ô£ø√º√≤√≠‚Äö√∫√•√î‚àè√®,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+16027,"RT : Hit the bitch nd forget the bitch, but i left my kids on her fuckin face",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+16030,RT : Ugly hoes love to fight lmao . They ain't got none to lose Ô£ø√º√≤¬©Ô£ø√º√≤√á,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+16061,"RT : I'd rather argue & make up Ô£ø√º√≤√≤ then fight Ô£ø√º√´√§Ô£ø√º√≠‚Ä¢Ô£ø√º√≠¬¢ & break up , Ô£ø√º√®√âÔ£ø√º√≠√â‚Äö√∫√•√î‚àè√®cause Ô£ø√º√≠¬∂ thirsty bitches Ô£ø√º√´√ò love to see happy Ô£ø√º√≤√§Ô£ø√º√®¬∞ homes FUC‚Äö√Ñ¬∂",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+16072,RT : Fighting over a hoe is one of the lamest things you can do,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+16162,RT : Kill'lees hoes when I feel like it,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+16165,"RT : Jihadi-In-Chief Hussein Urges restraint in Fighting Islamic Butchers‚Äö√Ñ¬∫√î‚àè√®Apparently, we SHOULD be nice to ISIS...we might hurt‚Äö√Ñ¬∂",GENERIC,VIOLENCE,has_violence_possibility=true
+16170,RT : it's all fun and games until I have to slap a bitch,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+16212,RT : corny sex being having you wanna kill that bitch right then & there Ô£ø√º√≤√áÔ£ø√º√≤¬©Ô£ø√º√≤¬∞,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+16221,RT : Rip blood money shoryy was a rider blew dat 50 at shy glizzy bitch ass in his own city yea yea...#300,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+16224,RT : Eddie Lacy rookie of the year! Well deserved The green & yellow bumble bee bekuz if he hit ya it's gon sting!Green Bay all‚Äö√Ñ¬∂,GENERIC,VIOLENCE,has_violence_possibility=true
+16248,RT : That's what I call the bitch and block! If you fuck with someone stay and fight! She hit t‚Äö√Ñ¬∂,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+16338,"RT : Since 1914, Derek Jeter‚Äö√Ñ√¥s 91 multi-hit games vs are 4th most among , behind Gehrig‚Äö√Ñ√¥s 121, Ruth‚Äö√Ñ√¥s 99 an‚Äö√Ñ¬∂",GENERIC,VIOLENCE,has_violence_possibility=true
+16373,RT : When your trying to resist the urge to smack a bitch http://t.co/8eQ3xB8Cjb,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+16379,RT : trying so hard to resist the urge to smack a bitch http://t.co/UkOF7K2RrH,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+16405,"RT : When Americans claim #ISIS is just a ""local threat,"" reply: You mean just to Iraq, Syria, Turkey, Jordan, Saudi Arabia, Leb‚Äö√Ñ¬∂",GENERIC,VIOLENCE,has_violence_possibility=true
+16407,RT : Charlie Rangel Re-Writes History: On GOP ‚Äö√Ñ√∫They Think They Won The Civil War‚Äö√Ñ√π http://t.co/moCeUBRUTf,GENERIC,VIOLENCE,has_violence_possibility=true
+16424,RT : Apparently the current hair trend for Hollywood bitches is to look like you lost a fight with a weed whacker.,SCIENCE,VIOLENCE,has_violence_possibility=true;has_substance_use_concern=true;has_negative_language=true
+16452,RT : This hoe ass ref got hit and fined the fighters,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+16469,"RT : Yankees offseason plan: Sign Sandoval, move A-Rod to first base, shoot Teixeira and throw his corpse in the East River. #Y‚Äö√Ñ¬∂",GENERIC,VIOLENCE,has_violence_possibility=true
+16502,RT : I gota hand fulla brothers Trek gang bitch we hustle,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+16544,RT : Waka gone kill dat hoe lol,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+16579,RT : WHO IS SHE? Ill fight her bestie RT : Then this bitch in my class wanna copy my homework off blackboard disc‚Äö√Ñ¬∂,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+16612,RT : Hunter Hurt Helmsley RT : Cut the imaginary height shit. Most of the women tweeting about it sleep alone every nig‚Äö√Ñ¬∂,GENERIC,VIOLENCE,has_emotional_distress=true;has_violence_possibility=true;has_negative_language=true
+16623,RT : Any chick that gets In a fight after the age 24 is a hoe,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+16682,"RT : When you make a beat with a pencil in class and the teacher says ""keep making that trash ass beat and I'll fail you"" ht‚Äö√Ñ¬∂",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+16753,RT : I feel like mean girls are the only really really loyal ones. Lemme find me a bitch that hurt my feelings lol,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+16802,RT : Smack a bitch. Bitches love hand prints on their ass.,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+16820,"RT : I got hit on today!!!! I'm back, bitches!!! *dies*",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+16865,"RT : This beat deserves Hennessey, a bad bitch, & a bag of weed. The Holy Trinity",SCIENCE,VIOLENCE,has_violence_possibility=true;has_substance_use_concern=true;has_negative_language=true
+16908,"RT : A silent protest in Philadelphia, performance artists protest the murder of Mike Brown while passerby's mock it. http://t.co/‚Äö√Ñ¬∂",GENERIC,VIOLENCE,has_violence_possibility=true
+16920,"RT : #YesWeDid attack, harass, threaten, mock and bully any woman or minority who dared not fall in line with our progressive a‚Äö√Ñ¬∂",GENERIC,VIOLENCE,has_violence_possibility=true
+17053,RT : I call this the 100gram sugar delight or a Heart Attack. It's a #PopTart #Twinkie & a #HoneyBun http://t.co/s6ZnLVlvLI,GENERIC,VIOLENCE,has_violence_possibility=true
+17087,"RT : If Hank Jr. was half the man his daddy was, he'd bitch-slap Brantly Gilbert for having his name in his mouth.",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+17127,"RT : Go fight against the IDF if you progressive trash hate them so much, you don't have the guts to do it. #IStandWithIsr‚Äö√Ñ¬∂",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+17138,RT : Drunk inlove with my gun bae bitch Beyonc‚àö¬© Ô£ø√º√≤√†Ô£ø√º√≤√®,SCIENCE,VIOLENCE,has_violence_possibility=true;has_substance_use_concern=true;has_negative_language=true
+17139,"RT : Yanks have a cocktail called an ""Irish car bomb"", but if you stuck two flakes in an ice cream cone and called it a 9/11 ‚Äö√Ñ¬∂",GENERIC,VIOLENCE,has_violence_possibility=true
+17150,RT : ‚Äö√Ñ√∫: I say if a girl got 7 bodies or more and she 20 or younger she a hoe‚Äö√Ñ√π ON GANG !,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+17296,RT : trying so hard to resist the urge to smack a bitch http://t.co/Cvnlm1I3Ls,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+17346,RT : Some hoes live jus to hit the clubs every weekend .. Ô£ø√º√≤¬•Ô£ø√º√´√™,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+17384,"RT : If one more FB idiot bitches about the weather, I will hunt them down & kill them with kindness because everyone is enti‚Äö√Ñ¬∂",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+17404,"RT : Yankees survive 9th-inning scare to beat Rangers, 12-11. ‚Äö√Ñ¬¢ Gardner: 4-5, HR, RBI, 3 R ‚Äö√Ñ¬¢ Teixeira: 1-2, HR, 2 RBI, 3 R htt‚Äö√Ñ¬∂",GENERIC,VIOLENCE,has_violence_possibility=true
+17418,RT : Watch social media with all that hate in their blood try and wish bad on Derrick! He back bitch! Stop hating #Stronger #Qui‚Äö√Ñ¬∂,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+17426,"RT : Can't trust a bitch who lets the microwave hit 0, she doesn't care about her life...she probably jumps on the lava part o‚Äö√Ñ¬∂",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+17430,RT : What doesn't kill you makes you a bitch.,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+17432,"RT : choke on a cactus, bitch.",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+17439,"RT : Can't trust a bitch who lets the microwave hit 0, she doesn't care about her life...she probably jumps on the lava part of‚Äö√Ñ¬∂",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+17449,RT : warning shots are for pussies I'm just gonna gun you down! And steal your pink boots!,CIVIC_LAW,VIOLENCE,has_violence_possibility=true
+17460,RT : I know another chick I will NEVER shoot again. Filing this one under: heartless cunt,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+17481,"RT : Can't wait for the to sweep the Cardinals tonight on ! No matter how bad the cubs are, we're gonna beat the bird‚Äö√Ñ¬∂",GENERIC,VIOLENCE,has_violence_possibility=true
+17519,RT : Darn trash man he beat me to the good stuff again. http://t.co/vdDJQ4l0mg,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+17584,RT : Gun control talks with gunrunning Eric Holder on board. We r the planet of the apes,GENERIC,VIOLENCE,has_violence_possibility=true
+17607,"RT : #NeverAskABlackPerson if her hair is hers . she will hit you with a ""bitch i bought it , so it's mine"" .",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+17665,RT : Rutgers terminated Mike Rice's contract by repeatedly calling it a cunt while hurling balls at it until it finally kill ...,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+17713,RT : Finna hit this bitch with a handful of salt http://t.co/uaBiQvI6a6,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+17728,"RT : Nerf the hell out of birds, they no longer attack you at long range, lower damage, don‚Äö√Ñ√¥t follow you forever.",GENERIC,VIOLENCE,has_violence_possibility=true
+17752,RT : Oh you didn't hit me boo boo - bitches who got hit in the jaw,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+17754,RT : Listen here ‚Äö√Ñ√∫: Bitches cheat on they bitch... But be SOOOOOO HURT when they bitch cheat back.‚Äö√Ñ√π,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+17755,RT : This bitch at work gone make me slap her head off her fuckin neck,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+17787,RT : #IfSheCantSuckTheDickRight slap it on her forehead.. The bitch needs a spankin.. discipline her ass Ô£ø√º√≤√á‚Äö√∫√£,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+17800,RT : Sorry bitches it takes more than Luck to beat me.,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+17854,"RT : If I see a bitch walking around wearing what Rihanna had on ima grab a titty and hoe I dare you to get mad, we can fight ab‚Äö√Ñ¬∂",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+17905,RT : Not a one RT lmaooooooo never saw a bitch at a Deltron concert blood,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+17954,"RT : ""SHARKEISHA'D"" = To lose one's face due to the brute force of a knockout punch. ""Dat bitch got sharkeisha'd""",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+17988,RT : be out here fighting bitches like its legal,CIVIC_LAW,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+18002,"RT : "": Its simple, dont be a hoe=dont worry about being exposed Ô£ø√º√≤√∫"" fight me",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+18060,RT : ‚Äö√Ñ√∫KOBE‚Äö√Ñ√π as they shoot a piece of paper into the trash,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+18095,RT : Resisting the urge to smack a bitch http://t.co/IhQgu7dP5m,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+18151,"RT : Ballgame over, #Yankees WIN! Yanks beat the White Sox in 10 innings, 4-3.",GENERIC,VIOLENCE,has_violence_possibility=true
+18153,"RT : Congratulations Ichiro! That leadoff base hit in the 8th is hit No. 2,800 in his career!",GENERIC,VIOLENCE,has_violence_possibility=true
+18182,RT : I'll kill this bitch no hesitation http://t.co/UxePa9LVi5,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+18204,RT : Mannn let bosh hoe ass hit that 3,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+18276,"RT : . lls lor bitches stay wanting to fight , made them real mad i talks my Shit",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+18281,RT : We slap bitches! Ô£ø√º√≤√áÔ£ø√º√≤√áÔ£ø√º√≤√á,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+18365,RT : ‚Äö√Ñ√∫: What's yall favorite chappelle show skit?‚Äö√Ñ√π Is wayne Brady gonna have to choke a bitch? Ô£ø√º√≤√á,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+18449,RT : ‚Äö√Ñ√∫: Hmu talmbout match but when I pull up its 30 other niccas wit ya Ô£ø√º√≤√≠‚Äö√Ñ√π smfh shit like that kill me,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+18485,RT : Ô£ø√º√¥√® Lord please don't let this bitch kill my vibe.,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+18547,"RT : ""That's what that means..some kid called me at like 1 in the morning asking me if I wanted to hit the slopes...""",GENERIC,VIOLENCE,has_violence_possibility=true
+18550,"RT : Nights like this I wish, ride low in the Chevy hit the switch. In the city burning killa with a bitch",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+18554,"RT : Just saw someone riding a bike while wearing camo, the bitch is asking to get hit!",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+18565,"RT : ‚Äö√Ñ√∫: Or... Run wildcat. Let Romo run that deep post, and have Murray bomb that bitch to Tony‚Äö√Ñ√π Ô£ø√º√≤√áÔ£ø√º√≤√áÔ£ø√º√≤√áÔ£ø√º√≤√áÔ£ø√º√≤√áÔ£ø√º√≤√áÔ£ø√º√≤√áÔ£ø√º√≤√áÔ£ø√º√≤√áÔ£ø√º√≤√áÔ£ø√º√≤√á",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+18579,RT : ‚Äö√Ñ√∫: If you posted a thunder buddy status yesterday slap yourself‚Äö√Ñ√πÔ£ø√º√≤√áyour a basic bitch*,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+18595,"RT : Quote of last night, telling me to find her a curved stick and she'll make a crossbow to shoot a bird down",GENERIC,VIOLENCE,has_violence_possibility=true
+18607,"RT : ""Drop that bitch"" - on the atomic bomb",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+18698,RT : I'll naturally slap the shit outa oomf that bitch talk to much.,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+18752,RT : I peep everything. And just know I'll slap a bitch with a smile on my face.,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+18778,RT : Mckean Mckean lol hate half the people there lol weird ass hoes lol corny ass food ( I still kill that shit doe ),GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+18875,"RT : Berto couldn't KO this dude who wanted to get KO'd‚Äö√Ñ¬∂Berto's trash, Upsher's trash, that fight was trash. #BronerTaylor #Boxing",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+18895,RT : Never hurt your Girlfriend to make a hoe happy Ô£ø√º√≠√ò #djmemphis10,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+18941,"RT : ""Why y'all doing the ALS challenge if y'all not gonna donate?"" Cuz we don't $10k & Tiger Blood to donate unlike Charlie ‚Äö√Ñ¬∂",GENERIC,VIOLENCE,has_violence_possibility=true
+18960,RT : Wouldn't mind driving up to ghetto ass chula vista just to slap the shit out of gyro and watch him stand there and just ta‚Äö√Ñ¬∂,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+19077,RT : Ô£ø√º√≤√áÔ£ø√º√≤√áÔ£ø√º√≤√áÔ£ø√º√≤√á RT ‚Äö√Ñ√∫: wtf this bitch broke her arm eery time she hit the shit https://t.co/7CtLW9eNjX‚Äö√Ñ√π,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+19276,RT : hickeys hurt I don't see how people always have them hoes .,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+19282,RT : school doesnt even test your intelligence it tests ur memory... ....it tests my ability to keep calm and not slap a bitch,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+19300,"RT : I wanted change and excitement and to shoot off in all directions myself, like the colored arrows from a Fourth of July‚Äö√Ñ¬∂",GENERIC,VIOLENCE,has_violence_possibility=true
+19314,RT : hit that bitch with a bottle,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+19325,RT : 24. Her. When we found her she was so sloppy and I tried to drag her to the car. She was fighting back and the bitch was hea‚Äö√Ñ¬∂,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+19465,"RT : Jammer just said to me he thought ""mustard on the beat ho"" was saying ""Abdullah on the beat"" this whole time LOOOOOOOL",GENERIC,VIOLENCE,has_violence_possibility=true
+19511,RT : Trying so hard to resist the urge to smack a bitch http://t.co/LtDBNLmOVu,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+19591,"RT : Attack animals, last house on the left by the lake, and she got colored eyes...we should have known.! Lol",GENERIC,VIOLENCE,has_violence_possibility=true
+19610,RT : Tbt: I tried on French's outfit for the Freshman cover at that shoot high as fuck off weed brownies‚Äö√Ñ¬∂ http://t.co/HKiWy‚Äö√Ñ¬∂,SCIENCE,VIOLENCE,has_violence_possibility=true;has_substance_use_concern=true;has_negative_language=true
+19652,"RT : "": Pretty bitches rep Taylor Gang"" #Hollah lmfaoo",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+19742,RT : PM: Last night this incitement was translated into the murder of a father traveling w/his family to celebrate the first nig‚Äö√Ñ¬∂,GENERIC,VIOLENCE,has_violence_possibility=true
+19764,"RT : if ur mine, its obvious people are gna hit on u cause ur obviously attractive. but if u flirt back its a problem bitch",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+19823,RT : Rick James ain't even slap his bitches that hard,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+19865,RT : Words from jac.. You can't save every hoe.. You got to let them hurt.,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+19897,RT : ‚Äö√Ñ√∫: Before I run from a niggah I'll lose the fight‚Äö√Ñ√π,GENERIC,VIOLENCE,has_violence_possibility=true
+19934,"RT : It's like The Walking Dead, but with less Carl and more talking birds. ZOMBIE ATTACK!!! http://t.co/UOCsPyksSC http://t.‚Äö√Ñ¬∂",DEATH_GRIEF,VIOLENCE,has_violence_possibility=true
+19975,RT : ugly bitch has blood on her hands for her whore ways,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+20007,RT : Fuck the Islamic State!! We will kill those cuntsÔ£ø√º√°¬®Ô£ø√º√°√ü,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+20036,RT : The P72 Derek Jeter used to hit the walk-off single in his final Stadium at-bat. (Images via ) htt‚Äö√Ñ¬∂,GENERIC,VIOLENCE,has_violence_possibility=true
+20049,RT : idkmadz tbh I've seen you in recess at the monkey bars but I was too busy getting beat up lol ! we should talk more! rate ‚Äö√Ñ¬∂,GENERIC,VIOLENCE,has_violence_possibility=true
+20120,"RT : Prime suspect of #Foley murder is 23y/o British Jihadi who, wait for it ... ""declared his allegiance to Anonymous'"" http://t‚Äö√Ñ¬∂",GENERIC,VIOLENCE,has_violence_possibility=true
+20136,RT : Alex Rodriguez you lucky only the Ryan Dempster hit you. I going to get my camel to break your neck you son of a bitch,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+20142,"RT : then u have the annoying ""HIT ME I DARE YOU"" ass bitches always tryna test a big ass 6ft linebacker ass dude.. girl if you‚Äö√Ñ¬∂",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+20165,RT : A bitch will fuck wit a dead beat dad as long as he cuttin her checksÔ£ø√º√≤¬¢,DEATH_GRIEF,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+20180,RT : I will fight a bitch for Austin that's my gringo right there ain't no one messing with my white chocolate drop,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+20181,"RT : Apr 29th 1997 released the album ""Kill.Fuck.Die"" #TakeTheAddiction #MyTorturedEyes #WASP #HeavyMetal http‚Äö√Ñ¬∂",DEATH_GRIEF,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+20213,RT : Charlie Crist Refuses To Back Down From Race-Based Attack On GOP http://t.co/zSHn94OK9S,GENERIC,VIOLENCE,has_violence_possibility=true
+20244,RT : Icepick punk bitch blood in the mosh pit,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+20253,"RT : "" fuck you say bitch? I will kill you "" http://t.co/3EiGzh6Q13",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+20257,RT : Happy teen wolf! Here's me with getting ready to bitch slap a berzerker http://t.co/ZChBqXFA0g,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+20265,RT : what bitch tried to kill Kendrick Lamar's vibe?,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+20331,RT : Respect the man with vision and a gang of bitches to follow it.,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+20429,RT : fuck you dude! talk shit to my friend I will beat your ass bitch,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+20476,Ray rice had that bitch of the xans and the lean all in one punch,SCIENCE,VIOLENCE,has_violence_possibility=true;has_substance_use_concern=true;has_negative_language=true
+20525,Review: The Yanks are Coming! A Military History of the United States in World War I http://t.co/Hv4k1yZACH via,GENERIC,VIOLENCE,has_violence_possibility=true
+20585,S/o to the homie niggah stay making bomb food when we high af,GENERIC,VIOLENCE,has_violence_possibility=true
+20587,SEnd y'all bitch asses fishing with us RT : We ain't beat San Antonio all season I don't wanna play them nigguhs #straightup,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+20605,"Sam is such a bitch, Ronnie got in a fight because of you Ô£ø√º√≤√≠",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+20618,"Saw brownies on the kitchen counter, bit into one and immediately a surge of pain and spice hit my tongue. Chili flakes. Eff you, Brian.",SCIENCE,VIOLENCE,has_safety_hazard=true;has_violence_possibility=true;has_medical_concern=true
+20631,Say you love that bitch so much I'll kill yo ass in front of her,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+20632,Say you love that bitch so much I'll kill you right in front of her,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+20641,Scott told me at work today he wants to come over to get me drunk and then seduce my girlfriend...Ô£ø√º√Æ¬¥Ô£ø√º√Æ‚Ñ¢ I'll kill you bitch Ô£ø√º√≤¬∞,SCIENCE,VIOLENCE,has_violence_possibility=true;has_substance_use_concern=true;has_negative_language=true
+20688,Sesh with my n-words say it like a white kid yes my Kush is betta than yours u are a whore so please kill yo self fool bitch ass,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+20700,Shantrell tryna fight bitches in da clinic n shut Ô£ø√º√≤√áÔ£ø√º√≤√á She wanna wait til uh bitch sick to try to bump Ô£ø√º√≤√áÔ£ø√º√≤√áÔ£ø√º√≠√Ñ,SCIENCE,VIOLENCE,has_safety_hazard=true;has_violence_possibility=true;has_medical_concern=true;has_negative_language=true
+20716,She been a hoe all summer but soon as the fall weather hit she'll probably forget about all that and be a good girl again. That's the cycle,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+20794,Shoot dice let yo hoe fade me,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+20795,Shoot out wit yo niccas you da type to throw da Pistol Ô£ø√º√¥√•,GENERIC,VIOLENCE,has_violence_possibility=true
+20798,Shoot you and your shorty bitch,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+20804,Should I take a nap though too kill a mocking bird or nah?,GENERIC,VIOLENCE,has_violence_possibility=true
+20828,Shut up bitch you beat off to your sister.,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+20878,Slap a hoe with a rusty axe ash my blunts on her ass,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+20879,Slap my hoes with a rake fake make great cake #illuminati,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+20880,Slap the bitch is fun...didnt know beer wasnt that bad,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+20943,"So bitch shoot me a look, it better be a blank stare, or get shanked in the pancreas",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+20965,So much for #UCLA being the team to beat they are trash,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+20997,"So you don't want to see the true life story of American heroes, Bizzy, Lazy, Krayzie & Wish... you wanna watch hillbillies shoot pumpkins",GENERIC,VIOLENCE,has_violence_possibility=true
+21009,Soetoro/Obama is moving the country #Forward w/ his vision. His vision is to downsize our 'oppressive' country and get even w/ whitey. #War,GENERIC,VIOLENCE,has_violence_possibility=true
+21065,Someone bitch slap me into the lake if you see me on FB tomorrow. I suspect my hard core GOP friends will be all over this.,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+21086,"Sometimes I wish I had a cute pet monkey, but then I remember it would probably defecate everywhere, beat me up, and destroy my house.",GENERIC,VIOLENCE,has_violence_possibility=true
+21113,Sosa on the beat ho,GENERIC,VIOLENCE,has_violence_possibility=true
+21152,Stephen the threat about your brother doesn't scare me. Quit runnin your fuckin mouth & you won't have to hide behind your brother bitch boy,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+21165,Still waiting for oomf to hit that hoe lololol,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+21191,"Study by Center for Biological Diversity called (taxpayer funded) Ivanpah a ‚Äö√Ñ√∫mega-trap‚Äö√Ñ√π-will kill 28,000 birds year. http://t.co/xPXEhne29E",GENERIC,VIOLENCE,has_violence_possibility=true
+21210,"Stupid people talking smack on ""Uncle Tim Tom"" are the same ghetto fools w/no future. I'm surprised u ignorant niggaz even read or write.",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+21252,Switch A Roo yo hoe let me hit her,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+21287,"Tarantulas are dope but the spiders that are small n can kill you.. Fuck dat RT : Spiders arent scary, sheesh y‚Äö√Ñ√¥all some pussies",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+21419,That one drunk white bitch that always instigate problems involving at least one.black dude then crys afterwards when someone gets hurt,SCIENCE,VIOLENCE,has_violence_possibility=true;has_substance_use_concern=true;has_negative_language=true
+21421,That pic is now circulated by Jihadis with a call to kill him. http://t.co/PUn8fNVBal #Saudi #ISIS #Syria,GENERIC,VIOLENCE,has_violence_possibility=true
+21451,That's how you let the beat build bitch.,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+21601,"The pilgrims was high as fuck, like ""Lets kill a big ass bird and eat it with a billion other things",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+21606,"The punishment should fit the crime. For instance, if you take the last Twinkie you should choke on that Twinkie. Twinkie's are sacred.",CIVIC_LAW,VIOLENCE,has_violence_possibility=true
+21647,Them gay dudes stay with the baddest bitches.....no punch line,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+21663,Then I hit that bitch like a free throw !,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+21667,Then again... i shoot bitches in the ass for doing some stupid shit like key my car or bust my windows.,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+21747,These brownies are bomb!!!!!!!!! http://t.co/lKZLQQj7W1,GENERIC,VIOLENCE,has_violence_possibility=true
+21829,These niccas want war give me what you got #WeTheLastOnesLeft #UMightNotGetIn #BeerandTacOS http://t.co/xwTa1PUDZU,GENERIC,VIOLENCE,has_violence_possibility=true
+21886,They slut for me they kill for me they steal for me and of course it'll be yo cash and I'll murder that bitch send the body back to yo ass,CIVIC_LAW,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+21918,This Charlie Murder game is pretty dope #Xbla,TECHNOLOGY,VIOLENCE,has_violence_possibility=true
+21922,This Mexican bitch almost just hit me with her car and she sped over the speed bump JUST SO SHE COULD DO IT OMFG,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+21943,This bitch ask me why I dont hit her up.and that I dont talk to her....bitch want me to hit her up so she can ignore or respond hours later,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+21947,This bitch bout to make me commit murder Ô£ø√º√Æ¬¥Ô£ø√º√Æ‚Ñ¢Ô£ø√º√´√§,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+21966,"This bitch in ma bed got double D's that SHAKE. Ass like Trina, when I smack her ass it SHAKE. #Game #SHAKE #2013shit #tune #hornyfuck",TECHNOLOGY,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+22040,This fucking little bitch landed on me in the car and really thought I wouldn't kill him.. http://t.co/nOuHxhLsHA,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+22062,This hot chocolate and Famous Amos too bomb right now,GENERIC,VIOLENCE,has_violence_possibility=true
+22085,This is why nothing gets done. Morons like Coburn trying 2 ad a gun amendment 2 a public works bill. Push back on the #teabagger #morningjoe,GENERIC,VIOLENCE,has_violence_possibility=true
+22127,This nigguh really tried to fight me on the bus over a grape kool aid jammer Ô£ø√º√≤√áÔ£ø√º√≤√áÔ£ø√º√≤√á,GENERIC,VIOLENCE,has_violence_possibility=true
+22161,This white bitch tried to set me up for a racial war ... Lol bitch it's impossible I'm smarter then you,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+22189,"Tilt my chin back, slit my throat, take a bath in my blood, get to know me",GENERIC,VIOLENCE,has_violence_possibility=true
+22190,Time 2 kill 2 birds with 1 stone. Work out while I renew my food handlers card online. Push play for this dumb class,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+22211,Today has been a bitch!!! I hit myself in the face with a branch!! I lost like 5 pounds of water weight!! And I'm sunburnt !! Thank you,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+22321,Tyga and Drake two light skin bitches but if had to choose in a fight I would go with the guy from Compton over the one from Toronto,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+22322,"Tyga is a hoe!!! He pooted in my muthafuckin face..... we bout to fight, bruh",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+22346,U on the hit list to bitch kill yo self,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+22376,"Ugly hoes, you can NOT have attitudes! Kill the ratchetness!! You need to be nice, cause your looks sure ain't getting you nowhere!!!!",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+22486,"Watch ima hit that hoe later on this summer, finna be the best/most livestock party of 2014!!!",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+22555,Well I wish I could shoot the shit wit u bitches but daddy gotta get dis money .one,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+22635,What you gonna do if she cheat ? Cry ? Fight for her ? No kick that bitch out and go straight to tootsies,GENERIC,VIOLENCE,has_emotional_distress=true;has_violence_possibility=true;has_negative_language=true
+22709,When i see a SUPER bad bitch and she happen to be from my city i just feel the need to shoot my shot.,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+22716,When lifes got ya down you just gotta get back up and pimp slap that hoe!!!!!,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+22758,When you see about to fight a bitch .... http://t.co/KZoNqkfVtB,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+22768,Whenever you need your hoe protected on social media or anywhere in the world? Please contact and he'll fight for that hoe.,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+22807,Who ever did the beat on that Wayne by Chief that bitch a banger #FreeWop #FreeSlick,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+22859,Why can't there be bomb single bitches available on tap?,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+22907,Why was Jorge Zimmerman arrested? Do prosecutors have a witness that saw Zimmy attack TrayTray? Are they afraid of the hoodie pussies?,GENERIC,VIOLENCE,has_emotional_distress=true;has_violence_possibility=true
+22985,World War Z is on Netflix yasssss bitch yasssss,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+22993,Wow I swear I'm gonna cunt punch you,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+23067,Ya last nicca couldn't beat it .. I hit it like a free throw!,GENERIC,VIOLENCE,has_violence_possibility=true
+23068,Ya last nicca couldn't beat it ... I hit it like a free throw!,GENERIC,VIOLENCE,has_violence_possibility=true
+23099,Yankees great Joe DiMaggio reportedly used to beat wife Marilyn Monroe. Here she is in 1954 announcing divorce http://t.co/blS7dalMiF,GENERIC,VIOLENCE,has_violence_possibility=true
+23101,Yankees should have NEVER gave away Melky. Guy can flat out HIT. #yankees #giants,GENERIC,VIOLENCE,has_violence_possibility=true
+23145,"Yeah, I had a bitch, but she ain't bad as you, so hit me up when you pass through",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+23156,Yes & no RT Is it ok to beat a bitch up over some tweets or nah?,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+23185,Yo bitch like to get cute and go the movies mane my bitch like to get fine and go to the gun range,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+23194,Yo hoe is like a tick so she hunting for a blood,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+23254,You better pray to god I don't like yo bitch cause we might catch eyes and she might get hit,BELIEF,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+23267,"You boil my blood, just how spoilt and how much ae an arrogant bitch you are. If u try to show off I'll flip nd most likely go nuts #ohwell",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+23340,"You just worried bout the bitches, I got one girl and she my girl no one else can hit it",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+23390,You niggaz is bitches better yet actresses da k hit ya ass nd flip you like a pissy mattress,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+23512,"Youre a fucking ugly bitch, I wanna stab you to death and then play around with your blood -Patrick Bateman",DEATH_GRIEF,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+23539,ahah fucking queer kill urself,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+23565,almightydavehunna's photo http://t.co/QFK2jhStc4 haha bitch ass Shmedium hit that hoe with that caption Ô£ø√º√≤‚â†Ô£ø√º√≤√á,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+23573,and if that's yo bitch then you may have to fight holmezz,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+23580,"animal crackers are the fuckin bomb, yo",SCIENCE,VIOLENCE,has_violence_possibility=true
+23620,bitch ass arod or shorty dont hit me back up,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+23634,"bitch kill yoself, go on to the bathroom and eat the pills bitch, all of em",SCIENCE,VIOLENCE,has_violence_possibility=true;has_substance_use_concern=true;has_negative_language=true
+23703,can my cat not kill birds and make a huge mes of feathers,GENERIC,VIOLENCE,has_violence_possibility=true
+23718,choke that bitch,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+23808,everybody talking bout hoes fighting I'm lurking on some moneyÔ£ø√º√≠¬µÔ£ø√º√≠‚â•Ô£ø√º√≠√ò,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+23829,foreign bad bitch n she said her name trinaaa trap house look like it got hit by hurricane katrinaaaa,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+23903,having one of those days where a pimp wants to unfollow every bitch in a 30 mile radius on IG that won't let me beat,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+23904,"he had a song called ""Hit u from the back"" with the iconic lines ""There they go! a big ole pack of pretty bitches...""",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+23922,hit that bitch with a reality check. bitches love reality checks.,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+23923,hit the strip club and see some bitches I went to school with......,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+23994,"i love how when it was airing everyone loved kill la kill but i was like ""no its fucking trash"" and now everyone who loved it hates it",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+23995,i made sweet & SPICY drunken noodles with handmade and handcut ho fun noodles with marinated chicken/shrimp. my back is hurting.,GENERIC,VIOLENCE,has_violence_possibility=true
+24112,"its either a gun, a sandwich, or both. details looking really fuzzy right now and i don't trust any police department in MO",CIVIC_LAW,VIOLENCE,has_violence_possibility=true
+24194,lost a couple online matches in nhl14. bitch hit me with her car. dad ate my pizza. just one of those days,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+24199,"maddie, karissa, Ireland, cierra and I have gotten so close I'd kill a bitch for them tbh",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+24280,no hoe shit or roxy shit but dawggg I swear I ain't knw Kia no how to fight...,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+24347,people be shooting their guns around here late as fuck got me thinking they tryna shoot my black ass 4 jammin jiggaboo music,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+24362,punch a bitch on her lip hahaha,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+24381,rams finna smack steven wackson bitch ass,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+24416,"shid, I thought it was legal to beat yo hoe.",CIVIC_LAW,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+24428,slap a hoe,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+24499,"that is what I do! RT : RT : The nicer you are, the easier you're hurt. So just be a bitch..",GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+24536,there's 13 people in my house and they're all yelling pls god give me the strength not to beat a bitch.,BELIEF,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+24537,"there's always that dumb twitter hoe when it comes to sports. ""I hope Floyd beat mayweather"" or ""I hope New Orleans beat the saints"" Ô£ø√º√≤√≠Ô£ø√º√≤√´Ô£ø√º√Æ‚Ñ¢",TECHNOLOGY,VIOLENCE,has_violence_possibility=true;has_negative_language=true
+24584,this one bitch dont feel the same no more an henny dont really kill the pain no moree,SCIENCE,VIOLENCE,has_safety_hazard=true;has_violence_possibility=true;has_medical_concern=true;has_negative_language=true
+24679,when yo song come on and you hit the blunt hard af cause that hoe go dat hard,GENERIC,VIOLENCE,has_violence_possibility=true;has_negative_language=true
